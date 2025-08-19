@@ -86,3 +86,94 @@ mdbook/
 *.prof
 perf.data*
 flamegraph.svg
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+.gradle/
+build/
+local.properties
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+google-services.json
+gradle-wrapper.properties
+android/app/google-services.json
+android/key.properties
+android/app/src/main/res/values/strings_config.xml
+
+# Android Studio
+*.iml
+.idea/
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+*.jks
+
+# iOS
+*.ipa
+*.dSYM.zip
+*.dSYM
+DerivedData/
+*.xcworkspace
+*.xcuserdata
+*.xcscmblueprint
+.build/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/flutter_assets/
+ios/ServiceDefinitions.json
+ios/Runner/GoogleService-Info.plist
+ios/Runner/Info.plist.backup
+
+# Xcode
+xcuserdata/
+project.xcworkspace/
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.pbxuser
+!default.pbxuser
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace/
+DerivedData/
+.build/
+
+# CocoaPods
+ios/Pods/
+Podfile.lock
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+.metadata
+flutter_*.png
+
+# Capacitor
+.capacitor/
+capacitor.config.ts.backup
+
+# React Native
+react-native/
+metro.config.js.backup

@@ -1,9 +1,11 @@
-// Point d'entrée principal temporaire
-// Sera remplacé par la structure modulaire dans les prochaines versions
+// CLI binary pour Miaou
+// Point d'entrée principal pour l'application de ligne de commande
+
+use miaou::hello_miaou;
 
 fn main() {
-    println!("Miaou v{}", env!("CARGO_PKG_VERSION"));
-    println!("Communication décentralisée");
+    println!("{}", hello_miaou());
+    println!("CLI Miaou v{}", env!("CARGO_PKG_VERSION"));
     
     #[cfg(target_os = "android")]
     println!("Support Android activé");

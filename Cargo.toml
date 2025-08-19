@@ -2,5 +2,47 @@
 name = "miaou"
 version = "0.1.0"
 edition = "2021"
+authors = ["yrbane <yrbane@nethttp.net>"]
+description = "Plateforme de communication décentralisée et sécurisée"
+repository = "https://github.com/yrbane/miaou"
+license = "MIT OR Apache-2.0"
+keywords = ["p2p", "encryption", "communication", "decentralized"]
+categories = ["network-programming", "cryptography"]
+
+[lib]
+name = "miaou"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "miaou-cli"
+path = "src/bin/cli.rs"
 
 [dependencies]
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+android_logger = "0.13"
+
+[target.'cfg(target_os = "ios")'.dependencies]
+objc = "0.2"
+
+[features]
+default = ["desktop"]
+desktop = []
+mobile = []
+android = ["mobile"]
+ios = ["mobile"]
+wasm = []
+
+[package.metadata.android]
+package = "net.nethttp.miaou"
+build_targets = ["aarch64-linux-android", "armv7-linux-androideabi", "i686-linux-android", "x86_64-linux-android"]
+
+[package.metadata.bundle]
+name = "Miaou"
+identifier = "net.nethttp.miaou"
+version = "0.1.0"
+copyright = "Copyright (c) yrbane 2024"
+category = "social-networking"
+short_description = "Communication décentralisée"
+long_description = "Plateforme de communication peer-to-peer sécurisée et décentralisée"

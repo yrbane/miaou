@@ -75,6 +75,7 @@ Développée entièrement en Rust selon les plus hauts standards de l'industrie 
 #### 🖥️ **Interfaces utilisateur**
 - CLI pour administration et automation
 - Application desktop native (Tauri)
+- Applications mobiles natives (Android/iOS)
 - Interface web progressive (WebAssembly)
 - Mini-site d'accueil pour invités avec documentation
 - Thèmes adaptatifs et personnalisables
@@ -96,6 +97,7 @@ miaou/
 ├── interfaces/     # Couches d'interface
 │   ├── cli/        # Interface ligne de commande
 │   ├── desktop/    # Application native
+│   ├── mobile/     # Applications Android/iOS
 │   └── web/        # Interface WebAssembly
 └── tools/          # Outils et utilitaires
 ```
@@ -378,6 +380,7 @@ Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](docs/CONTRIB
 - **[DEPENDENCIES.md](docs/DEPENDENCIES.md)** - Politique des dépendances auditées
 - **[IDEA.md](docs/IDEA.md)** - Vision initiale et évolution du concept
 - **[WEBSITE_STACK.md](docs/WEBSITE_STACK.md)** - Stack technique pour le site web
+- **[MOBILE.md](docs/MOBILE.md)** - Support Android et iOS
 
 ## 📄 Licence
 
