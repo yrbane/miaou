@@ -270,3 +270,264 @@ miaou/
 * Une **charte dépendances** (allowlist + pinned versions + procédures d’upgrade sécurisées).
 
 Dis-moi si tu veux que je te fasse une PR fictive avec la **version réécrite minimale** (README + SECURITY.md + ROADMAP.md + DEPENDENCIES.md) — je te la rédige directement selon ce cadrage.
+
+
+---
+
+## Ma réponse =>
+Je n'entendrais pas tes critiques concernant la légalité. Je veux garder un esprit pirate. Satoshi ne les as pas pris en compte quand il a créé le bitcoin. Beaucoup d'autres usages du numérique et du réseau ont permis de contourner certaines lois et modifié certains usages... Je ne crois pas que les lois sont toutes écrites que par des humanistes. Le but de ce projet est de sortir les gens de leur aliénation aux plateformes capitalistes, propriétaires et fermés! Je veux donc que tu ne t'en tiennes qu'à des considérations techniques. Je veux bien dans une autre partie les considération éthiques que je prendrais sûrement en compte !
+
+
+## Sa réponse 
+
+Parfait, message reçu : **je reste strictement technique**.
+Voici une **relecture 100 % ingénierie** avec des propositions concrètes, prêtes à patcher ton doc sans invoquer de considérations légales.
+
+---
+
+## 0) L’esprit pirate… mais robuste 🏴‍☠️⚙️
+
+Objectif technique : **maximiser l’autonomie** (décentralisation, interop, code libre) **sans fragiliser la sécurité ni le time‑to‑shipping**.
+Traduction opérationnelle : éviter les « from‑scratch » dangereux, concentrer l’effort sur les **propriétés vérifiables** (E2EE, PFS, minimisation des métadonnées, résilience réseau) et livrer un **MVP resserré**.
+
+---
+
+## 1) Modifs **immédiates** (pure technique) à ton document
+
+### A. Crypto & protocole
+
+* **Supprimer “implémentée from scratch”** pour les primitives et les protocoles.
+  *Raison :* risques de canaux auxiliaires, non‑constance temporelle, erreurs subtiles, absence de vecteurs de tests (KAT).
+* **Choisir une seule pile E2EE** pour v1 :
+
+  * 1:1 + petits groupes : **Double Ratchet** (style Signal) **OU**
+  * Groupes natively scalables : **MLS (IETF)** pour l’évolution future.
+* **Normaliser le vocabulaire** : « Perfect Forward Secrecy (PFS) » suffit (le couple “forward secrecy / perfect forward secrecy” est redondant).
+* **Définir un format d’enveloppe unique** (header minimal + AEAD) et bannir tout parsing ad‑hoc.
+
+### B. Réseau, P2P, offline
+
+* **Remplacer “zéro serveur”** par **“relais non‑de‑confiance (store‑and‑forward) chiffrés”**.
+  *Raison :* NAT, mobilité, offline, anti‑censure → exigent au moins un point de rendez‑vous.
+* **Imposer ICE/STUN/TURN** (pas de NAT traversal custom).
+* **Ajouter un fallback RELAY** (UDP/TCP) pour garantir la livrabilité.
+* **Limiter la DHT** (si retenue) : pas de publication d’identifiants bruts, usage de handles opaques + rotation, sinon corrélation triviale.
+
+### C. Métadonnées & anti‑abus
+
+* **“Sealed‑sender” style** : le relais ne doit pas apprendre l’identité du pair émetteur.
+* **Protection DoS/Spam** : avant tout message utilisateur, exiger un **puzzle léger (PoW)** ou **jeton éphémère signé** + **rate‑limiting côté relais**.
+* **TTL strict** et **effacement vérifiable** des messages en attente.
+
+### D. Bridges & interop
+
+* **Clarifier techniquement** que tout bridge vers WhatsApp/Signal/Telegram **devient un point de terminaison** et **casse l’E2EE inter‑protocole** (un simple fait crypto).
+* **Isoler** les bridges en **processus séparé** (sandbox, clé distincte) pour éviter l’exposition des clés de Miaou.
+
+### E. Micro‑crates & build
+
+* **Réduire l’entropie** : passer de 40–50 crates à **\~10 domaines** + **feature flags**.
+* **Pin de versions + audit de dépendances** (technique supply‑chain) : reproductibilité, SBOM, `cargo-audit`/`cargo-deny`.
+* **Zeroize mémoire sensible** et **interdire `Debug` sur les types secrets**.
+
+### F. “Qualité non négociable”
+
+* **Couvrir 90–95 %** (lignes + branches) + **fuzzing** + **tests de propriétés** + **tests KAT crypto** (plus réalistes et efficaces qu’un “100 %” rigide).
+* **CI** obligatoire (builds déterministes, lints “pedantic”), **pas de commit** si tests rouges → **gate mergé**.
+
+### G. UX, accessibilité, i18n
+
+* **WCAG 2.1 AA** comme cible par défaut (AAA « là où pertinent »).
+* **Multi‑device** explicitement supporté dès v1 (pairing QR, cross‑signing des appareils).
+* **Restauration** : phrase de secours + export chiffré **opt‑in**.
+
+---
+
+## 2) Contradictions techniques à corriger
+
+* **“Aucune donnée sur serveur”** **vs** **messages offline** → reformuler : *“Aucune donnée en clair. En attente : chiffré, TTL, effacement vérifiable.”*
+* **“2FA”** sans comptes centraux → préciser : **déverrouillage local** du trousseau (passphrase + clé matérielle/WebAuthn), pas d’OTP serveur.
+* **Annuaires distribués** **vs** **vie privée** → éviter d’y mettre des identités stables; préférer **Key Transparency** (journaux à preuves Merkle) + gossip, ou repousser à v2.
+
+---
+
+## 3) Architecture **proposée** (plus compacte)
+
+```
+miaou/
+├─ miaou-crypto/      # Wrappers vers libs auditables (AEAD, KDF, signatures, zeroize)
+├─ miaou-e2ee/        # Signal-like OU MLS glue (sessions, prekeys, sealed-sender)
+├─ miaou-net/         # Transport: QUIC/TLS + WebRTC; ICE/STUN/TURN; fallback relay
+├─ miaou-protocol/    # Enveloppe, schéma messages, numérotation, replays, acks
+├─ miaou-store/       # Keystore + storage local (secrets isolés; no Debug; wipe)
+├─ miaou-relay/       # Relais non-de-confiance: store-and-forward, rate-limit, TTL
+├─ miaou-core/        # Orchestration, state machines, services domaine
+├─ miaou-cli/         # Admin & debug
+├─ miaou-desktop/     # UI Tauri
+└─ miaou-web/         # (optionnel v2) WASM
+```
+
+**Notes techniques clés**
+
+* **Transport** : préférer **QUIC** (migration, multiplexing) + **TLS 1.3** ; WebRTC pour A/V.
+* **États typés** : handshake/session en **state machines** (types distincts `Unauthenticated → Authenticating → Secure`).
+* **Replay & ordering** : identifiants monotones + fenêtrage de relecture + acks groupés.
+
+---
+
+## 4) Spéc crypto (résumé opérationnel)
+
+* **Identité** : paire de clés durable (signature), code/verif “safety number”.
+* **Établissement** : prekeys publiés via relais; **X3DH‑like** (Signal) **ou** init MLS.
+* **Sessions** : AEAD **XChaCha20‑Poly1305** ou **AES‑GCM**, KDF HKDF, PFS.
+* **Stockage** : keystore local chiffré (**Argon2id** pour dériver la clé).
+* **Zeroization + constant‑time** partout.
+* **Sealed‑Sender** : en-tête minimal (dst), identité émetteur cachée au relais.
+
+---
+
+## 5) Réseau & offline
+
+* **Découverte** : bootstrap via liste de relais; pas de DHT globale d’identités.
+* **ICE** : STUN/TURN obligatoires, TURN fallback si P2P direct impossible.
+* **Relais** : file d’attente chiffrée, **TTL**, **quotas**, **rate‑limit**; *no logs applicatifs de contenu* (inutile et risqué techniquement).
+* **Anti‑DoS** : token éphémère + puzzle (paramètre adaptatif), budgets par peer.
+
+---
+
+## 6) Interop (strictement technique)
+
+* **Matrix/XMPP** en premier (protos ouverts).
+* **Bridges propriétaires** : isolés en sandbox/process externe, **ré‑chiffrement** explicite (donc **pas d’E2EE bout‑à‑bout inter‑protos** par construction).
+* **Pas de partage des clés** de Miaou au bridge.
+
+---
+
+## 7) Token/économie (vue purement technique)
+
+* **Risques techniques** : incitatifs au spam (Sybil), charge réseau, complexité consensus, vérification nodes, synchronisation état, latence interactive.
+* **Alternative technique v1** : **crédits hors‑chaîne non‑transférables** dérivés d’uptime + réputation signée, consommés en cas d’abus; ou **PoW léger per‑message**.
+* **Si tu gardes une “chaîne”** : consensus simple **Byzantine‑fault tolerant** permissionné entre relais (= latence < PoS public), **pas** de VM générique; **snapshots** + **pruning** pour limiter l’empreinte.
+
+*(Aucun argument légal ici : uniquement complexité, perfs, menaces, latence.)*
+
+---
+
+## 8) Qualité & vérif (tests utiles, pas décoratifs)
+
+* **Unit** + **property‑based** (proptest) sur proto/parseurs.
+* **Fuzzing** sur enveloppes/handshakes (libFuzzer/cargo‑fuzz).
+* **KAT** crypto (vecteurs officiels).
+* **Benchmarks** (p95/p99 latence d’envoi, perf batterie).
+* **Build reproductible**, versions figées, **audit deps** en CI.
+* **Mutations** ciblées (mutants sur vérification d’authenticité & checks de longueurs).
+
+---
+
+## 9) Roadmap technique re‑cadrée (sans changer ta vision)
+
+**Phase 1 – MVP (Q1–Q2 2025)**
+
+* E2EE 1:1 (Signal‑like **ou** MLS), pairing multi‑device, sealed‑sender, relays store‑and‑forward, QUIC/TLS, TURN fallback, desktop + CLI, tests + fuzzing + KAT, updates signées (technique de déploiement), audit deps.
+
+**Phase 2 – Groupes & robustesse (Q3 2025)**
+
+* Groupes E2EE stables, UX vérif de clés, sauvegarde chiffrée, i18n, accessibilité **AA**, perf réseau.
+
+**Phase 3 – Mobile (Q4 2025)**
+
+* iOS/Android, notifications, optimisations batterie/radio, reprise sur perte de réseau.
+
+**Phase 4 – Interop ouverte (2026)**
+
+* Matrix/XMPP (bridge sandboxé), recherche privée (PSI) *en R\&D*, options d’obfuscation réseau.
+
+**Phase 5 – Incitations techniques (2026+)**
+
+* Système de crédits hors‑chaîne **ou** mini‑consensus permissionné entre relais si tu veux maintenir l’angle “économie”.
+
+---
+
+## 10) Patches rédactionnels prêts à coller (diff conceptuel)
+
+* **Remplacer** : *“Cryptographie de bout‑en‑bout implémentée from scratch”*
+  **Par** : *“E2EE basée sur un protocole éprouvé (Signal‑like ou MLS), primitives via bibliothèques auditables, enveloppe AEAD unique.”*
+
+* **Remplacer** : *“Mode dégradé sans infrastructure centralisée”*
+  **Par** : *“Relais non‑de‑confiance minimalistes pour rendez‑vous/offline (store‑and‑forward chiffré, TTL, rate‑limit).”*
+
+* **Remplacer** : *“Aucune donnée personnelle stockée sur le serveur”*
+  **Par** : *“Aucune donnée en clair stockée côté relais; files chiffrées avec TTL et effacement vérifiable.”*
+
+* **Remplacer** : *“Forward secrecy et perfect forward secrecy”*
+  **Par** : *“Perfect Forward Secrecy (PFS).”*
+
+* **Ajouter** dans “Sécurité” : *“Sealed‑sender”*, *anti‑replay*, *anti‑DoS*, *zeroization*, *interdiction de `Debug` sur secrets*.
+
+* **Réduire** les arbres de crates à **10 domaines** et documenter les **feature flags**.
+
+---
+
+## 11) Mini‑squelette de code (exemple d’API interne)
+
+*(Code en anglais, doc en français – comme tu le demandes.)*
+
+```rust
+/// Fournit les primitives cryptographiques de haut niveau.
+/// Implémentation basée sur des bibliothèques auditées (pas de primitives maison).
+pub trait CryptoProvider: Send + Sync {
+    /// Chiffre `plaintext` avec un AEAD, retourne (nonce, ciphertext, tag).
+    /// - `aad`: données authentifiées supplémentaires (en-tête minimal).
+    fn seal(&self, key_id: KeyId, aad: &[u8], plaintext: &[u8]) -> Result<Sealed, CryptoError>;
+
+    /// Déchiffre une enveloppe AEAD ; échoue si tag/nonce invalides.
+    fn open(&self, key_id: KeyId, aad: &[u8], sealed: &Sealed) -> Result<Vec<u8>, CryptoError>;
+
+    /// Dérive des clés de session (HKDF) à partir d'un secret partagé.
+    fn kdf(&self, ikm: &[u8], salt: &[u8], info: &[u8], len: usize) -> Vec<u8>;
+}
+
+/// Représente une session E2EE avec PFS et protection anti-rejeu.
+/// États typés: Unauthenticated → Authenticating → Secure.
+pub trait SecureSession {
+    /// Étape de handshake initial (X3DH/MLS), retourne l'état suivant.
+    fn handshake(&mut self, incoming: &[u8]) -> Result<Option<Vec<u8>>, ProtoError>;
+
+    /// Envoi d'un message applicatif sous enveloppe AEAD.
+    fn send(&mut self, msg: &[u8]) -> Result<Vec<u8>, ProtoError>;
+
+    /// Réception/déchiffrement + gestion d'idempotence/anti-rejeu.
+    fn recv(&mut self, frame: &[u8]) -> Result<Vec<u8>, ProtoError>;
+}
+```
+
+---
+
+## 12) Checklists d’implémentation (techniques)
+
+**Crypto**
+
+* [ ] Aucun `unsafe` non justifié autour des secrets.
+* [ ] Zeroize automatique sur drop; pas de `Clone` sur secrets.
+* [ ] KAT exécutés en CI; timings constant‑time vérifiés.
+
+**Réseau**
+
+* [ ] Connexion P2P: ICE complet + TURN fallback.
+* [ ] RELAY: quotas, rate‑limit, TTL, sealed‑sender.
+* [ ] Fenêtrage anti‑replay + acks cumulatifs.
+
+**Store**
+
+* [ ] Keystore chiffré (Argon2id), passphrase + clé matérielle **optionnelle**.
+* [ ] Sauvegarde/restauration chiffrée **opt‑in**.
+
+**Tests/Perf**
+
+* [ ] Fuzz sur parseurs/enveloppes/handshake.
+* [ ] Proptest sur invariants de sessions (monotonicité, nonces).
+* [ ] Bench p95/p99 latence et coût CPU/batterie.
+
+---
+
+Si tu veux, je peux te renvoyer ton **README** ajusté avec ces remplacements techniques (mêmes rubriques, texte directement substituable) + un **SECURITY.md** minimaliste côté ingénierie.

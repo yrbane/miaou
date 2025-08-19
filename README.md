@@ -2,17 +2,27 @@
 
 > *La messagerie qui fait ronronner les cryptographes et qui vous récompense à chaque miaou* 
 
-**Miaou** est l'application de messagerie décentralisée qui transforme chaque conversation en aventure : indépendante comme un chat de gouttière, sécurisée comme un coffre-fort suisse, et généreuse comme une grand-mère qui distribue des MiaouCoins à chaque message. Parce qu'au final, vos conversations méritent mieux qu'un simple serveur quelque part dans un datacenter.
+**Miaou** est l'application de messagerie décentralisée qui transforme chaque conversation en aventure : indépendante comme un chat de gouttière, sécurisée comme un coffre-fort suisse, et généreuse comme une grand-mère qui distribue des croquettes à chaque contribution. Parce qu'au final, vos conversations méritent mieux qu'un simple serveur quelque part dans un datacenter.
 
 ## 📖 Description détaillée
 
 **Miaou** représente une approche révolutionnaire de la messagerie moderne, conçue selon les principes de souveraineté numérique et de confidentialité absolue. Cette application décentralisée exploite une architecture peer-to-peer sophistiquée où chaque utilisateur devient un acteur autonome du réseau, éliminant ainsi les points de défaillance centralisés et les risques de surveillance de masse.
 
-L'application s'appuie sur une cryptographie de bout-en-bout implémentée from scratch, garantissant que seuls les destinataires légitimes peuvent accéder au contenu des communications. Son système d'annuaires distribués permet une redondance géographique naturelle, assurant la continuité de service même en cas de tentatives de censure ou de conflits régionaux.
+L'application s'appuie sur une cryptographie de bout-en-bout basée sur des bibliothèques auditées (ring, RustCrypto), garantissant que seuls les destinataires légitimes peuvent accéder au contenu des communications. Son système d'annuaires distribués permet une redondance géographique naturelle, assurant la continuité de service même en cas de tentatives de censure ou de conflits régionaux.
 
-L'innovation majeure de Miaou réside dans son système d'incitations économiques basé sur une blockchain intégrée. Les utilisateurs sont récompensés en MiaouCoins pour leur participation au réseau, créant un écosystème auto-entretenu et encourageant l'adoption virale. Le système de parrainage cross-platform permet d'inviter des utilisateurs depuis toutes les messageries populaires, transformant chaque utilisateur en ambassadeur du réseau décentralisé.
+L'innovation majeure de Miaou réside dans son système d'incitations économiques basé sur une blockchain intégrée. Les utilisateurs sont récompensés en croquettes pour leur participation au réseau, créant un écosystème auto-entretenu et encourageant l'adoption virale. Le système de parrainage cross-platform permet d'inviter des utilisateurs depuis toutes les messageries populaires, transformant chaque utilisateur en ambassadeur du réseau décentralisé.
 
 Développée entièrement en Rust selon les plus hauts standards de l'industrie (SOLID, TDD, couverture 100%), Miaou privilégie la performance, la sécurité mémoire et la fiabilité. Son architecture micro-modulaire garantit une maintenabilité optimale et une extensibilité future, while son interface multi-plateforme (CLI, desktop, web) s'adapte à tous les environnements d'usage.
+
+## 🏴‍☠️ Philosophie et vision
+
+**Miaou incarne un esprit de liberté numérique et de résistance technologique.** Nous refusons l'idée que les communications humaines doivent être contrôlées, monétisées ou surveillées par des corporations ou des États. Inspirés par l'héritage de cypherpunks, les créateurs du Web décentralisé et les pionniers du logiciel libre, nous construisons un outil d'émancipation numérique.
+
+**Notre conviction :** La technologie doit servir l'humain, pas le contraire. Chaque ligne de code est écrite avec l'intention de redonner le pouvoir aux utilisateurs sur leurs données, leurs conversations et leur vie privée. Nous ne cherchons pas à "disruptr" un marché, mais à libérer les gens de l'aliénation aux plateformes propriétaires.
+
+**Notre approche :** Pragmatique mais intransigeante sur les principes. Nous utilisons les meilleures technologies disponibles (pas de réinvention dangereuse), nous construisons sur des standards ouverts, mais nous n'acceptons aucun compromis sur la décentralisation et la confidentialité. Comme les premiers développeurs du Web, nous créons d'abord l'infrastructure technique solide, puis l'adoption suivra naturellement.
+
+**L'esprit pirate :** Nous contournons les limitations imposées, nous connectons les îlots isolés, nous redistribuons le pouvoir. Mais toujours avec la rigueur technique qui garantit que notre rébellion soit durable et sécurisée.
 
 ## 📋 Vue d'ensemble
 
@@ -35,17 +45,25 @@ Développée entièrement en Rust selon les plus hauts standards de l'industrie 
 - Mode dégradé sans infrastructure centralisée
 
 #### 🎮 **Économie & Gamification**
-- Blockchain MiaouCoin intégrée
-- Mining par micro-interactions
+- Blockchain croquettes intégrée
+- Mining par contributions qualitatives
 - Système de parrainage récompensé
 - Portefeuille et échanges P2P
 - Marketplace décentralisée
 
 #### 🌉 **Interopérabilité**
 - Ponts vers messageries populaires (WhatsApp, Signal, Telegram...)
+- Liaison Mastodon et réseaux sociaux décentralisés
 - Invitations cross-platform automatisées
 - Protocoles ouverts (Matrix, XMPP, IRC)
 - Migration depuis autres plateformes
+
+#### 📱 **Fonctions sociales respectueuses de la vie privée**
+- Agrégation de publications Facebook, Instagram, Twitter
+- Pont Mastodon bidirectionnel sécurisé
+- Publication sociale optionnelle et anonymisable
+- Serveur de contenu web intégré (WebAssembly)
+- Isolation des données sociales et messagerie privée
 
 #### 💬 **Communications**
 - Messagerie texte chiffrée
@@ -102,226 +120,72 @@ miaou/
 - Confirmation requise des deux parties
 - Pas d'annuaire public des utilisateurs
 
-## 🛠️ Développement et exigences qualité
+## 🛠️ Développement
 
-### ⚡ **Exigences techniques strictes**
+Miaou suit des standards de développement stricts pour garantir sécurité, performance et maintenabilité.
 
-#### 📋 **Qualité du code (NON NÉGOCIABLE)**
-- **🏗️ Architecture SOLID** : Respect strict des 5 principes de conception
-- **🧪 Test-Driven Development (TDD)** : Tests écrits AVANT le code
-- **📊 Couverture 100%** : Aucune ligne de code sans test
-- **🚫 Zéro commit** : Si un seul test échoue, aucun commit accepté
-- **📝 Commentaires exhaustifs** : Tout le code documenté en français
-- **🔐 Sécurité by design** : Validation, sanitization, cryptographie
-- **⚡ Performance optimisée** : Profiling et benchmarks systématiques
-- **♻️ Code sobre** : Minimalism, efficacité, pas de code superflu
-- **🎨 Code élégant** : Lisible, maintenable, respectant les conventions Rust
+**📋 Exigences principales :**
+- **Architecture SOLID** et **TDD** obligatoires
+- **Couverture de tests >= 90%** avec fuzzing et tests KAT crypto
+- **Allowlist de dépendances auditées** pour la sécurité (voir DEPENDENCIES.md)
+- **Documentation exhaustive** auto-générée avec rustdoc
+- **Support i18n et accessibilité** dès le départ
 
-#### 🧩 **Modularité micro-crates**
-- **🔬 Micro-modules** : Un crate = une responsabilité unique
-- **🚫 Zéro dépendance externe** : Aucune crate tierce (sauf dev tools)
-- **🔗 Dépendances internes autorisées** : Les crates miaou-* peuvent se référencer
-- **🔌 Hiérarchie claire** : Dépendances unidirectionnelles (pas de cycles)
-- **📦 Composition modulaire** : Assemblage par dependency injection
-- **🔄 Réutilisabilité** : Chaque crate utilisable indépendamment
+Pour les détails complets, voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
-#### 🌍 **Localisation et UX**
-- **🌐 Internationalisé (i18n)** : Support multi-langues dès le départ
-- **♿ Accessible** : Conformité WCAG 2.1 AAA
-- **📱 Responsive** : Adaptation tous écrans et plateformes
-- **🎨 Templates externes** : Séparation logique/présentation absolue
-- **🎭 Design patterns** : Factory, Observer, Strategy, Command...
-
-#### 📚 **Documentation et références**
-- **📖 Auto-générée** : rustdoc avec exemples et benchmarks
-- **🔗 Références citées** : Standards, RFCs, papers académiques
-- **📋 Spécifications** : Protocoles et APIs documentés
-- **🏛️ Architecture Decision Records (ADR)** : Décisions techniques tracées
-
-### 🏗️ **Architecture micro-modulaire détaillée**
+### 🏗️ **Architecture micro-modulaire**
 
 ```
 miaou/
-├── 🔐 security/
-│   ├── crypto-primitives/      # Primitives cryptographiques pures
-│   ├── crypto-keyring/         # Gestion trousseau de clés
-│   ├── crypto-signature/       # Signatures numériques
-│   ├── crypto-encryption/      # Chiffrement symétrique/asymétrique
-│   ├── crypto-hashing/         # Fonctions de hachage
-│   └── security-audit/         # Audit trail et journalisation
-├── 🌐 network/
-│   ├── network-transport/      # Couche transport TCP/UDP
-│   ├── network-discovery/      # Découverte de pairs
-│   ├── network-protocol/       # Protocole Miaou
-│   ├── network-nat/            # NAT traversal
-│   └── network-resilience/     # Anti-censure et résilience
-├── 📇 directory/
-│   ├── directory-api/          # API REST annuaires
-│   ├── directory-sync/         # Synchronisation P2P
-│   ├── directory-trust/        # Web of trust
-│   └── directory-server/       # Mode serveur auto-hébergé
-├── ⛏️ blockchain/
-│   ├── blockchain-consensus/   # Algorithme de consensus
-│   ├── blockchain-mining/      # Mining et validation
-│   ├── blockchain-wallet/      # Portefeuille MiaouCoin
-│   ├── blockchain-contracts/   # Smart contracts simples
-│   └── blockchain-incentives/  # Système d'incitations
-├── 💬 messaging/
-│   ├── messaging-core/         # Messages et conversations
-│   ├── messaging-groups/       # Groupes et channels
-│   ├── messaging-offline/      # Messages hors-ligne
-│   ├── messaging-files/        # Partage de fichiers
-│   └── messaging-media/        # Audio/vidéo WebRTC
-├── 🌉 bridges/
-│   ├── bridge-matrix/          # Pont Matrix
-│   ├── bridge-xmpp/            # Pont XMPP
-│   ├── bridge-discord/         # Pont Discord
-│   ├── bridge-whatsapp/        # Pont WhatsApp
-│   ├── bridge-signal/          # Pont Signal
-│   ├── bridge-telegram/        # Pont Telegram
-│   └── bridge-core/            # Infrastructure commune ponts
-├── 🎯 invitations/
-│   ├── invitations-generator/  # Génération liens personnalisés
-│   ├── invitations-tracker/    # Tracking parrainages
-│   ├── invitations-rewards/    # Récompenses crypto
-│   └── invitations-analytics/  # Analytics croissance
-├── 🏪 marketplace/
-│   ├── marketplace-core/       # Place de marché décentralisée
-│   ├── marketplace-plugins/    # Système de plugins
-│   ├── marketplace-payments/   # Paiements MiaouCoin
-│   └── marketplace-governance/ # Gouvernance communautaire
-├── 🖥️ interfaces/
-│   ├── ui-cli/                 # Interface ligne de commande
-│   ├── ui-desktop/             # Application desktop Tauri
-│   ├── ui-web/                 # Interface WebAssembly
-│   ├── ui-welcome/             # Mini-site d'accueil pour invités
-│   ├── ui-docs/                # Documentation intégrée auto-générée
-│   ├── ui-components/          # Composants UI réutilisables
-│   └── ui-themes/              # Système de thèmes
-├── 🌍 i18n/
-│   ├── i18n-core/              # Infrastructure i18n
-│   ├── i18n-messages/          # Messages traduits
-│   └── i18n-formats/           # Formats localisés
-├── 📊 analytics/
-│   ├── analytics-metrics/      # Métriques performance
-│   ├── analytics-usage/        # Analytics d'usage
-│   └── analytics-blockchain/   # Analytics blockchain
-├── 🌐 web-server/
-│   ├── web-server/             # Serveur HTTP intégré léger
-│   ├── web-static/             # Assets statiques (CSS, images)
-│   └── web-templates/          # Templates HTML pour site d'accueil
-├── 🔧 utils/
-│   ├── utils-config/           # Configuration application
-│   ├── utils-logging/          # Logging structuré
-│   ├── utils-errors/           # Gestion d'erreurs
-│   ├── utils-validation/       # Validation données
-│   └── utils-serialization/    # Sérialisation formats
-└── 🧪 testing/
-    ├── testing-framework/      # Framework tests personnalisé
-    ├── testing-mocks/          # Mocks et fixtures
-    ├── testing-integration/    # Tests d'intégration
-    └── testing-benchmarks/     # Benchmarks performance
+├── 🔐 security/       # Cryptographie et sécurité (6 crates)
+├── 🌐 network/        # Communication P2P et transport (5 crates)  
+├── 📇 directory/      # Annuaires distribués (4 crates)
+├── ⛏️ blockchain/     # Croquettes et consensus (5 crates)
+├── 💬 messaging/      # Messages et conversations (5 crates)
+├── 🌉 bridges/        # Ponts vers autres messageries (8 crates)
+├── 📱 social/         # Fonctions sociales décentralisées (4 crates)
+├── 🎯 invitations/    # Système de parrainage (4 crates)
+├── 🏪 marketplace/    # Place de marché plugins (4 crates)
+├── 🖥️ interfaces/    # Interfaces utilisateur (7 crates)
+├── 🌍 i18n/          # Internationalisation (3 crates)
+├── 📊 analytics/      # Métriques et monitoring (3 crates)
+├── 🌐 web-server/     # Serveur web intégré (5 crates)
+├── 🔧 utils/          # Utilitaires transversaux (5 crates)
+└── 🧪 testing/       # Framework de tests (4 crates)
 ```
 
-### 🎯 **Design patterns implémentés**
+**Total : ~70 micro-crates** pour une modularité maximale et une réutilisabilité optimale.
 
-#### 🏗️ **Patterns architecturaux**
-- **Repository Pattern** : Abstraction accès données
-- **Factory Pattern** : Création d'objets complexes
-- **Strategy Pattern** : Algorithmes interchangeables
-- **Observer Pattern** : Notifications événements
-- **Command Pattern** : Encapsulation d'actions
-- **Facade Pattern** : Interface simplifiée modules complexes
-- **Adapter Pattern** : Intégration systèmes externes
-- **Dependency Injection** : Inversion de contrôle
+Voir l'architecture détaillée dans [CONTRIBUTING.md](CONTRIBUTING.md).
 
-#### 🔐 **Patterns sécurité**
-- **Secure by Default** : Configuration sécurisée par défaut
-- **Fail-Safe Defaults** : Échec vers état sécurisé
-- **Principle of Least Privilege** : Permissions minimales
-- **Defense in Depth** : Multiples couches sécurité
-- **Input Validation** : Validation exhaustive entrées
+## 🔐 Sécurité
 
-### 📋 **Standards et références**
+Miaou implémente une sécurité de niveau militaire avec chiffrement bout-en-bout par défaut.
 
-#### 📚 **Cryptographie**
-- **[RFC 8446] TLS 1.3** : Transport Layer Security
-- **[RFC 7539] ChaCha20-Poly1305** : Chiffrement authentifié
-- **[RFC 8032] Ed25519** : Signatures numériques
-- **[RFC 5869] HKDF** : Dérivation de clés
-- **[NIST SP 800-38D] AES-GCM** : Chiffrement authentifié
+**🔒 Propriétés garanties :**
+- Confidentialité des messages (ChaCha20-Poly1305)
+- Perfect Forward Secrecy (Double Ratchet)
+- Authentification des correspondants (Ed25519)
+- Résistance à la censure et surveillance
 
-#### 🌐 **Réseau et protocoles**
-- **[RFC 5245] ICE** : Interactive Connectivity Establishment
-- **[RFC 8445] ICE-TCP** : ICE pour TCP
-- **[RFC 8829] WebRTC** : Communications temps réel
-- **[RFC 6455] WebSocket** : Communication bidirectionnelle
+**📋 Standards utilisés :**
+- TLS 1.3, WebRTC, Signal Protocol
+- Bibliothèques auditées : ring, RustCrypto, libsignal
+- Tests cryptographiques avec vecteurs officiels NIST/IETF
 
-#### ⛏️ **Blockchain**
-- **[Nakamoto 2008]** : Bitcoin: A Peer-to-Peer Electronic Cash System
-- **[Buterin 2014]** : Ethereum: A Next-Generation Smart Contract Platform
-- **[King & Nadal 2012]** : PPCoin: Peer-to-Peer Crypto-Currency with Proof-of-Stake
-
-#### 🛡️ **Sécurité**
-- **[OWASP Top 10]** : Vulnérabilités web les plus critiques
-- **[NIST Cybersecurity Framework]** : Framework sécurité
-- **[ISO 27001]** : Systèmes de management sécurité information
-
-### 📦 **Politique de dépendances stricte**
-
-#### ✅ **Autorisées uniquement**
-```toml
-# Outils de développement et build UNIQUEMENT
-[dev-dependencies]
-criterion = "0.5"           # Benchmarks
-proptest = "1.0"            # Tests de propriétés  
-cargo-tarpaulin = "0.27"    # Couverture de code
-cargo-mutagen = "0.2"       # Tests de mutation
-
-# Dépendances internes 
-[dependencies]
-crypto-primitives = { path = "../crypto-primitives" }
-utils-errors = { path = "../utils-errors" }
-```
-
-#### 🚫 **Interdites formellement**
-- **Aucune crate externe** en production (tokio, serde, ring, etc.)
-- **Pas de frameworks** (axum, actix, warp...)
-- **Pas de libraries crypto tierces** (ring, sodiumoxide...)
-- **Pas de libraries réseau** (hyper, reqwest...)
-
-#### 🏗️ **Hiérarchie des dépendances internes**
-```
-Level 0 (Foundation) : utils-*, crypto-primitives
-    ↓
-Level 1 (Core)       : crypto-*, network-transport
-    ↓  
-Level 2 (Services)   : messaging-*, blockchain-*
-    ↓
-Level 3 (Bridges)    : bridge-*, invitations-*
-    ↓
-Level 4 (UI)         : ui-*, marketplace-*
-```
-
-### Technologies **implémentées from scratch**
-- **🦀 Rust 1.75+ std uniquement** : Pas de dépendances externes
-- **🔐 Cryptographie custom** : Implémentation pure Rust des algorithmes
-- **🌐 Réseau custom** : Socket TCP/UDP natifs + protocole propriétaire
-- **🕸️ WebAssembly** : Compilation native sans frameworks
-- **⚡ Async custom** : Runtime asynchrone léger propriétaire
-- **📋 Sérialisation custom** : Format binaire optimisé propriétaire
+Pour les détails complets, voir [SECURITY.md](SECURITY.md).
 
 ## 🚀 Roadmap par progression logique
 
 ### 🏗️ **Phase 1 : Fondations techniques** *(Q1 2025)*
 #### Objectif : Établir l'infrastructure de base sécurisée et modulaire
 
-- [ ] **🔐 Core cryptographique (implémentation from scratch)**
-  - [ ] crypto-primitives : Primitives AES, ChaCha20, Ed25519 pure Rust
-  - [ ] crypto-keyring : Génération et gestion sécurisée des clés
-  - [ ] crypto-encryption : Chiffrement hybride custom (courbes elliptiques + symétrique)
-  - [ ] crypto-signature : Signatures Ed25519 et vérification d'intégrité
-  - [ ] crypto-hashing : Implémentation SHA-3, BLAKE3, Argon2
+- [ ] **🔐 Core cryptographique (wrappers vers libs auditées)**
+  - [ ] crypto-primitives : Wrappers vers ring, RustCrypto (AES, ChaCha20, Ed25519)
+  - [ ] crypto-keyring : Génération et gestion sécurisée via ed25519-dalek
+  - [ ] crypto-encryption : Chiffrement hybride avec libsignal-protocol
+  - [ ] crypto-signature : Signatures Ed25519 via ed25519-dalek
+  - [ ] crypto-hashing : Wrappers SHA-3, BLAKE3, Argon2 (RustCrypto)
 
 - [ ] **📦 Architecture modulaire**
   - [ ] Structure des crates Rust (core, crypto, network, storage)
@@ -344,11 +208,11 @@ Level 4 (UI)         : ui-*, marketplace-*
 ### 🌐 **Phase 2 : Réseau P2P et communication** *(Q2 2025)*
 #### Objectif : Communication décentralisée directe entre clients
 
-- [ ] **🔗 Communication P2P (implémentation native)**
-  - [ ] network-discovery : DHT custom + mDNS natif + bootstrap nodes
-  - [ ] network-protocol : Protocole Miaou propriétaire sur TCP/UDP std
-  - [ ] network-transport : Couche transport avec chiffrement intégré
-  - [ ] network-nat : NAT traversal et hole punching algorithm custom
+- [ ] **🔗 Communication P2P (standards éprouvés)**
+  - [ ] network-discovery : WebRTC + ICE pour découverte automatique
+  - [ ] network-protocol : Protocole Miaou sur WebRTC Data Channels
+  - [ ] network-transport : TLS 1.3 + DTLS pour WebRTC
+  - [ ] network-nat : ICE + STUN/TURN standards (pas de custom NAT traversal)
 
 - [ ] **📇 Annuaires distribués**
   - [ ] API REST pour clés publiques et métadonnées
@@ -396,12 +260,14 @@ Level 4 (UI)         : ui-*, marketplace-*
   - [ ] Interface responsive et accessible
   - [ ] Synchronisation avec versions desktop/mobile
 
-- [ ] **🌐 Mini-site d'accueil intégré**
+- [ ] **🌐 Mini-site d'accueil et contenu social intégré**
   - [ ] web-server : Serveur HTTP léger intégré (from scratch)
   - [ ] Site d'accueil pour invités avec design moderne
   - [ ] Documentation auto-générée hébergée (rustdoc + custom)
   - [ ] Templates responsive avec thèmes adaptatifs
   - [ ] Assets statiques optimisés (CSS/JS minimal)
+  - [ ] web-wasm : Modules WebAssembly pour contenu riche
+  - [ ] web-social : Serveur de contenu social décentralisé
 
 - [ ] **👤 Expérience utilisateur**
   - [ ] Assistant d'onboarding et configuration initiale
@@ -422,11 +288,18 @@ Level 4 (UI)         : ui-*, marketplace-*
   - [ ] WhatsApp (Business API + reverse engineering)
   - [ ] Signal (libsignal-client), Telegram (MTProto)
   - [ ] Facebook Messenger (Graph API)
+  - [ ] Mastodon (API ActivityPub bidirectionnelle)
 
 - [ ] **📧 Système d'invitations cross-platform**
   - [ ] Génération de liens personnalisés
   - [ ] Envoi automatique via ponts existants
   - [ ] Tracking et récompenses pour croissance virale
+
+- [ ] **📱 Fonctions sociales intégrées**
+  - [ ] social-aggregator : Agrégation Facebook, Instagram, Twitter
+  - [ ] social-publisher : Publication optionnelle et anonymisable
+  - [ ] social-privacy : Isolation totale données sociales/messagerie
+  - [ ] web-social : Serveur contenu web avec modules WASM
 
 ---
 
@@ -468,18 +341,44 @@ Level 4 (UI)         : ui-*, marketplace-*
   - [ ] Système de vote communautaire
   - [ ] Mécanismes de résolution de conflits
 
-## 📦 Installation et utilisation
+## 🚀 Démarrage rapide
 
-*Section à développer lors de l'implémentation*
+```bash
+# Clone du repository
+git clone https://github.com/username/miaou.git
+cd miaou
+
+# Build et tests
+cargo build --release
+cargo test
+
+# Lancement interface CLI
+./target/release/miaou-cli --help
+```
+
+*Documentation complète à venir avec les premières releases.*
 
 ## 🤝 Contribution
 
-*Guidelines de contribution à définir*
+Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](CONTRIBUTING.md) pour :
+- Guidelines de développement strict (TDD, SOLID, sécurité)
+- Processus de review et de merge
+- Standards de code et de documentation
+- Système de récompenses en croquettes
+
+## 📋 Documentation
+
+- **[ROADMAP.md](ROADMAP.md)** - Feuille de route détaillée
+- **[CHANGELOG.md](CHANGELOG.md)** - Historique des versions
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guide de contribution
+- **[SECURITY.md](SECURITY.md)** - Politique de sécurité
+- **[GLOSSAIRE.md](GLOSSAIRE.md)** - Définitions techniques
+- **[CRITIQUE_CLAUDE.md](CRITIQUE_CLAUDE.md)** - Analyse critique du projet
 
 ## 📄 Licence
 
-*Licence à définir*
+*Licence open source à définir (probablement MIT ou Apache 2.0)*
 
 ---
 
-*Miaou est actuellement en développement. Cette documentation évoluera avec le projet.*
+*Miaou est actuellement en phase de conception. Rejoignez-nous pour construire l'avenir de la messagerie décentralisée !* 🏴‍☠️
