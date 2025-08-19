@@ -83,17 +83,19 @@
 #### Objectif : Expérience utilisateur moderne et accessible
 📖 **[Documentation détaillée](versions/v0.4.0-toilettage-royal.md)**
 
-### **🖥️ Application desktop**
-- [ ] Interface Tauri avec frontend moderne
+### **🖥️ Applications natives**
+- [ ] Interface Tauri avec frontend moderne (desktop)
+- [ ] Applications mobiles Android/iOS avec bindings natifs
 - [ ] Gestion complète des conversations et contacts
 - [ ] Intégration compteurs locaux et stats gamification
 - [ ] Notifications système et thèmes adaptatifs
+- [ ] Synchronisation cross-platform (desktop ↔ mobile)
 
 ### **🌐 Interface web progressive**
 - [ ] Compilation WebAssembly pour performance
 - [ ] PWA avec support offline
 - [ ] Interface responsive et accessible
-- [ ] Synchronisation avec versions desktop/mobile
+- [ ] Synchronisation avec versions desktop/mobile/web
 
 ### **🌐 Mini-site d'accueil et contenu social intégré**
 - [ ] web-server : Serveur HTTP léger intégré (from scratch)
@@ -205,7 +207,8 @@
 - [ ] Portefeuille sécurisé intégré
 
 ### **Phase 4 - Critères de succès**
-- [ ] Applications desktop et web complètes
+- [ ] Applications desktop, mobile et web complètes
+- [ ] Synchronisation cross-platform opérationnelle
 - [ ] Accessibilité WCAG 2.1 AA
 - [ ] Support multi-langues
 - [ ] Site d'accueil avec documentation
