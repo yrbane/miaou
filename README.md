@@ -381,6 +381,7 @@ Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](docs/CONTRIB
 - **[IDEA.md](docs/IDEA.md)** - Vision initiale et évolution du concept
 - **[WEBSITE_STACK.md](docs/WEBSITE_STACK.md)** - Stack technique pour le site web
 - **[MOBILE.md](docs/MOBILE.md)** - Support Android et iOS
+- **[GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)** - Stratégie de branches par version
 
 ## 📄 Licence
 

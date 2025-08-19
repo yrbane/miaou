@@ -56,10 +56,29 @@ cp scripts/pre-commit.sh .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-### **2. 🌿 Branches et workflow**
+### **2. 🌿 Workflow Git par versions**
+
+Le projet utilise une stratégie de branches dédiées par version majeure :
+
+```
+main (production)
+├── v0.1.0-premiere-griffe (Phase 1 - Fondations crypto)
+├── v0.2.0-radar-moustaches (Phase 2 - Réseau P2P)  
+├── v0.3.0-ronron-bonheur (Phase 3 - Économie gamification)
+├── v0.4.0-toilettage-royal (Phase 4 - UI/UX multi-plateforme)
+├── v0.5.0-chat-gouttiere (Phase 5 - Interopérabilité)
+├── v0.6.0-neuf-vies (Phase 6 - Fonctionnalités avancées)
+└── v1.0.0-matou-majestueux (Phase 7 - Production complète)
+```
+
+**📖 Documentation complète :** [GIT_WORKFLOW.md](GIT_WORKFLOW.md)
+
 ```bash
-# Créer une branche pour votre feature
-git checkout -b feature/nom-explicite
+# Développement sur une version spécifique
+git checkout v0.1.0-premiere-griffe  # Exemple pour Phase 1
+
+# Créer une branche de fonctionnalité depuis la version
+git checkout -b feature/crypto-primitives v0.1.0-premiere-griffe
 
 # OU pour un bugfix
 git checkout -b fix/description-bug
