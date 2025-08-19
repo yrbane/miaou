@@ -95,13 +95,13 @@ miaou/
 4. Applications CLI/Desktop/Web
 
 ### **Vision élargie (7 phases)**
-1. **Q1 2025** : Fondations crypto + architecture
-2. **Q2 2025** : Réseau P2P + annuaires distribués
-3. **Q3 2025** : Blockchain croquettes + gamification  
-4. **Q4 2025** : Interfaces modernes + site intégré
-5. **Q1-Q2 2026** : Ponts + fonctions sociales
-6. **Q3-Q4 2026** : Multimédia + résistance
-7. **2027** : Marketplace + IA + DAO
+1. **Phase 1** : Fondations crypto + architecture
+2. **Phase 2** : Réseau P2P + annuaires distribués
+3. **Phase 3** : Blockchain croquettes + gamification  
+4. **Phase 4** : Interfaces modernes + site intégré
+5. **Phase 5** : Ponts + fonctions sociales
+6. **Phase 6** : Multimédia + résistance
+7. **Phase 7** : Marketplace + IA + DAO
 
 ---
 

@@ -32,7 +32,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
-## [0.1.0] - 2025-01-XX - MVP Planifié
+## [0.1.0] - Première Griffe - MVP Planifié
 
 ### Sera ajouté
 - Core cryptographique avec primitives sécurisées
@@ -43,7 +43,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
-## [0.2.0] - 2025-Q2 - Réseau P2P
+## [0.2.0] - Radar à Moustaches - Réseau P2P
 
 ### Sera ajouté
 - Découverte de pairs DHT
@@ -54,7 +54,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
-## [0.3.0] - 2025-Q3 - Blockchain
+## [0.3.0] - Ronron du Bonheur - Gamification
 
 ### Sera ajouté
 - Blockchain Croquettes
@@ -65,7 +65,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
-## [0.4.0] - 2025-Q4 - Interfaces
+## [0.4.0] - Toilettage Royal - Interfaces
 
 ### Sera ajouté
 - Application desktop (Tauri)
@@ -76,7 +76,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
-## [0.5.0] - 2026-Q1-Q2 - Interopérabilité
+## [0.5.0] - Chat de Gouttière - Interopérabilité
 
 ### Sera ajouté
 - Ponts Matrix, XMPP, IRC
@@ -87,7 +87,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
-## [0.6.0] - 2026-Q3-Q4 - Fonctionnalités avancées
+## [0.6.0] - Neuf Vies - Fonctionnalités avancées
 
 ### Sera ajouté
 - Audio/vidéo P2P (WebRTC)
@@ -98,7 +98,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
-## [1.0.0] - 2027 - Release stable
+## [1.0.0] - Matou Majestueux - Release stable
 
 ### Sera ajouté
 - Marketplace décentralisée

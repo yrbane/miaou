@@ -127,11 +127,11 @@ Miaou suit des standards de développement stricts pour garantir sécurité, per
 **📋 Exigences principales :**
 - **Architecture SOLID** et **TDD** obligatoires
 - **Couverture de tests >= 90%** avec fuzzing et tests KAT crypto
-- **Allowlist de dépendances auditées** pour la sécurité (voir DEPENDENCIES.md)
+- **Allowlist de dépendances auditées** pour la sécurité (voir [DEPENDENCIES.md](docs/DEPENDENCIES.md))
 - **Documentation exhaustive** auto-générée avec rustdoc
 - **Support i18n et accessibilité** dès le départ
 
-Pour les détails complets, voir [CONTRIBUTING.md](CONTRIBUTING.md).
+Pour les détails complets, voir [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ### 🏗️ **Architecture micro-modulaire**
 
@@ -156,7 +156,7 @@ miaou/
 
 **Total : ~70 micro-crates** pour une modularité maximale et une réutilisabilité optimale.
 
-Voir l'architecture détaillée dans [CONTRIBUTING.md](CONTRIBUTING.md).
+Voir l'architecture détaillée dans [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ## 🔐 Sécurité
 
@@ -173,11 +173,11 @@ Miaou implémente une sécurité de niveau militaire avec chiffrement bout-en-bo
 - Bibliothèques auditées : ring, RustCrypto, libsignal
 - Tests cryptographiques avec vecteurs officiels NIST/IETF
 
-Pour les détails complets, voir [SECURITY.md](SECURITY.md).
+Pour les détails complets, voir [SECURITY.md](docs/SECURITY.md).
 
 ## 🚀 Roadmap par progression logique
 
-### 🏗️ **Phase 1 : Fondations techniques** *(Q1 2025)*
+### 🏗️ **Phase 1 : Fondations techniques**
 #### Objectif : Établir l'infrastructure de base sécurisée et modulaire
 
 - [ ] **🔐 Core cryptographique (wrappers vers libs auditées)**
@@ -205,7 +205,7 @@ Pour les détails complets, voir [SECURITY.md](SECURITY.md).
 
 ---
 
-### 🌐 **Phase 2 : Réseau P2P et communication** *(Q2 2025)*
+### 🌐 **Phase 2 : Réseau P2P et communication**
 #### Objectif : Communication décentralisée directe entre clients
 
 - [ ] **🔗 Communication P2P (standards éprouvés)**
@@ -228,7 +228,7 @@ Pour les détails complets, voir [SECURITY.md](SECURITY.md).
 
 ---
 
-### 🎮 **Phase 3 : Blockchain et économie** *(Q3 2025)*
+### 🎮 **Phase 3 : Blockchain et économie**
 #### Objectif : Système d'incitations et gamification
 
 - [ ] **⛏️ Blockchain MiaouCoin**
@@ -245,7 +245,7 @@ Pour les détails complets, voir [SECURITY.md](SECURITY.md).
 
 ---
 
-### 🖥️ **Phase 4 : Interfaces utilisateur** *(Q4 2025)*
+### 🖥️ **Phase 4 : Interfaces utilisateur**
 #### Objectif : Expérience utilisateur moderne et accessible
 
 - [ ] **🖥️ Application desktop**
@@ -276,7 +276,7 @@ Pour les détails complets, voir [SECURITY.md](SECURITY.md).
 
 ---
 
-### 🌍 **Phase 5 : Interopérabilité et ponts** *(Q1-Q2 2026)*
+### 🌍 **Phase 5 : Interopérabilité et ponts**
 #### Objectif : Connexion avec l'écosystème existant
 
 - [ ] **🌉 Ponts vers protocoles ouverts**
@@ -303,7 +303,7 @@ Pour les détails complets, voir [SECURITY.md](SECURITY.md).
 
 ---
 
-### 🚀 **Phase 6 : Fonctionnalités avancées** *(Q3-Q4 2026)*
+### 🚀 **Phase 6 : Fonctionnalités avancées**
 #### Objectif : Écosystème complet et résilient
 
 - [ ] **📁 Multimédia et fichiers**
@@ -323,7 +323,7 @@ Pour les détails complets, voir [SECURITY.md](SECURITY.md).
 
 ---
 
-### 🌟 **Phase 7 : Écosystème et gouvernance** *(2027)*
+### 🌟 **Phase 7 : Écosystème et gouvernance**
 #### Objectif : Plateforme autonome et communautaire
 
 - [ ] **🏪 Marketplace décentralisée**
@@ -360,7 +360,7 @@ cargo test
 
 ## 🤝 Contribution
 
-Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](CONTRIBUTING.md) pour :
+Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](docs/CONTRIBUTING.md) pour :
 - Guidelines de développement strict (TDD, SOLID, sécurité)
 - Processus de review et de merge
 - Standards de code et de documentation
@@ -368,12 +368,16 @@ Les contributions sont les bienvenues ! Consultez [CONTRIBUTING.md](CONTRIBUTING
 
 ## 📋 Documentation
 
-- **[ROADMAP.md](ROADMAP.md)** - Feuille de route détaillée
-- **[CHANGELOG.md](CHANGELOG.md)** - Historique des versions
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guide de contribution
-- **[SECURITY.md](SECURITY.md)** - Politique de sécurité
-- **[GLOSSAIRE.md](GLOSSAIRE.md)** - Définitions techniques
-- **[CRITIQUE_CLAUDE.md](CRITIQUE_CLAUDE.md)** - Analyse critique du projet
+- **[ROADMAP.md](docs/ROADMAP.md)** - Feuille de route détaillée
+- **[CHANGELOG.md](docs/CHANGELOG.md)** - Historique des versions
+- **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Guide de contribution
+- **[SECURITY.md](docs/SECURITY.md)** - Politique de sécurité
+- **[GLOSSAIRE.md](docs/GLOSSAIRE.md)** - Définitions techniques
+- **[CRITIQUE_CLAUDE.md](docs/CRITIQUE_CLAUDE.md)** - Analyse critique du projet
+- **[CRITIQUE_COMPILEE.md](docs/CRITIQUE_COMPILEE.md)** - Compilation des critiques techniques
+- **[DEPENDENCIES.md](docs/DEPENDENCIES.md)** - Politique des dépendances auditées
+- **[IDEA.md](docs/IDEA.md)** - Vision initiale et évolution du concept
+- **[WEBSITE_STACK.md](docs/WEBSITE_STACK.md)** - Stack technique pour le site web
 
 ## 📄 Licence
 

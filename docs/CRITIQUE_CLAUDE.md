@@ -150,24 +150,24 @@ pub struct MessageCost {
 
 ## 📋 Plan d'action technique
 
-### **Phase 1 : Fondations sécurisées (Q1 2025)**
+### **Phase 1 : Fondations sécurisées**
 - [ ] Remplacer crypto "from scratch" par libs éprouvées
 - [ ] Implémenter Signal Protocol pour E2EE  
 - [ ] QUIC + WebRTC pour transport
 - [ ] Tests crypto avec vecteurs officiels (KAT)
 
-### **Phase 2 : Réseau robuste (Q2 2025)**  
+### **Phase 2 : Réseau robuste**  
 - [ ] NAT traversal avec STUN/TURN
 - [ ] Système de relais store-and-forward
 - [ ] Anti-DoS avec PoW adaptatif
 - [ ] Métadonnées protection (sealed sender)
 
-### **Phase 3 : Bridges sécurisés (Q3 2025)**
+### **Phase 3 : Bridges sécurisés**
 - [ ] Architecture sandbox pour bridges
 - [ ] Matrix/XMPP en priorité (protocoles ouverts)
 - [ ] Isolation cryptographique totale
 
-### **Phase 4 : Économie simplifiée (Q4 2025)**
+### **Phase 4 : Économie simplifiée**
 - [ ] Système de crédits hors-chaîne
 - [ ] Incitations participation réseau
 - [ ] Mécanismes anti-Sybil

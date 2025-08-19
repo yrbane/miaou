@@ -5,8 +5,9 @@
 ---
 
 ## 🏗️ **Phase 1 : Fondations techniques**
-### 🏷️ **Version 0.1.0 "Griffes"** - Les premières armes
+### 🏷️ **Version 0.1.0 "Première Griffe"** - Quand le chaton montre ses crocs
 #### Objectif : Établir l'infrastructure de base sécurisée et modulaire
+📖 **[Documentation détaillée](versions/v0.1.0-premiere-griffe.md)**
 
 ### **🔐 Core cryptographique (wrappers vers libs auditées)**
 - [ ] crypto-primitives : Wrappers vers ring, RustCrypto (AES, ChaCha20, Ed25519)
@@ -34,8 +35,9 @@
 ---
 
 ## 🌐 **Phase 2 : Réseau P2P et communication**
-### 🏷️ **Version 0.2.0 "Moustaches"** - Les capteurs du réseau
+### 🏷️ **Version 0.2.0 "Radar à Moustaches"** - Détecter tous les pairs dans l'ombre
 #### Objectif : Communication décentralisée directe entre clients
+📖 **[Documentation détaillée](versions/v0.2.0-radar-moustaches.md)**
 
 ### **🔗 Communication P2P (standards éprouvés)**
 - [ ] network-discovery : WebRTC + ICE pour découverte automatique
@@ -58,8 +60,9 @@
 ---
 
 ## 🎮 **Phase 3 : Économie et gamification**
-### 🏷️ **Version 0.3.0 "Ronronnement"** - Le plaisir de contribuer
+### 🏷️ **Version 0.3.0 "Ronron du Bonheur"** - Quand contribuer fait plaisir
 #### Objectif : Système d'incitations et gamification
+📖 **[Documentation détaillée](versions/v0.3.0-ronron-bonheur.md)**
 
 ### **🏆 Système de récompenses local (MVP)**
 - [ ] Compteurs locaux pour contributions (messages, uptime, parrainage)
@@ -76,8 +79,9 @@
 ---
 
 ## 🖥️ **Phase 4 : Interfaces utilisateur**
-### 🏷️ **Version 0.4.0 "Pelage"** - L'habit fait le moine
+### 🏷️ **Version 0.4.0 "Toilettage Royal"** - Quand l'élégance rencontre l'ergonomie
 #### Objectif : Expérience utilisateur moderne et accessible
+📖 **[Documentation détaillée](versions/v0.4.0-toilettage-royal.md)**
 
 ### **🖥️ Application desktop**
 - [ ] Interface Tauri avec frontend moderne
@@ -108,8 +112,9 @@
 ---
 
 ## 🌍 **Phase 5 : Interopérabilité et ponts**
-### 🏷️ **Version 0.5.0 "Territoire"** - Marquer son terrain
+### 🏷️ **Version 0.5.0 "Chat de Gouttière"** - Naviguer entre tous les territoires
 #### Objectif : Connexion avec l'écosystème existant
+📖 **[Documentation détaillée](versions/v0.5.0-chat-gouttiere.md)**
 
 ### **🌉 Ponts vers protocoles ouverts**
 - [ ] Matrix, XMPP, IRC avec chiffrement préservé
@@ -136,8 +141,9 @@
 ---
 
 ## 🚀 **Phase 6 : Fonctionnalités avancées**
-### 🏷️ **Version 0.6.0 "Agilité"** - Neuf vies numériques
+### 🏷️ **Version 0.6.0 "Neuf Vies"** - Indestructible comme un vrai chat
 #### Objectif : Écosystème complet et résilient
+📖 **[Documentation détaillée](versions/v0.6.0-neuf-vies.md)**
 
 ### **📁 Multimédia et fichiers**
 - [ ] Partage de fichiers P2P avec chunking
@@ -157,8 +163,9 @@
 ---
 
 ## 🌟 **Phase 7 : Écosystème et gouvernance**
-### 🏷️ **Version 1.0.0 "Félin Alpha"** - Le chef de meute
+### 🏷️ **Version 1.0.0 "Matou Majestueux"** - Roi de la jungle numérique
 #### Objectif : Plateforme autonome et communautaire
+📖 **[Documentation détaillée](versions/v1.0.0-matou-majestueux.md)**
 
 ### **🏪 Marketplace décentralisée + Blockchain complète**
 - [ ] Plugins et extensions communautaires

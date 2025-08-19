@@ -175,21 +175,21 @@ cargo tree                       # Dépendances transitives
 
 ### **Réduction progressive des dépendances**
 
-**Phase 1 (2025)** : Utiliser les meilleures bibliothèques auditées
+**Phase 1** : Utiliser les meilleures bibliothèques auditées
 ```
 - ring, RustCrypto : Primitives crypto
 - libsignal : Protocoles éprouvés  
 - webrtc : Communication P2P
 ```
 
-**Phase 2 (2026)** : Optimisations spécialisées
+**Phase 2** : Optimisations spécialisées
 ```
 - Wrappers légers autour des primitives
 - Réimplémentation de couches non-critiques
 - Maintien des primitives crypto externes
 ```
 
-**Phase 3 (2027+)** : Écosystème mature
+**Phase 3** : Écosystème mature
 ```
 - Bibliothèques Miaou réutilisables
 - Contributions upstream aux projets utilisés
