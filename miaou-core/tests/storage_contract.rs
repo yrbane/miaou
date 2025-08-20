@@ -12,7 +12,9 @@ impl SecureStorage for FailingStorage {
     fn delete(&mut self, _k: &str) -> Result<(), StorageError> {
         Ok(())
     }
-    fn exists(&self, _k: &str) -> bool { false }
+    fn exists(&self, _k: &str) -> bool {
+        false
+    }
 }
 
 #[test]

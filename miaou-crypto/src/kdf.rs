@@ -297,4 +297,148 @@ mod tests {
             assert_eq!(config.output_length, 32);
         }
     }
+
+    #[test]
+    fn test_default_config() {
+        let default_config = Argon2Config::default();
+        let balanced_config = Argon2Config::balanced();
+        assert_eq!(default_config.memory_cost, balanced_config.memory_cost);
+        assert_eq!(default_config.time_cost, balanced_config.time_cost);
+        assert_eq!(default_config.parallelism, balanced_config.parallelism);
+        assert_eq!(default_config.output_length, balanced_config.output_length);
+    }
+
+    #[test]
+    fn test_derive_key_default() {
+        let password = SecretString::new("test_password".to_string());
+        let salt = generate_salt();
+
+        let key1 = derive_key_default(&password, &salt).unwrap();
+        let key2 = derive_key_32(&password, &salt, &Argon2Config::balanced()).unwrap();
+
+        // Should be equivalent to balanced config
+        assert_eq!(key1, key2);
+    }
+
+    #[test]
+    fn test_generate_salt() {
+        let salt1 = generate_salt();
+        let salt2 = generate_salt();
+
+        // Salts should be different
+        assert_ne!(salt1.to_string(), salt2.to_string());
+
+        // Should be valid base64
+        assert!(!salt1.to_string().is_empty());
+        assert!(!salt2.to_string().is_empty());
+    }
+
+    #[test]
+    fn test_hash_password_different_configs() {
+        let password = SecretString::new("test_password".to_string());
+
+        let hash_fast = hash_password(&password, &Argon2Config::fast_insecure()).unwrap();
+        let hash_balanced = hash_password(&password, &Argon2Config::balanced()).unwrap();
+        let hash_secure = hash_password(&password, &Argon2Config::secure()).unwrap();
+
+        // Different configs should produce different hashes
+        assert_ne!(hash_fast, hash_balanced);
+        assert_ne!(hash_balanced, hash_secure);
+        assert_ne!(hash_fast, hash_secure);
+
+        // All should start with $argon2id$
+        assert!(hash_fast.starts_with("$argon2id$"));
+        assert!(hash_balanced.starts_with("$argon2id$"));
+        assert!(hash_secure.starts_with("$argon2id$"));
+    }
+
+    #[test]
+    fn test_verify_password_wrong_password() {
+        let password = SecretString::new("correct_password".to_string());
+        let wrong_password = SecretString::new("wrong_password".to_string());
+        let config = Argon2Config::fast_insecure();
+
+        let hash = hash_password(&password, &config).unwrap();
+
+        // Correct password should verify
+        assert!(verify_password(&password, &hash).unwrap());
+
+        // Wrong password should not verify
+        assert!(!verify_password(&wrong_password, &hash).unwrap());
+    }
+
+    #[test]
+    fn test_verify_password_invalid_hash() {
+        let password = SecretString::new("test_password".to_string());
+
+        // Invalid hash format should return error
+        assert!(verify_password(&password, "invalid_hash").is_err());
+        assert!(verify_password(&password, "").is_err());
+        assert!(verify_password(&password, "$invalid$format$").is_err());
+    }
+
+    #[test]
+    fn test_derive_subkey_hkdf_edge_cases() {
+        let master_key = [42u8; 32];
+        let info = b"test_info";
+
+        // Test zero length (should error)
+        assert!(derive_subkey_hkdf(&master_key, info, 0).is_err());
+
+        // Test maximum length + 1 (should error)
+        assert!(derive_subkey_hkdf(&master_key, info, 255 * 32 + 1).is_err());
+
+        // Test valid maximum length
+        assert!(derive_subkey_hkdf(&master_key, info, 255 * 32).is_ok());
+
+        // Test length 1
+        let subkey = derive_subkey_hkdf(&master_key, info, 1).unwrap();
+        assert_eq!(subkey.len(), 1);
+    }
+
+    #[test]
+    fn test_derive_subkey_32_different_info() {
+        let master_key = [42u8; 32];
+        let info1 = b"info1";
+        let info2 = b"info2";
+
+        let subkey1 = derive_subkey_32(&master_key, info1).unwrap();
+        let subkey2 = derive_subkey_32(&master_key, info2).unwrap();
+
+        // Different info should produce different subkeys
+        assert_ne!(subkey1, subkey2);
+    }
+
+    #[test]
+    fn test_derive_subkey_32_different_master_keys() {
+        let master_key1 = [1u8; 32];
+        let master_key2 = [2u8; 32];
+        let info = b"same_info";
+
+        let subkey1 = derive_subkey_32(&master_key1, info).unwrap();
+        let subkey2 = derive_subkey_32(&master_key2, info).unwrap();
+
+        // Different master keys should produce different subkeys
+        assert_ne!(subkey1, subkey2);
+    }
+
+    #[test]
+    fn test_argon2_params_edge_cases() {
+        let password = SecretString::new("test".to_string());
+        let salt = generate_salt();
+
+        // Test with minimal valid parameters (Argon2 has higher minimums than expected)
+        let config = Argon2Config {
+            memory_cost: 8,    // Minimum for Argon2
+            time_cost: 1,      // Minimum 1 iteration
+            parallelism: 1,    // Minimum 1 thread
+            output_length: 32, // Standard length
+        };
+
+        // Should succeed with minimal valid params
+        let result = derive_key_32(&password, &salt, &config);
+        assert!(result.is_ok());
+        let key = result.unwrap();
+        assert_eq!(key.len(), 32); // Always 32 bytes output
+    }
 }

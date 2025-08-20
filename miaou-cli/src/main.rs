@@ -644,3 +644,354 @@ fn main() -> Result<()> {
         None => miaou_cli.interactive_mode(), // Mode interactif par défaut
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    fn create_test_cli() -> Result<MiaouCli> {
+        let temp_dir = TempDir::new()?;
+        MiaouCli::new(temp_dir.path().to_path_buf(), false)
+    }
+
+    #[test]
+    fn test_cli_creation() {
+        let temp_dir = TempDir::new().unwrap();
+        let cli = MiaouCli::new(temp_dir.path().to_path_buf(), false);
+        assert!(cli.is_ok());
+    }
+
+    #[test]
+    fn test_expand_path_home() {
+        let path = PathBuf::from("~/test");
+        let expanded = expand_path(path).unwrap();
+        // Should not contain ~ anymore
+        assert!(!expanded.to_string_lossy().contains('~'));
+    }
+
+    #[test]
+    fn test_expand_path_absolute() {
+        let path = PathBuf::from("/tmp/test");
+        let expanded = expand_path(path.clone()).unwrap();
+        assert_eq!(expanded, path);
+    }
+
+    #[test]
+    fn test_expand_path_relative() {
+        let path = PathBuf::from("test/path");
+        let expanded = expand_path(path.clone()).unwrap();
+        assert_eq!(expanded, path);
+    }
+
+    #[test]
+    fn test_get_disk_space() {
+        let temp_dir = TempDir::new().unwrap();
+        let result = get_disk_space(&temp_dir.path().to_path_buf()).unwrap();
+        assert_eq!(result, "Disponible");
+    }
+
+    #[test]
+    fn test_get_disk_space_nonexistent() {
+        let path = PathBuf::from("/nonexistent/path");
+        let result = get_disk_space(&path).unwrap();
+        assert_eq!(result, "Inconnu");
+    }
+
+    #[test]
+    fn test_show_status() {
+        let cli = create_test_cli().unwrap();
+        // This test just verifies the function doesn't panic
+        // Real output testing would require capturing stdout
+        let result = cli.show_status();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_crypto_tests() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_crypto_tests();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_profile_creation_flow() {
+        let cli = create_test_cli().unwrap();
+
+        // Test listing empty profiles
+        let result = cli.list_profiles_cmd();
+        assert!(result.is_ok());
+
+        // Test show non-existent profile
+        let result = cli.show_profile("nonexistent".to_string());
+        assert!(result.is_err());
+
+        // Test delete non-existent profile
+        let result = cli.delete_profile("nonexistent".to_string());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_test_encryption() {
+        let cli = create_test_cli().unwrap();
+        let message = Some("Test message for encryption".to_string());
+        let result = cli.test_encryption(message);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_test_signing() {
+        let cli = create_test_cli().unwrap();
+        let message = Some("Test message for signing".to_string());
+        let result = cli.test_signing(message);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_benchmarks() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_benchmarks();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_commands_enum_creation() {
+        // Test that Commands enum variants can be created
+        let _status = Commands::Status;
+        let _crypto_test = Commands::CryptoTest;
+        let _interactive = Commands::Interactive;
+        let _benchmark = Commands::Benchmark;
+
+        let _profile = Commands::Profile {
+            action: ProfileAction::List,
+        };
+
+        let _test_encrypt = Commands::TestEncrypt {
+            message: Some("test".to_string()),
+        };
+
+        let _test_sign = Commands::TestSign {
+            message: Some("test".to_string()),
+        };
+    }
+
+    #[test]
+    fn test_profile_action_enum_creation() {
+        // Test ProfileAction enum variants
+        let _create = ProfileAction::Create {
+            name: "test".to_string(),
+        };
+        let _list = ProfileAction::List;
+        let _delete = ProfileAction::Delete {
+            name: "test".to_string(),
+        };
+        let _show = ProfileAction::Show {
+            name: "test".to_string(),
+        };
+    }
+
+    #[test]
+    fn test_run_command_status() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_command(Commands::Status);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_command_crypto_test() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_command(Commands::CryptoTest);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_command_benchmark() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_command(Commands::Benchmark);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_command_test_encrypt() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_command(Commands::TestEncrypt {
+            message: Some("test message".to_string()),
+        });
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_command_test_sign() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_command(Commands::TestSign {
+            message: Some("test message".to_string()),
+        });
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_command_profile_list() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_command(Commands::Profile {
+            action: ProfileAction::List,
+        });
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_run_command_profile_show_nonexistent() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_command(Commands::Profile {
+            action: ProfileAction::Show {
+                name: "nonexistent".to_string(),
+            },
+        });
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_run_command_profile_delete_nonexistent() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.run_command(Commands::Profile {
+            action: ProfileAction::Delete {
+                name: "nonexistent".to_string(),
+            },
+        });
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_cli_parser_default_values() {
+        // Test that CLI struct can be constructed with default values
+        use clap::Parser;
+
+        // Simulate command line args
+        let args = vec!["miaou-cli", "status"];
+        let cli = Cli::try_parse_from(args);
+        assert!(cli.is_ok());
+
+        let cli = cli.unwrap();
+        assert_eq!(cli.data_dir, PathBuf::from("~/.miaou"));
+        assert!(!cli.verbose);
+        assert!(matches!(cli.command, Some(Commands::Status)));
+    }
+
+    #[test]
+    fn test_cli_parser_verbose_flag() {
+        use clap::Parser;
+
+        let args = vec!["miaou-cli", "--verbose", "status"];
+        let cli = Cli::try_parse_from(args);
+        assert!(cli.is_ok());
+
+        let cli = cli.unwrap();
+        assert!(cli.verbose);
+    }
+
+    #[test]
+    fn test_cli_parser_custom_data_dir() {
+        use clap::Parser;
+
+        let args = vec!["miaou-cli", "--data-dir", "/tmp/custom", "status"];
+        let cli = Cli::try_parse_from(args);
+        assert!(cli.is_ok());
+
+        let cli = cli.unwrap();
+        assert_eq!(cli.data_dir, PathBuf::from("/tmp/custom"));
+    }
+
+    #[test]
+    fn test_cli_parser_profile_commands() {
+        use clap::Parser;
+
+        let test_cases = vec![
+            (vec!["miaou-cli", "profile", "list"], ProfileAction::List),
+            (
+                vec!["miaou-cli", "profile", "create", "alice"],
+                ProfileAction::Create {
+                    name: "alice".to_string(),
+                },
+            ),
+            (
+                vec!["miaou-cli", "profile", "show", "bob"],
+                ProfileAction::Show {
+                    name: "bob".to_string(),
+                },
+            ),
+            (
+                vec!["miaou-cli", "profile", "delete", "charlie"],
+                ProfileAction::Delete {
+                    name: "charlie".to_string(),
+                },
+            ),
+        ];
+
+        for (args, expected_action) in test_cases {
+            let cli = Cli::try_parse_from(args).unwrap();
+            if let Some(Commands::Profile { action }) = cli.command {
+                match (action, expected_action) {
+                    (ProfileAction::List, ProfileAction::List) => {}
+                    (ProfileAction::Create { name: a }, ProfileAction::Create { name: b }) => {
+                        assert_eq!(a, b)
+                    }
+                    (ProfileAction::Show { name: a }, ProfileAction::Show { name: b }) => {
+                        assert_eq!(a, b)
+                    }
+                    (ProfileAction::Delete { name: a }, ProfileAction::Delete { name: b }) => {
+                        assert_eq!(a, b)
+                    }
+                    _ => panic!("Action mismatch"),
+                }
+            } else {
+                panic!("Expected Profile command");
+            }
+        }
+    }
+
+    #[test]
+    fn test_cli_parser_test_commands() {
+        use clap::Parser;
+
+        // Test encrypt without message
+        let args = vec!["miaou-cli", "test-encrypt"];
+        let cli = Cli::try_parse_from(args).unwrap();
+        if let Some(Commands::TestEncrypt { message }) = cli.command {
+            assert!(message.is_none());
+        } else {
+            panic!("Expected TestEncrypt command");
+        }
+
+        // Test encrypt with message
+        let args = vec!["miaou-cli", "test-encrypt", "--message", "hello"];
+        let cli = Cli::try_parse_from(args).unwrap();
+        if let Some(Commands::TestEncrypt { message }) = cli.command {
+            assert_eq!(message, Some("hello".to_string()));
+        } else {
+            panic!("Expected TestEncrypt command");
+        }
+
+        // Test sign with message
+        let args = vec!["miaou-cli", "test-sign", "-m", "test"];
+        let cli = Cli::try_parse_from(args).unwrap();
+        if let Some(Commands::TestSign { message }) = cli.command {
+            assert_eq!(message, Some("test".to_string()));
+        } else {
+            panic!("Expected TestSign command");
+        }
+    }
+
+    #[test]
+    fn test_directory_creation_in_new() {
+        let temp_dir = TempDir::new().unwrap();
+        let custom_path = temp_dir.path().join("custom_miaou");
+
+        // Directory doesn't exist yet
+        assert!(!custom_path.exists());
+
+        // Creating MiaouCli should create the directory
+        let _cli = MiaouCli::new(custom_path.clone(), false).unwrap();
+
+        // Directory should now exist
+        assert!(custom_path.exists());
+    }
+}

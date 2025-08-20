@@ -14,7 +14,8 @@ fn prints_version_and_mode() {
 #[test]
 fn shows_help_and_subcommands() {
     let mut cmd = Command::cargo_bin("miaou").unwrap();
-    cmd.arg("--help").assert()
+    cmd.arg("--help")
+        .assert()
         .success()
         .stdout(predicate::str::contains("USAGE"))
         .stdout(predicate::str::contains("CreateProfile"))
@@ -24,7 +25,5 @@ fn shows_help_and_subcommands() {
 #[test]
 fn bad_subcommand_returns_error_code() {
     let mut cmd = Command::cargo_bin("miaou").unwrap();
-    cmd.arg("not-a-real-subcommand")
-        .assert()
-        .failure();
+    cmd.arg("not-a-real-subcommand").assert().failure();
 }

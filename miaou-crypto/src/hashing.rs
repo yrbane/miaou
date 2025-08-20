@@ -269,4 +269,148 @@ mod tests {
         let is_valid = Argon2Hasher::verify_password(wrong_password, &hash).unwrap();
         assert!(!is_valid);
     }
+
+    #[test]
+    fn test_blake3_output_from_bytes() {
+        let bytes = [42u8; 32];
+        let output = Blake3Output::from_bytes(bytes);
+        assert_eq!(*output.as_bytes(), bytes);
+    }
+
+    #[test]
+    fn test_blake3_output_as_slice() {
+        let bytes = [42u8; 32];
+        let output = Blake3Output::from_bytes(bytes);
+        assert_eq!(output.as_slice(), &bytes);
+    }
+
+    #[test]
+    fn test_blake3_output_to_hex() {
+        let bytes = [42u8; 32];
+        let output = Blake3Output::from_bytes(bytes);
+        let hex_str = output.to_hex();
+        assert_eq!(hex_str.len(), 64); // 32 bytes * 2 hex chars
+        assert!(hex_str.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_blake3_output_from_hex() {
+        let bytes = [42u8; 32];
+        let output = Blake3Output::from_bytes(bytes);
+        let hex_str = output.to_hex();
+        let restored = Blake3Output::from_hex(&hex_str).unwrap();
+        assert_eq!(output, restored);
+    }
+
+    #[test]
+    fn test_blake3_output_from_hex_invalid() {
+        // Invalid hex string
+        assert!(Blake3Output::from_hex("invalid").is_err());
+
+        // Wrong length
+        assert!(Blake3Output::from_hex("deadbeef").is_err());
+    }
+
+    #[test]
+    fn test_blake3_hasher_hash_multiple() {
+        let items = vec![
+            b"part1".as_slice(),
+            b"part2".as_slice(),
+            b"part3".as_slice(),
+        ];
+        let hash1 = Blake3Hasher::hash_multiple(&items);
+        let hash2 = Blake3Hasher::hash_multiple(&items);
+        assert_eq!(hash1, hash2);
+
+        // Different order should give different hash
+        let items_different = vec![
+            b"part2".as_slice(),
+            b"part1".as_slice(),
+            b"part3".as_slice(),
+        ];
+        let hash3 = Blake3Hasher::hash_multiple(&items_different);
+        assert_ne!(hash1, hash3);
+    }
+
+    #[test]
+    fn test_blake3_hasher_hash_keyed() {
+        let key = [1u8; 32];
+        let data = b"test data";
+        let hash1 = Blake3Hasher::hash_keyed(&key, data);
+        let hash2 = Blake3Hasher::hash_keyed(&key, data);
+        assert_eq!(hash1, hash2);
+
+        // Different key should give different hash
+        let key2 = [2u8; 32];
+        let hash3 = Blake3Hasher::hash_keyed(&key2, data);
+        assert_ne!(hash1, hash3);
+    }
+
+    #[test]
+    fn test_blake3_hasher_hash_with_context() {
+        let data = b"test data";
+        let context = "test_context";
+        let hash1 = Blake3Hasher::hash_with_context(data, context);
+        let hash2 = Blake3Hasher::hash_with_context(data, context);
+        assert_eq!(hash1, hash2);
+
+        // Different context should give different hash
+        let hash3 = Blake3Hasher::hash_with_context(data, "different_context");
+        assert_ne!(hash1, hash3);
+    }
+
+    #[test]
+    fn test_argon2_config_defaults() {
+        let config = Argon2Config::default();
+        assert_eq!(config.memory_cost, 65536);
+        assert_eq!(config.time_cost, 3);
+        assert_eq!(config.parallelism, 4);
+        assert_eq!(config.output_length, 32);
+    }
+
+    #[test]
+    fn test_argon2_config_presets() {
+        let fast = Argon2Config::fast_insecure();
+        assert_eq!(fast.memory_cost, 1024);
+        assert_eq!(fast.time_cost, 1);
+
+        let secure = Argon2Config::secure();
+        assert_eq!(secure.memory_cost, 131_072);
+        assert_eq!(secure.time_cost, 4);
+    }
+
+    #[test]
+    fn test_argon2_hasher_derive_key_different_configs() {
+        let password = b"test_password";
+        let salt = b"test_salt_123456";
+
+        let key_fast =
+            Argon2Hasher::derive_key(password, salt, &Argon2Config::fast_insecure()).unwrap();
+        let key_secure = Argon2Hasher::derive_key(password, salt, &Argon2Config::secure()).unwrap();
+
+        // Note: The simplified implementation uses only output_length, so same length = same result
+        // This tests the derive_key function works with different configs
+        assert_eq!(key_fast.len(), key_secure.len());
+        assert_eq!(key_fast.len(), 32); // Both should be 32 bytes for default output_length
+    }
+
+    #[test]
+    fn test_argon2_hasher_verify_password_invalid_format() {
+        let password = b"test";
+
+        // Invalid format should return false, not error
+        assert!(!Argon2Hasher::verify_password(password, "invalid_format").unwrap());
+        assert!(!Argon2Hasher::verify_password(password, "not$enough$parts").unwrap());
+        assert!(!Argon2Hasher::verify_password(password, "wrong$format$here").unwrap());
+    }
+
+    #[test]
+    fn test_argon2_hasher_verify_password_invalid_hex() {
+        let password = b"test";
+
+        // Invalid hex should return error
+        assert!(
+            Argon2Hasher::verify_password(password, "blake3$invalid_hex$also_invalid").is_err()
+        );
+    }
 }

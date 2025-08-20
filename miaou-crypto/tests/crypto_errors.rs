@@ -1,5 +1,5 @@
 // miaou-crypto/tests/crypto_errors.rs
-use miaou_crypto::{test_crypto_availability, decrypt, encrypt, AeadKeyRef, CryptoError};
+use miaou_crypto::{decrypt, encrypt, test_crypto_availability, AeadKeyRef, CryptoError};
 use rand_core::OsRng;
 
 #[test]

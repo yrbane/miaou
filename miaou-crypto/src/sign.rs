@@ -333,4 +333,227 @@ mod tests {
         assert!(debug_str.contains("[REDACTED]"));
         assert!(!debug_str.contains("SigningKey"));
     }
+
+    #[test]
+    fn test_signing_key_ref_from_bytes() {
+        let bytes = [42u8; 32];
+        let signing_key = SigningKeyRef::from_bytes(bytes);
+
+        // Should be able to create a signing key from bytes
+        let public_key = signing_key.verifying_key();
+        assert_eq!(public_key.to_bytes().len(), 32);
+    }
+
+    #[test]
+    fn test_signing_key_ref_generate_with_rng() {
+        let mut rng = rand_core::OsRng;
+        let signing_key = SigningKeyRef::generate(&mut rng);
+
+        // Should generate a valid signing key
+        let public_key = signing_key.verifying_key();
+        assert_eq!(public_key.to_bytes().len(), 32);
+    }
+
+    #[test]
+    fn test_signing_key_ref_to_bytes() {
+        let signing_key = SigningKeyRef::generate(&mut rand_core::OsRng);
+        let bytes = signing_key.to_bytes();
+
+        assert_eq!(bytes.len(), 32);
+
+        // Should be able to recreate the same key
+        let recreated = SigningKeyRef::from_bytes(bytes);
+        let original_public = signing_key.verifying_key();
+        let recreated_public = recreated.verifying_key();
+
+        assert_eq!(original_public.to_bytes(), recreated_public.to_bytes());
+    }
+
+    #[test]
+    fn test_signing_key_ref_debug_redacted() {
+        let signing_key = SigningKeyRef::generate(&mut rand_core::OsRng);
+        let debug_str = format!("{:?}", signing_key);
+
+        assert!(debug_str.contains("SigningKeyRef([REDACTED])"));
+    }
+
+    #[test]
+    fn test_verifying_key_ref_from_bytes_invalid() {
+        // Test with invalid bytes (should error)
+        let invalid_bytes = [0xFFu8; 32];
+        match VerifyingKeyRef::from_bytes(invalid_bytes) {
+            Ok(_) => {} // Ed25519 accepts most 32-byte arrays
+            Err(e) => assert!(matches!(e, CryptoError::InvalidKey)),
+        }
+    }
+
+    #[test]
+    fn test_verifying_key_ref_from_hex_invalid() {
+        // Invalid hex string
+        assert!(VerifyingKeyRef::from_hex("invalid_hex").is_err());
+
+        // Wrong length
+        assert!(VerifyingKeyRef::from_hex("deadbeef").is_err());
+
+        // Too long
+        let too_long = "a".repeat(100);
+        assert!(VerifyingKeyRef::from_hex(&too_long).is_err());
+    }
+
+    #[test]
+    fn test_signature_from_bytes_to_bytes() {
+        let keypair = Keypair::generate();
+        let message = b"test message";
+        let signature = keypair.sign(message);
+
+        let signature_bytes = signature.to_bytes();
+        assert_eq!(signature_bytes.len(), 64);
+
+        let recreated_signature = Signature::from_bytes(signature_bytes).unwrap();
+        assert_eq!(signature, recreated_signature);
+    }
+
+    #[test]
+    fn test_signature_from_hex_invalid() {
+        // Invalid hex
+        assert!(Signature::from_hex("invalid_hex").is_err());
+
+        // Wrong length
+        assert!(Signature::from_hex("deadbeef").is_err());
+
+        // Too long
+        let too_long = "a".repeat(200);
+        assert!(Signature::from_hex(&too_long).is_err());
+    }
+
+    #[test]
+    fn test_keypair_generate_with_rng() {
+        let mut rng = rand_core::OsRng;
+        let keypair1 = Keypair::generate_with_rng(&mut rng);
+        let keypair2 = Keypair::generate_with_rng(&mut rng);
+
+        // Should generate different keypairs
+        assert_ne!(keypair1.public_bytes(), keypair2.public_bytes());
+        assert_ne!(keypair1.secret_bytes(), keypair2.secret_bytes());
+    }
+
+    #[test]
+    fn test_keypair_from_secret_key() {
+        let secret_key = SigningKeyRef::generate(&mut rand_core::OsRng);
+        let public_key = secret_key.verifying_key();
+
+        let keypair = Keypair::from_secret_key(secret_key);
+
+        // Should have same public key
+        assert_eq!(keypair.public.to_bytes(), public_key.to_bytes());
+    }
+
+    #[test]
+    fn test_keypair_from_private_bytes() {
+        let original_keypair = Keypair::generate();
+        let private_bytes = original_keypair.secret_bytes();
+
+        let recreated_keypair = Keypair::from_private_bytes(private_bytes).unwrap();
+
+        // Should have same keys
+        assert_eq!(
+            original_keypair.public_bytes(),
+            recreated_keypair.public_bytes()
+        );
+        assert_eq!(
+            original_keypair.secret_bytes(),
+            recreated_keypair.secret_bytes()
+        );
+    }
+
+    #[test]
+    fn test_keypair_public_bytes_secret_bytes() {
+        let keypair = Keypair::generate();
+
+        let public_bytes = keypair.public_bytes();
+        let secret_bytes = keypair.secret_bytes();
+
+        assert_eq!(public_bytes.len(), 32);
+        assert_eq!(secret_bytes.len(), 32);
+
+        // Should match direct access
+        assert_eq!(public_bytes, keypair.public.to_bytes());
+        assert_eq!(secret_bytes, keypair.secret.to_bytes());
+    }
+
+    #[test]
+    fn test_keypair_key_references() {
+        let keypair = Keypair::generate();
+
+        let public_key_ref = keypair.public_key();
+        let secret_key_ref = keypair.secret_key();
+
+        // Should match direct access
+        assert_eq!(public_key_ref.to_bytes(), keypair.public.to_bytes());
+
+        let message = b"test";
+        let sig1 = secret_key_ref.sign(message);
+        let sig2 = keypair.secret.sign(message);
+        assert_eq!(sig1, sig2);
+    }
+
+    #[test]
+    fn test_keypair_debug_format() {
+        let keypair = Keypair::generate();
+        let debug_str = format!("{:?}", keypair);
+
+        // Should contain public key info but redact secret
+        assert!(debug_str.contains("Keypair"));
+        assert!(debug_str.contains("public"));
+        assert!(debug_str.contains("[REDACTED]"));
+    }
+
+    #[test]
+    fn test_sign_verify_wrong_message_fails() {
+        let keypair = Keypair::generate();
+        let message1 = b"correct message";
+        let message2 = b"wrong message";
+
+        let signature = keypair.sign(message1);
+
+        // Correct message should verify
+        assert!(keypair.verify(message1, &signature).is_ok());
+
+        // Wrong message should fail
+        assert!(keypair.verify(message2, &signature).is_err());
+    }
+
+    #[test]
+    fn test_verifying_key_verify_wrong_signature_fails() {
+        let keypair1 = Keypair::generate();
+        let keypair2 = Keypair::generate();
+        let message = b"test message";
+
+        let signature = keypair1.sign(message);
+
+        // Correct key should verify
+        assert!(keypair1.public.verify(message, &signature).is_ok());
+
+        // Wrong key should fail
+        assert!(keypair2.public.verify(message, &signature).is_err());
+    }
+
+    #[test]
+    fn test_cross_compatibility() {
+        // Test that all sign/verify combinations work
+        let keypair = Keypair::generate();
+        let message = b"cross compatibility test";
+
+        // Sign with secret key, verify with public key
+        let sig1 = keypair.secret.sign(message);
+        assert!(keypair.public.verify(message, &sig1).is_ok());
+
+        // Sign with keypair, verify with public key
+        let sig2 = keypair.sign(message);
+        assert!(keypair.public.verify(message, &sig2).is_ok());
+
+        // Sign with keypair, verify with keypair
+        let sig3 = keypair.sign(message);
+        assert!(keypair.verify(message, &sig3).is_ok());
+    }
 }

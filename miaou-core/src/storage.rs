@@ -629,4 +629,190 @@ mod tests {
         // Vérifier qu'il n'existe plus
         assert!(storage.load_profile(&profile_id, &password).is_err());
     }
+
+    #[test]
+    fn test_profile_id_generation() {
+        let id1 = ProfileId::new("alice");
+        let id2 = ProfileId::new("alice");
+        let id3 = ProfileId::new("bob");
+
+        // Same name should produce same ID
+        assert_eq!(id1.name, id2.name);
+        assert_eq!(id1.hash, id2.hash);
+
+        // Different names should produce different IDs
+        assert_ne!(id1.hash, id3.hash);
+        assert_eq!(id1.name, "alice");
+        assert_eq!(id3.name, "bob");
+    }
+
+    #[test]
+    fn test_profile_id_safe_name() {
+        let id1 = ProfileId::new("alice");
+        let id2 = ProfileId::new("bob@domain.com");
+        let id3 = ProfileId::new("user with spaces");
+
+        let safe1 = id1.safe_name();
+        let safe2 = id2.safe_name();
+        let safe3 = id3.safe_name();
+
+        // All safe names should be filesystem safe
+        assert!(safe1.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
+        assert!(safe2.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
+        assert!(safe3.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
+
+        // Should contain hash suffix
+        assert!(safe1.contains(&id1.hash[..8]));
+        assert!(safe2.contains(&id2.hash[..8]));
+        assert!(safe3.contains(&id3.hash[..8]));
+    }
+
+    #[test]
+    fn test_sanitize_filename() {
+        assert_eq!(sanitize_filename("normal"), "normal");
+        assert_eq!(sanitize_filename("user@domain.com"), "user_domain_com");
+        assert_eq!(sanitize_filename("user with spaces"), "user_with_spaces");
+        assert_eq!(sanitize_filename("user/\\<>:|?*"), "user________");
+
+        // Should limit length
+        let long_name = "a".repeat(100);
+        let sanitized = sanitize_filename(&long_name);
+        assert_eq!(sanitized.len(), 32);
+    }
+
+    #[test]
+    fn test_create_profile_already_exists() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = SecureStorage::new(temp_dir.path()).unwrap();
+        let password = SecretString::new("test_password".to_string());
+
+        // Create first profile
+        storage.create_profile("alice", &password).unwrap();
+
+        // Try to create same profile again
+        let result = storage.create_profile("alice", &password);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_load_profile_not_found() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = SecureStorage::new(temp_dir.path()).unwrap();
+        let password = SecretString::new("test_password".to_string());
+
+        let fake_id = ProfileId::new("nonexistent");
+        let result = storage.load_profile(&fake_id, &password);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_delete_profile_not_found() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = SecureStorage::new(temp_dir.path()).unwrap();
+
+        let fake_id = ProfileId::new("nonexistent");
+        let result = storage.delete_profile(&fake_id);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_list_profiles_empty() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = SecureStorage::new(temp_dir.path()).unwrap();
+
+        let profiles = storage.list_profiles().unwrap();
+        assert_eq!(profiles.len(), 0);
+    }
+
+    #[test]
+    fn test_profile_settings_default() {
+        let settings = ProfileSettings::default();
+        assert!(!settings.auto_accept_friends);
+        assert_eq!(settings.encryption_level, "balanced");
+        assert!(settings.backup_enabled);
+        assert_eq!(settings.theme, "auto");
+    }
+
+    #[test]
+    fn test_profile_loading_with_different_configs() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = SecureStorage::new(temp_dir.path()).unwrap();
+
+        // Test loading profiles with different Argon2 configs
+        let passwords = [
+            SecretString::new("password1".to_string()),
+            SecretString::new("password2".to_string()),
+            SecretString::new("password3".to_string()),
+        ];
+
+        let names = ["user_fast", "user_balanced", "user_secure"];
+
+        for (i, (name, password)) in names.iter().zip(passwords.iter()).enumerate() {
+            let profile_id = storage.create_profile(name, password).unwrap();
+
+            // Should be able to load the profile
+            let loaded_profile = storage.load_profile(&profile_id, password).unwrap();
+            assert_eq!(loaded_profile.metadata.name, *name);
+
+            // Wrong password should fail
+            let wrong_password = SecretString::new(format!("wrong_{i}"));
+            assert!(storage.load_profile(&profile_id, &wrong_password).is_err());
+        }
+    }
+
+    #[test]
+    fn test_profile_key_integrity() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = SecureStorage::new(temp_dir.path()).unwrap();
+        let password = SecretString::new("test_password".to_string());
+
+        let profile_id = storage.create_profile("alice", &password).unwrap();
+        let profile = storage.load_profile(&profile_id, &password).unwrap();
+
+        // Test that the keys work for crypto operations
+        let message = b"test message for signing";
+        let signature = profile.identity_keypair.sign(message);
+
+        // Verify signature works
+        assert!(profile.identity_keypair.verify(message, &signature).is_ok());
+
+        // Wrong message should fail verification
+        assert!(profile
+            .identity_keypair
+            .verify(b"wrong message", &signature)
+            .is_err());
+    }
+
+    #[test]
+    fn test_profile_metadata_consistency() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage = SecureStorage::new(temp_dir.path()).unwrap();
+        let password = SecretString::new("test_password".to_string());
+
+        let profile_id = storage.create_profile("test_user", &password).unwrap();
+        let profile = storage.load_profile(&profile_id, &password).unwrap();
+
+        // Metadata should be consistent
+        assert_eq!(profile.metadata.id.name, "test_user");
+        assert_eq!(profile.metadata.name, "test_user");
+        assert_eq!(profile.metadata.version, "0.1.0");
+        assert!(profile.metadata.created <= chrono::Utc::now());
+        assert!(profile.metadata.last_access <= chrono::Utc::now());
+        assert!(profile.metadata.last_access >= profile.metadata.created);
+    }
+
+    #[test]
+    fn test_secure_storage_directory_creation() {
+        let temp_dir = TempDir::new().unwrap();
+        let storage_path = temp_dir.path().join("new_storage");
+
+        // Directory doesn't exist yet
+        assert!(!storage_path.exists());
+
+        // Creating storage should create directories
+        let _storage = SecureStorage::new(&storage_path).unwrap();
+        assert!(storage_path.exists());
+        assert!(storage_path.join("profiles").exists());
+        assert!(storage_path.join("keystore").exists());
+    }
 }

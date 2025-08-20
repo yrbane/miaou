@@ -220,6 +220,67 @@ mod tests {
     }
 
     #[test]
+    fn test_decrypt_with_empty_aad() {
+        let key = AeadKeyRef::from_bytes([42u8; 32]);
+        let nonce = [1u8; 12];
+
+        // First encrypt with valid AAD
+        let sealed = encrypt(&key, nonce, b"valid_aad", b"message").unwrap();
+
+        // Try to decrypt with empty AAD should fail
+        let result = decrypt(&key, b"", &sealed);
+        assert!(matches!(result, Err(CryptoError::EmptyAad)));
+    }
+
+    #[test]
+    fn test_encrypt_auto_nonce_success() {
+        let key = AeadKeyRef::from_bytes([42u8; 32]);
+        let aad = b"test_aad";
+        let plaintext = b"test message";
+        let mut rng = OsRng;
+
+        let sealed = encrypt_auto_nonce(&key, aad, plaintext, &mut rng).unwrap();
+        let decrypted = decrypt(&key, aad, &sealed).unwrap();
+
+        assert_eq!(decrypted, plaintext);
+        assert_eq!(sealed.nonce.len(), 12);
+    }
+
+    #[test]
+    fn test_sealed_data_total_size() {
+        let key = AeadKeyRef::from_bytes([42u8; 32]);
+        let nonce = [1u8; 12];
+        let aad = b"test_aad";
+        let plaintext = b"hello world"; // 11 bytes
+
+        let sealed = encrypt(&key, nonce, aad, plaintext).unwrap();
+
+        // Total size should be nonce + ciphertext + tag
+        // ChaCha20-Poly1305 adds 16 bytes for authentication tag
+        let expected_size = 12 + 11 + 16; // nonce + plaintext + tag
+        assert_eq!(sealed.total_size(), expected_size);
+    }
+
+    #[test]
+    fn test_aead_key_ref_generate() {
+        let mut rng = OsRng;
+        let key1 = AeadKeyRef::generate(&mut rng);
+        let key2 = AeadKeyRef::generate(&mut rng);
+
+        // Generated keys should be different
+        assert_ne!(key1.as_key().as_slice(), key2.as_key().as_slice());
+    }
+
+    #[test]
+    fn test_aead_key_ref_debug() {
+        let key = AeadKeyRef::from_bytes([42u8; 32]);
+        let debug_str = format!("{:?}", key);
+
+        // Should not expose key material
+        assert!(debug_str.contains("AeadKeyRef([REDACTED])"));
+    }
+
+    #[test]
     fn test_key_zeroization() {
         // Test que AeadKeyRef implémente ZeroizeOnDrop
         fn assert_zeroize_on_drop<T: ZeroizeOnDrop>() {}
