@@ -14,6 +14,10 @@ use zeroize::Zeroize;
 /// # Returns
 /// * `Vec<u8>` - Bytes aléatoires générés
 ///
+/// # Errors
+/// Cette fonction ne peut actuellement pas échouer avec `OsRng`, mais retourne
+/// un `Result` pour cohérence avec l'API et extensibilité future.
+///
 /// # Examples
 /// ```
 /// use miaou_crypto::primitives::random_bytes;
@@ -29,6 +33,10 @@ pub fn random_bytes(length: usize) -> CryptoResult<Vec<u8>> {
 }
 
 /// Génère un tableau de bytes aléatoires de taille fixe
+///
+/// # Errors
+/// Cette fonction ne peut actuellement pas échouer avec `OsRng`, mais retourne
+/// un `Result` pour cohérence avec l'API et extensibilité future.
 ///
 /// # Examples
 /// ```
@@ -68,6 +76,7 @@ pub fn random_array<const N: usize>() -> CryptoResult<[u8; N]> {
 /// assert!(secure_compare(data1, data2));
 /// assert!(!secure_compare(data1, data3));
 /// ```
+#[must_use]
 pub fn secure_compare(a: &[u8], b: &[u8]) -> bool {
     // Vérification des longueurs d'abord
     if a.len() != b.len() {
@@ -86,6 +95,9 @@ pub fn secure_compare(a: &[u8], b: &[u8]) -> bool {
 ///
 /// # Returns
 /// * `Result<Vec<u8>, CryptoError>` - XOR des deux slices
+///
+/// # Errors
+/// Retourne `CryptoError::InvalidDataSize` si les slices ont des tailles différentes.
 ///
 /// # Examples
 /// ```
@@ -120,6 +132,7 @@ pub fn xor_bytes(a: &[u8], b: &[u8]) -> CryptoResult<Vec<u8>> {
 /// # Security
 /// Les clés sont d'abord hachées avec BLAKE3 avant XOR pour éviter
 /// les faiblesses cryptographiques du XOR direct.
+#[must_use]
 pub fn combine_keys(key1: &[u8], key2: &[u8]) -> [u8; 32] {
     let hash1 = blake3::hash(key1);
     let hash2 = blake3::hash(key2);
@@ -152,8 +165,9 @@ pub fn combine_keys(key1: &[u8], key2: &[u8]) -> [u8; 32] {
 ///
 /// assert_ne!(encryption_key, signing_key);
 /// ```
+#[must_use]
 pub fn derive_subkey(master_key: &[u8], context: &str, index: u32) -> [u8; 32] {
-    let context_with_index = format!("miaou.{}.{}", context, index);
+    let context_with_index = format!("miaou.{context}.{index}");
     let combined = [master_key, context_with_index.as_bytes()].concat();
     let hash = blake3::hash(&combined);
     *hash.as_bytes()
@@ -171,6 +185,7 @@ pub fn derive_subkey(master_key: &[u8], context: &str, index: u32) -> [u8; 32] {
 /// # Security
 /// Utilise un mélange déterministe basé sur BLAKE3 pour éviter
 /// les dépendances supplémentaires.
+#[must_use]
 pub fn secure_shuffle(data: &[u8], seed: &[u8; 32]) -> Vec<u8> {
     let mut result = data.to_vec();
 
@@ -179,6 +194,7 @@ pub fn secure_shuffle(data: &[u8], seed: &[u8; 32]) -> Vec<u8> {
         let mut hash_input = seed.to_vec();
         hash_input.extend_from_slice(&(i as u64).to_le_bytes());
         let hash = blake3::hash(&hash_input);
+        #[allow(clippy::cast_possible_truncation)]
         let j = (u64::from_le_bytes([
             hash.as_bytes()[0],
             hash.as_bytes()[1],
@@ -199,6 +215,10 @@ pub fn secure_shuffle(data: &[u8], seed: &[u8; 32]) -> Vec<u8> {
 ///
 /// # Returns
 /// * `[u8; 16]` - Sel aléatoire de 16 bytes
+///
+/// # Errors
+/// Cette fonction ne peut actuellement pas échouer avec `OsRng`, mais retourne
+/// un `Result` pour cohérence avec l'API et extensibilité future.
 pub fn generate_salt() -> CryptoResult<[u8; 16]> {
     random_array::<16>()
 }
@@ -207,6 +227,10 @@ pub fn generate_salt() -> CryptoResult<[u8; 16]> {
 ///
 /// # Returns
 /// * `[u8; 12]` - Nonce aléatoire de 12 bytes
+///
+/// # Errors
+/// Cette fonction ne peut actuellement pas échouer avec `OsRng`, mais retourne
+/// un `Result` pour cohérence avec l'API et extensibilité future.
 pub fn generate_nonce() -> CryptoResult<[u8; 12]> {
     random_array::<12>()
 }
@@ -231,6 +255,10 @@ pub struct SecureIdGenerator {
 
 impl SecureIdGenerator {
     /// Crée un nouveau générateur avec un ID de nœud aléatoire
+    /// 
+    /// # Errors
+    /// Cette fonction ne peut actuellement pas échouer avec `OsRng`, mais retourne
+    /// un `Result` pour cohérence avec l'API et extensibilité future.
     pub fn new() -> CryptoResult<Self> {
         let node_id = random_array::<8>()?;
         Ok(Self {
@@ -240,10 +268,15 @@ impl SecureIdGenerator {
     }
 
     /// Génère un ID unique de 16 bytes
+    /// 
+    /// # Panics
+    /// Peut paniquer si l'horloge système est défaillante (très rare).
+    #[must_use]
     pub fn generate_id(&self) -> [u8; 16] {
         use std::sync::atomic::Ordering;
 
         let counter = self.counter.fetch_add(1, Ordering::SeqCst);
+        #[allow(clippy::cast_possible_truncation)]
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
