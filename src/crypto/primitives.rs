@@ -162,10 +162,10 @@ pub fn combine_keys(key1: &[u8], key2: &[u8]) -> [u8; 32] {
 /// assert_ne!(encryption_key, signing_key);
 /// ```
 pub fn derive_subkey(master_key: &[u8], context: &str, index: u32) -> [u8; 32] {
-    use crate::crypto::hashing::Blake3Hasher;
-    
     let context_with_index = format!("miaou.{}.{}", context, index);
-    Blake3Hasher::derive_key(&context_with_index, master_key)
+    let combined = [master_key, context_with_index.as_bytes()].concat();
+    let hash = blake3::hash(&combined);
+    *hash.as_bytes()
 }
 
 /// Mélange sécurisé de données (shuffle cryptographique)

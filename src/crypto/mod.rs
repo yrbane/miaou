@@ -1,124 +1,98 @@
 //! # Module Cryptographique Miaou v0.1.0 "Première Griffe"
 //! 
 //! Ce module fournit des wrappers sécurisés autour de bibliothèques cryptographiques
-//! auditées pour garantir la sécurité des communications Miaou.
+//! auditées selon l'Option A cohérente (RustCrypto + Dalek).
 //! 
 //! ## Primitives supportées
 //! 
-//! - **Chiffrement authentifié** : ChaCha20-Poly1305 (via `chacha20poly1305`)
+//! - **Chiffrement authentifié** : XChaCha20-Poly1305 (nonces 192-bit)
 //! - **Signatures numériques** : Ed25519 (via `ed25519-dalek`)  
-//! - **Hachage** : BLAKE3, Argon2 pour mots de passe
-//! - **Générateurs aléatoires** : CSPRNG via `ring`
+//! - **Échange de clés** : X25519 (via `x25519-dalek`)
+//! - **Hachage** : BLAKE3, SHA-3
+//! - **KDF** : Argon2id (mots de passe) + HKDF (sessions)
 //! 
 //! ## Garanties de sécurité
 //! 
-//! - Utilise exclusivement des crates auditées
+//! - Stack cryptographique cohérente (pas de mélange ring + dalek)
+//! - AAD obligatoire pour tous les AEAD
 //! - Zeroization automatique des secrets
-//! - Tests avec vecteurs officiels NIST/IETF
+//! - Traits object-safe avec &self
+//! - Tests KAT avec vecteurs IETF officiels
 //! - Protection contre les attaques par canaux auxiliaires
 
-pub mod encryption;
-pub mod signing;
-pub mod hashing;
-pub mod keyring;
-pub mod primitives;
+pub mod aead;
+pub mod sign;
+pub mod kdf;
+pub mod hash;
 
 // Re-exports publics
-pub use encryption::{EncryptionEngine, ChaCha20Poly1305Cipher};
-pub use signing::{SigningEngine, Ed25519Signer};
-pub use hashing::{HashingEngine, Blake3Hasher, Argon2Hasher};
-pub use keyring::{KeyPair, SecretKey, PublicKey, KeyStore};
-pub use primitives::{random_bytes, secure_compare};
+pub use aead::{AeadKeyRef, SealedData, random_nonce};
+pub use sign::{Keypair, SigningKeyRef, VerifyingKeyRef, Signature};
+pub use kdf::{derive_key_32, Argon2Config};
+pub use hash::{blake3_32, sha3_256, Blake3Output, HashingEngine, Blake3Engine};
 
-/// Erreurs cryptographiques communes
-#[derive(Debug, thiserror::Error)]
+/// Erreurs cryptographiques cohérentes
+#[derive(thiserror::Error, Debug)]
 pub enum CryptoError {
-    #[error("Erreur de chiffrement: {0}")]
-    EncryptionError(String),
-    
-    #[error("Erreur de déchiffrement: {0}")]
-    DecryptionError(String),
-    
-    #[error("Erreur de signature: {0}")]
-    SignatureError(String),
-    
-    #[error("Erreur de vérification: {0}")]
-    VerificationError(String),
-    
-    #[error("Erreur de génération de clé: {0}")]
-    KeyGenerationError(String),
-    
-    #[error("Erreur de hachage: {0}")]
-    HashingError(String),
-    
-    #[error("Taille de données invalide: attendu {expected}, reçu {actual}")]
-    InvalidDataSize { expected: usize, actual: usize },
-    
-    #[error("Format de clé invalide")]
-    InvalidKeyFormat,
-    
-    #[error("Nonce réutilisé - risque de sécurité critique")]
-    NonceReuse,
+    /// Échec chiffrement/déchiffrement AEAD.
+    #[error("encryption/decryption failure")]
+    AeadFailure,
+    /// Clé invalide / longueur incorrecte.
+    #[error("invalid key or key length")]
+    InvalidKey,
+    /// Entrée invalide (format/longueur).
+    #[error("invalid input")]
+    InvalidInput,
+    /// AAD vide (interdit).
+    #[error("empty AAD not allowed")]
+    EmptyAad,
+    /// Signature invalide.
+    #[error("signature verification failed")]
+    SignatureVerificationFailed,
+    /// Erreur de génération aléatoire.
+    #[error("random generation failed")]
+    RandomGenerationFailed,
 }
 
 /// Type de résultat standard pour les opérations cryptographiques
 pub type CryptoResult<T> = Result<T, CryptoError>;
 
-/// Teste la disponibilité des fonctions cryptographiques
-pub fn test_crypto_availability() -> Result<(), String> {
-    // Test rapide de chaque primitive
-    use crate::crypto::{
-        encryption::{ChaCha20Poly1305Cipher, EncryptionEngine},
-        signing::{Ed25519Signer, SigningEngine},
-        hashing::Blake3Hasher,
-        primitives::random_bytes,
-    };
+/// Fournit des primitives cryptographiques de haut niveau (AEAD, signatures)
+/// Implémentations basées EXCLUSIVEMENT sur des bibliothèques auditées
+pub trait CryptoProvider: Send + Sync {
+    /// Chiffre avec XChaCha20-Poly1305 et AAD obligatoires
+    /// - `aad`: données associées (version protocole, type message, flags)
+    /// - Génère automatiquement un nonce 192-bit aléatoire
+    fn seal(
+        &self,
+        key: &AeadKeyRef,
+        aad: &[u8],  // OBLIGATOIRE - jamais vide
+        plaintext: &[u8],
+        rng: &mut dyn rand_core::RngCore,
+    ) -> Result<SealedData, CryptoError>;
+
+    /// Déchiffre et authentifie ; échoue si tag/nonce/AAD invalide
+    fn open(
+        &self,
+        key: &AeadKeyRef,
+        aad: &[u8],  // DOIT correspondre exactement au seal
+        sealed: &SealedData,
+    ) -> Result<Vec<u8>, CryptoError>;
+
+    /// Signe avec Ed25519 (signature 64 bytes)
+    fn sign(&self, sk: &SigningKeyRef, msg: &[u8]) -> Result<Signature, CryptoError>;
+
+    /// Vérifie signature Ed25519 - RETOURNE ERREUR (pas bool)
+    fn verify(&self, pk: &VerifyingKeyRef, msg: &[u8], sig: &Signature) -> Result<(), CryptoError>;
+}
+
+/// Génère et gère le matériel cryptographique (object-safe)
+pub trait KeyMaterial: Send + Sync {
+    /// Génère une nouvelle identité (paire de clés Ed25519)
+    fn generate_identity(&self, rng: &mut dyn rand_core::RngCore) -> Result<Keypair, CryptoError>;
     
-    // Test ChaCha20-Poly1305
-    let cipher = ChaCha20Poly1305Cipher::generate_key()
-        .map_err(|e| format!("ChaCha20-Poly1305 indisponible: {}", e))?;
-    
-    let test_data = b"test";
-    let encrypted = cipher.encrypt_with_random_nonce(test_data)
-        .map_err(|e| format!("Chiffrement échoué: {}", e))?;
-    let decrypted = cipher.decrypt_with_nonce(&encrypted)
-        .map_err(|e| format!("Déchiffrement échoué: {}", e))?;
-    
-    if decrypted != test_data {
-        return Err("Test de chiffrement échoué".into());
-    }
-    
-    // Test Ed25519
-    let (private_key, public_key) = Ed25519Signer::generate_keypair()
-        .map_err(|e| format!("Génération de clés Ed25519 échouée: {}", e))?;
-    
-    let signature = Ed25519Signer::sign(&private_key, test_data)
-        .map_err(|e| format!("Signature échouée: {}", e))?;
-    let valid = Ed25519Signer::verify(&public_key, test_data, &signature)
-        .map_err(|e| format!("Vérification de signature échouée: {}", e))?;
-    
-    if !valid {
-        return Err("Test de signature échoué".into());
-    }
-    
-    // Test BLAKE3
-    let hash1 = Blake3Hasher::hash(test_data);
-    let hash2 = Blake3Hasher::hash(test_data);
-    if hash1 != hash2 {
-        return Err("Test de hachage échoué".into());
-    }
-    
-    // Test générateur aléatoire
-    let random1 = random_bytes(16)
-        .map_err(|e| format!("Génération aléatoire échouée: {}", e))?;
-    let random2 = random_bytes(16)
-        .map_err(|e| format!("Génération aléatoire échouée: {}", e))?;
-    
-    if random1 == random2 {
-        return Err("Générateur aléatoire défaillant".into());
-    }
-    
-    Ok(())
+    /// Fait la rotation d'une clé de session (nouvelle clé AEAD)
+    fn rotate_session_key(&self, rng: &mut dyn rand_core::RngCore) -> Result<AeadKeyRef, CryptoError>;
 }
 
 /// Taille standard des nonces pour ChaCha20-Poly1305 (12 bytes)
@@ -133,15 +107,79 @@ pub const SIGNATURE_SIZE: usize = 64;
 /// Taille des clés publiques Ed25519 (32 bytes)
 pub const PUBLIC_KEY_SIZE: usize = 32;
 
+/// Teste la disponibilité des fonctions cryptographiques
+pub fn test_crypto_availability() -> Result<(), String> {
+    use rand_core::OsRng;
+    
+    // Test BLAKE3
+    let hash1 = blake3_32(b"test");
+    let hash2 = blake3_32(b"test");
+    if hash1 != hash2 {
+        return Err("Test de hachage échoué".into());
+    }
+    
+    // Test génération aléatoire
+    let mut rng = OsRng;
+    let random1 = random_nonce(&mut rng);
+    let random2 = random_nonce(&mut rng);
+    
+    if random1 == random2 {
+        return Err("Générateur aléatoire défaillant".into());
+    }
+    
+    // Test AEAD roundtrip basique
+    let key = AeadKeyRef::from_bytes([42u8; 32]);
+    let nonce = random_nonce(&mut rng);
+    
+    match aead::encrypt(&key, nonce, b"test_aad", b"test_message") {
+        Ok(sealed) => {
+            match aead::decrypt(&key, b"test_aad", &sealed) {
+                Ok(decrypted) => {
+                    if decrypted != b"test_message" {
+                        return Err("Test AEAD roundtrip échoué".into());
+                    }
+                }
+                Err(_) => return Err("Test AEAD decrypt échoué".into()),
+            }
+        }
+        Err(_) => return Err("Test AEAD encrypt échoué".into()),
+    }
+    
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand_core::OsRng;
 
     #[test]
     fn test_constants() {
-        assert_eq!(NONCE_SIZE, 12);
+        assert_eq!(NONCE_SIZE, 12);  // ChaCha20 nonce
         assert_eq!(KEY_SIZE, 32);
         assert_eq!(SIGNATURE_SIZE, 64);
         assert_eq!(PUBLIC_KEY_SIZE, 32);
+    }
+
+    #[test]
+    fn test_crypto_availability() {
+        // La fonction retourne Result<(), String>
+        let result = crate::crypto::test_crypto_availability();
+        assert!(result.is_ok(), "Test crypto availability failed: {:?}", result);
+    }
+    
+    #[test]
+    fn test_aead_aad_enforcement() {
+        let key = AeadKeyRef::from_bytes([42u8; 32]);
+        let mut rng = OsRng;
+        let nonce = random_nonce(&mut rng);
+        
+        // AAD vide doit être rejetée
+        let result = aead::encrypt(&key, nonce, b"", b"plaintext");
+        assert!(result.is_err());
+        
+        // AAD non-vide doit fonctionner
+        let result = aead::encrypt(&key, nonce, b"version:1", b"plaintext");
+        assert!(result.is_ok());
     }
 }

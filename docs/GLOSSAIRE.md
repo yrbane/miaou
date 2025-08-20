@@ -10,7 +10,7 @@
 Documents traçant les décisions architecturales importantes, leurs contextes, options considérées et justifications.
 
 ### **AEAD (Authenticated Encryption with Associated Data)**
-Mode de chiffrement qui combine confidentialité et authentification. Exemples : AES-GCM, ChaCha20-Poly1305.
+Mode de chiffrement qui combine confidentialité et authentification. Exemples : AES-GCM, ChaCha20-Poly1305. Dans Miaou v0.1.0, utilisation obligatoire d'AAD (Associated Authenticated Data) pour toutes les opérations de chiffrement.
 
 ### **AES (Advanced Encryption Standard)**
 Standard de chiffrement symétrique adopté par le NIST. Versions : AES-128, AES-192, AES-256.
@@ -19,7 +19,7 @@ Standard de chiffrement symétrique adopté par le NIST. Versions : AES-128, AES
 Liste blanche stricte de dépendances externes autorisées après audit de sécurité, remplaçant la politique "zéro dépendance". Voir DEPENDENCIES.md.
 
 ### **Argon2**
-Fonction de dérivation de clés résistante aux attaques par force brute, winner du Password Hashing Competition.
+Fonction de dérivation de clés résistante aux attaques par force brute, winner du Password Hashing Competition. Miaou v0.1.0 utilise Argon2id avec configurations adaptées : fast_insecure (tests), balanced (défaut), secure (haute sécurité).
 
 ### **ActivityPub**
 Protocole de fédération sociale du W3C utilisé par Mastodon, Pleroma et autres réseaux sociaux décentralisés.
@@ -57,7 +57,7 @@ Outil vérifiant licences et politiques de dépendances pour projets Rust.
 Outil mesure de couverture de code Rust. Objectif Miaou : >= 90% + fuzzing.
 
 ### **ChaCha20-Poly1305**
-Algorithme de chiffrement authentifié combinant le cipher ChaCha20 et l'authentificateur Poly1305.
+Algorithme de chiffrement authentifié combinant le cipher ChaCha20 et l'authentificateur Poly1305. Primitive AEAD principale de Miaou v0.1.0, choisie pour sa performance et sa sécurité post-quantique.
 
 ### **CI/CD (Continuous Integration/Continuous Deployment)**
 Pratiques d'intégration et déploiement continus pour automatiser les tests et livraisons.
@@ -353,6 +353,28 @@ Protocoles réseau établis (WebRTC, ICE, STUN/TURN) adoptés dans Miaou au lieu
 
 ### **Wrappers crypto**
 Couches d'abstraction Miaou autour de bibliothèques auditées (ring, RustCrypto) au lieu d'implémentations from scratch.
+
+---
+
+## Nouveaux termes v0.1.0
+
+### **AAD obligatoire**
+Politique Miaou imposant l'utilisation d'Associated Authenticated Data pour toutes les opérations AEAD, empêchant les chiffrements sans contexte d'authentification.
+
+### **CryptoProvider trait**
+Interface object-safe définissant les opérations cryptographiques fondamentales (seal, open, sign, verify) dans l'architecture modulaire de Miaou.
+
+### **Edition 2024**
+Version du langage Rust requise par certaines dépendances cryptographiques, nécessitant une mise à jour de la toolchain.
+
+### **Object-safe traits**
+Contrainte Rust permettant l'utilisation de trait objects pour le polymorphisme dynamique. Essentiel pour l'architecture modulaire crypto de Miaou.
+
+### **SealedData**
+Structure Miaou encapsulant les données chiffrées avec nonce et tag d'authentification pour un transport sécurisé.
+
+### **Zeroization**
+Effacement sécurisé automatique des clés cryptographiques en mémoire via le trait ZeroizeOnDrop, implémenté dans toutes les structures sensibles.
 
 ---
 

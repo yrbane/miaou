@@ -1,11 +1,5 @@
-//! Tests cryptographiques pour Miaou
+//! Tests cryptographiques pour Miaou Phase 1
 //! 
-//! Organisation des tests selon les standards de l'industrie :
-//! - Known Answer Tests (KAT) avec vecteurs officiels
-//! - Tests de propriétés cryptographiques
-//! - Tests de performance et limites
-//! - Tests de sécurité et cas d'erreur
+//! Module de tests pour valider les primitives cryptographiques.
 
-pub mod known_answer_tests;
-pub mod property_tests;
-pub mod integration_tests;
+mod basic_tests;

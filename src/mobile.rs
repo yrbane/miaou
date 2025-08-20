@@ -3,12 +3,14 @@
 
 use crate::{PlatformInterface, core::MiaouCore};
 
+/// Plateforme mobile (Android/iOS)
 pub struct MobilePlatform {
     core: MiaouCore,
     platform_name: &'static str,
 }
 
 impl MobilePlatform {
+    /// Crée une nouvelle plateforme mobile
     pub fn new(platform_name: &'static str) -> Self {
         Self {
             core: MiaouCore::new(),

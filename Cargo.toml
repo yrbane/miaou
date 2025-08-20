@@ -18,29 +18,40 @@ name = "miaou-cli"
 path = "src/bin/cli.rs"
 
 [dependencies]
-# Cryptographie auditée (versions stables)
-ring = "0.16"
-ed25519-dalek = { version = "1.0", features = ["rand"] }
-chacha20poly1305 = "0.8"
-blake3 = "1.0"
-argon2 = "0.4"
+# Stack cryptographique cohérente (Option A : RustCrypto + Dalek)
+# AEAD avec XChaCha20 (nonces 192-bit, moins de contraintes d'unicité)
+chacha20poly1305 = { version = "0.10", default-features = false, features = ["alloc"] }
 
-# Utilitaires cryptographiques
-rand = "0.8"
-rand_core = { version = "0.6", features = ["std"] }
-zeroize = { version = "1.5", features = ["zeroize_derive"] }
+# Signatures et ECDH via Dalek (performance + audit)
+ed25519-dalek = { version = "2", features = ["rand_core", "zeroize"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
 
-# Sérialisation sécurisée
-serde = { version = "1.0", features = ["derive"] }
-bincode = "1.3"
+# KDF et hachage
+hkdf = "0.12"
+blake3 = { version = "1", features = ["zeroize"] }
+sha3 = "0.10"
+argon2 = "0.5"
 
-# Gestion d'erreurs
-thiserror = "1.0"
+# Transport sécurisé (mis à jour)
+rustls = { version = "0.23", default-features = true }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
+
+# Sécurité et gestion des secrets
+zeroize = "1.7"
+subtle = "2.5"
+secrecy = "0.8"
+rand_core = { version = "0.6", features = ["getrandom"] }
+thiserror = "1"
+
+# Sérialisation et utilitaires
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4"
+
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+rpassword = "7.3"
 anyhow = "1.0"
-
-# Sécurité additionnelle
-subtle = "2.4"
-rand_chacha = "0.3"
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21"
@@ -72,9 +83,9 @@ long_description = "Plateforme de communication peer-to-peer sécurisée et déc
 
 # Tests et dev
 [dev-dependencies]
-criterion = { version = "0.5.1", features = ["html_reports"] }
-proptest = "1.4.0"
-hex = "0.4.3"
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.5"
+
 
 [[bench]]
 name = "crypto_benchmarks"
