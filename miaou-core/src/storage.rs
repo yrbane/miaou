@@ -13,12 +13,21 @@ use anyhow::Result;
 /// Trait pour les implémentations de stockage sécurisé
 pub trait StorageBackend {
     /// Stocke des données sous une clé
+    ///
+    /// # Errors
+    /// Retourne une erreur si l'écriture échoue ou si les données sont invalides.
     fn store(&mut self, key: &str, data: &[u8]) -> Result<(), StorageError>;
 
     /// Récupère des données par clé
+    ///
+    /// # Errors
+    /// Retourne une erreur si la clé n'existe pas ou si la lecture échoue.
     fn retrieve(&self, key: &str) -> Result<Vec<u8>, StorageError>;
 
     /// Supprime des données par clé
+    ///
+    /// # Errors
+    /// Retourne une erreur si la suppression échoue.
     fn delete(&mut self, key: &str) -> Result<(), StorageError>;
 
     /// Vérifie si une clé existe
