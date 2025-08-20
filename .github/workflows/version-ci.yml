@@ -49,14 +49,7 @@ jobs:
       run: cargo fmt --all -- --check
       
     - name: 🔍 Lint with clippy
-      run: |
-        cargo clippy --all-features --all-targets -- \
-          -D warnings \
-          -D clippy::pedantic \
-          -D clippy::nursery \
-          -D clippy::cargo \
-          -A clippy::multiple_crate_versions \
-          -A clippy::cargo_common_metadata
+      run: cargo clippy --all-features --all-targets -- -D warnings -D clippy::pedantic -D clippy::nursery -D clippy::cargo -A clippy::multiple_crate_versions -A clippy::cargo_common_metadata
           
     - name: 🧪 Run tests
       run: cargo test --all-features --verbose
