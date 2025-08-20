@@ -13,6 +13,7 @@ pub mod aead;
 pub mod hash;
 pub mod hashing;
 pub mod kdf;
+pub mod primitives;
 pub mod sign;
 
 // Re-exports pour API simplifiée
@@ -70,6 +71,19 @@ pub enum CryptoError {
     /// Erreur de troncature (cast impossible)
     #[error("Truncation error during cast")]
     Truncation,
+
+    /// Erreur de génération de clé
+    #[error("Key generation failed: {0}")]
+    KeyGenerationError(String),
+
+    /// Taille de données incorrecte (variante alternative)
+    #[error("Invalid data size: expected {expected}, got {actual}")]
+    InvalidDataSize {
+        /// Taille attendue
+        expected: usize,
+        /// Taille actuelle
+        actual: usize,
+    },
 }
 
 /// Type de résultat cryptographique

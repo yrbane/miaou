@@ -1,10 +1,12 @@
 // miaou-core/tests/storage_contract.rs
-use miaou_core::{SecureStorage, StorageError};
+use miaou_core::{StorageBackend, StorageError};
 
 struct FailingStorage;
-impl SecureStorage for FailingStorage {
+impl StorageBackend for FailingStorage {
     fn store(&mut self, _k: &str, _d: &[u8]) -> Result<(), StorageError> {
-        Err(StorageError::Io("simulated".into()))
+        Err(StorageError::Io(
+            std::io::Error::new(std::io::ErrorKind::Other, "simulated").into(),
+        ))
     }
     fn retrieve(&self, _k: &str) -> Result<Vec<u8>, StorageError> {
         Err(StorageError::NotFound)

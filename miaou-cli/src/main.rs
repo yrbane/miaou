@@ -994,4 +994,33 @@ mod tests {
         // Directory should now exist
         assert!(custom_path.exists());
     }
+
+    #[test]
+    fn test_list_profiles_cmd() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.list_profiles_cmd();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_expand_path_with_tilde() {
+        // Test basic tilde expansion
+        if let Ok(expanded) = expand_path(PathBuf::from("~/test")) {
+            assert!(!expanded.to_string_lossy().contains("~"));
+        }
+    }
+
+    #[test]
+    fn test_test_encryption_no_message() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.test_encryption(None);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_test_signing_no_message() {
+        let cli = create_test_cli().unwrap();
+        let result = cli.test_signing(None);
+        assert!(result.is_ok());
+    }
 }

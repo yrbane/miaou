@@ -91,3 +91,56 @@ pub mod ios {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mobile_platform_creation() {
+        let platform = MobilePlatform::new("TestPlatform");
+        assert_eq!(platform.get_platform_name(), "TestPlatform");
+        assert!(!platform.initialized);
+    }
+
+    #[test]
+    fn test_mobile_platform_initialization() {
+        let mut platform = MobilePlatform::new("Android");
+        assert!(!platform.initialized);
+
+        let result = platform.initialize();
+        assert!(result.is_ok());
+        assert!(platform.initialized);
+
+        // Should be idempotent
+        let result2 = platform.initialize();
+        assert!(result2.is_ok());
+        assert!(platform.initialized);
+    }
+
+    #[test]
+    fn test_platform_interface_methods() {
+        let mut platform = MobilePlatform::new("iOS");
+
+        // Test get_platform_name
+        assert_eq!(platform.get_platform_name(), "iOS");
+
+        // Test get_supported_version (from trait default)
+        assert_eq!(platform.get_supported_version(), crate::VERSION);
+
+        // Test initialize
+        assert!(platform.initialize().is_ok());
+        assert_eq!(platform.get_platform_name(), "iOS");
+    }
+
+    #[test]
+    fn test_different_platform_names() {
+        let android = MobilePlatform::new("Android");
+        let ios = MobilePlatform::new("iOS");
+        let custom = MobilePlatform::new("CustomPlatform");
+
+        assert_eq!(android.get_platform_name(), "Android");
+        assert_eq!(ios.get_platform_name(), "iOS");
+        assert_eq!(custom.get_platform_name(), "CustomPlatform");
+    }
+}

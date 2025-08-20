@@ -18,7 +18,7 @@ pub mod mobile;
 pub mod storage;
 
 // Re-exports publics
-pub use storage::{ProfileHandle, ProfileId, SecureStorage};
+pub use storage::{ProfileHandle, ProfileId, SecureStorage, StorageBackend, StorageError};
 
 /// Version actuelle de Miaou
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
