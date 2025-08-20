@@ -9,7 +9,7 @@ use ed25519_dalek::{
 };
 use rand_core::{OsRng, CryptoRng, RngCore};
 use zeroize::ZeroizeOnDrop;
-use crate::crypto::CryptoError;
+use crate::CryptoError;
 
 /// Clé de signature secrète (zeroized on drop, non clonable, non affichable)
 #[derive(ZeroizeOnDrop)]

@@ -8,93 +8,75 @@
 //! une plateforme de communication décentralisée. Elle implémente les primitives
 //! cryptographiques essentielles selon les principes de sécurité, performance
 //! et décentralisation du projet.
+//!
+//! ## Architecture modulaire
+//!
+//! Miaou v0.1.0 adopte une architecture modulaire avec des crates séparés :
+//! - `miaou-crypto` : Primitives cryptographiques sécurisées
+//! - `miaou-core` : Logique métier centrale et abstractions
+//! - `miaou-cli` : Interface en ligne de commande
 
-// Note: README.md inclusion disabled to avoid doctest issues with Unicode characters
 #![warn(missing_docs)]
-// Note: rustdoc::missing_doc_code_examples is unstable, disabled for now
 #![warn(rustdoc::broken_intra_doc_links)]
 
-// Modules principaux
+// Re-exports des crates modulaires
+pub use miaou_core as core;
+pub use miaou_crypto as crypto;
 
-/// Module cryptographique avec primitives sécurisées
-pub mod crypto;
-
-/// Noyau central de l'application
-pub mod core;
-
-/// Support des plateformes mobiles
-pub mod mobile;
-
-// Re-exports publics pour API simplifiée
-pub use crypto::{
-    Blake3Engine, HashingEngine,
+// Re-exports pour compatibilité API
+pub use miaou_core::{
+    version_info, initialize, VERSION, VERSION_NAME, DEVELOPMENT_PHASE,
+    PlatformInterface,
+    storage::{SecureStorage, ProfileId, ProfileHandle},
 };
 
-/// Version actuelle de Miaou
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-/// Nom de la version actuelle
-pub const VERSION_NAME: &str = "Première Griffe";
-
-/// Phase de développement actuelle
-pub const DEVELOPMENT_PHASE: u8 = 1;
-
-/// Interface commune pour toutes les plateformes
-pub trait PlatformInterface {
-    /// Initialise la plateforme
-    fn initialize(&mut self) -> Result<(), String>;
-    
-    /// Retourne le nom de la plateforme
-    fn get_platform_name(&self) -> &'static str;
-    
-    /// Retourne la version supportée
-    fn get_supported_version(&self) -> &'static str {
-        VERSION
-    }
-}
-
-/// Informations sur la version et compilation
-pub fn version_info() -> String {
-    format!(
-        "Miaou v{} \"{}\" (Phase {})",
-        VERSION,
-        VERSION_NAME,
-        DEVELOPMENT_PHASE
-    )
-}
-
-/// Fonction principale d'initialisation de Miaou
-pub fn initialize() -> Result<(), String> {
-    // Vérification des dépendances cryptographiques
-    crypto::test_crypto_availability()?;
-    Ok(())
-}
+pub use miaou_crypto::{
+    CryptoError, CryptoResult, CryptoProvider, DefaultCryptoProvider,
+    aead::{AeadKeyRef, SealedData, encrypt_auto_nonce, decrypt},
+    hash::{blake3_32, Blake3Engine, HashingEngine},
+    kdf::{Argon2Config, hash_password, verify_password},
+    sign::{Keypair, SigningKeyRef, VerifyingKeyRef, Signature},
+    constants,
+};
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_version_info() {
+    fn test_modular_architecture() {
+        // Test que les re-exports fonctionnent
         let info = version_info();
         assert!(info.contains("Miaou"));
-        assert!(info.contains("Première Griffe"));
-        assert!(info.contains("Phase 1"));
-    }
-
-    #[test]
-    fn test_initialize() {
+        
+        // Test crypto
+        assert!(crypto::test_crypto_availability().is_ok());
+        
+        // Test core
         assert!(initialize().is_ok());
     }
-
+    
     #[test]
-    fn test_constants() {
-        assert_eq!(VERSION_NAME, "Première Griffe");
-        assert_eq!(DEVELOPMENT_PHASE, 1);
-        // Allow clippy warning for const string check
-        #[allow(clippy::const_is_empty)]
-        {
-            assert!(!VERSION.is_empty());
-        }
+    fn test_crypto_re_exports() {
+        // Test AEAD
+        let key = AeadKeyRef::from_bytes([42u8; 32]);
+        let plaintext = b"test";
+        let aad = b"test_aad";
+        let mut rng = rand_core::OsRng;
+        
+        let encrypted = encrypt_auto_nonce(&key, aad, plaintext, &mut rng).unwrap();
+        let decrypted = decrypt(&key, aad, &encrypted).unwrap();
+        assert_eq!(&decrypted, plaintext);
+        
+        // Test signatures
+        let keypair = Keypair::generate();
+        let message = b"test message";
+        let signature = keypair.sign(message);
+        assert!(keypair.verify(message, &signature).is_ok());
+        
+        // Test hachage
+        let hash1 = blake3_32(b"test");
+        let hash2 = blake3_32(b"test");
+        assert_eq!(hash1, hash2);
     }
 }

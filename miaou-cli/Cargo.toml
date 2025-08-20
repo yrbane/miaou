@@ -1,0 +1,42 @@
+[package]
+name = "miaou-cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["yrbane <yrbane@nethttp.net>"]
+description = "Command-line interface for Miaou decentralized communication platform"
+repository = "https://github.com/yrbane/miaou"
+license = "MIT OR Apache-2.0"
+keywords = ["cli", "p2p", "communication", "decentralized"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "miaou-cli"
+path = "src/main.rs"
+
+[dependencies]
+# Core Miaou dependencies
+miaou-core = { path = "../miaou-core" }
+miaou-crypto = { path = "../miaou-crypto" }
+
+# CLI framework
+clap = { version = "4.5", features = ["derive"] }
+rpassword = "7.3"
+anyhow = "1.0"
+
+# Utilities
+home = "0.5"
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4"
+
+# Security
+secrecy = "0.8"
+
+# Random number generation
+rand_core = { version = "0.6", features = ["getrandom"] }
+
+[features]
+default = ["desktop"]
+desktop = []
+mobile = []
