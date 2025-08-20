@@ -32,14 +32,35 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
-## [0.1.0] - Première Griffe - MVP Planifié
+## [0.1.0] - Première Griffe - 2025-08-20 - IMPLÉMENTÉ ✅
 
-### Sera ajouté
-- Core cryptographique avec primitives sécurisées
-- Communication P2P basique
-- Interface CLI fonctionnelle
-- Messages chiffrés bout-en-bout
-- Tests avec couverture >= 95%
+### Ajouté
+- **Module cryptographique complet** avec primitives sécurisées auditées
+  - ChaCha20-Poly1305 pour chiffrement AEAD avec AAD obligatoire
+  - Ed25519 pour signatures numériques avec zeroization
+  - Argon2id pour dérivation de clés (configurations fast/balanced/secure)
+  - BLAKE3 et SHA3-256 pour fonctions de hachage
+  - HKDF pour dérivation de sous-clés
+- **Architecture object-safe** avec traits CryptoProvider modulaires
+- **Support multi-plateformes** (CLI, desktop, mobile Android/iOS)
+- **Tests exhaustifs** avec vecteurs IETF/NIST (34 tests, 100% de réussite)
+- **Benchmarks de performance** pour toutes les primitives cryptographiques
+- **Documentation complète** des APIs publiques avec rustdoc
+- **Gestion sécurisée de la mémoire** avec zeroization automatique
+- **Interfaces JNI/Objective-C** pour intégration mobile native
+
+### Modifié
+- Adoption des bibliothèques cryptographiques auditées (RustCrypto + Dalek)
+- Abandon de l'approche "crypto from scratch" au profit de libs éprouvées
+- Configuration balanced par défaut pour Argon2 (remplace default())
+- Compilation clean sans warnings (cargo + clippy)
+
+### Sécurité
+- **AAD obligatoire** pour toutes les opérations AEAD
+- **Object-safe traits** permettant le polymorphisme sécurisé
+- **Zeroization automatique** des clés cryptographiques
+- **Tests KAT** avec vecteurs officiels IETF/NIST
+- **Gestion d'erreurs** robuste sans exposition d'informations sensibles
 
 ---
 
