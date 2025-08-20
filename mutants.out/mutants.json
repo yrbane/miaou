@@ -1,0 +1,32 @@
+[
+  {
+    "package": "miaou",
+    "file": "src/main.rs",
+    "function": {
+      "function_name": "main",
+      "return_type": "",
+      "span": {
+        "start": {
+          "line": 4,
+          "column": 1
+        },
+        "end": {
+          "line": 16,
+          "column": 2
+        }
+      }
+    },
+    "span": {
+      "start": {
+        "line": 5,
+        "column": 5
+      },
+      "end": {
+        "line": 15,
+        "column": 33
+      }
+    },
+    "replacement": "()",
+    "genre": "FnValue"
+  }
+]

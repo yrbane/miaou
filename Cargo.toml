@@ -105,7 +105,39 @@ long_description = "Plateforme de communication peer-to-peer sécurisée et déc
 criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.5"
 tempfile = "3.5"
+secrecy = { version = "0.8", features = ["serde"] }
 
 [[bench]]
-name = "crypto_benchmarks"
+name = "crypto_bench"
 harness = false
+
+# Support multi-plateforme optimisé
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+android_logger = "0.13"
+
+[target.'cfg(target_os = "ios")'.dependencies] 
+objc = "0.2"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+web-sys = "0.3"
+js-sys = "0.3"
+
+# Optimisations de compilation par target
+[profile.release]
+opt-level = 3
+lto = "thin" 
+panic = "abort"
+codegen-units = 1
+strip = true
+
+[profile.release-mobile]
+inherits = "release"
+opt-level = "z"  # Optimisation taille pour mobile
+panic = "abort"
+
+[profile.release-wasm]
+inherits = "release" 
+opt-level = "s"  # Optimisation taille pour WASM
+panic = "abort"

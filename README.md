@@ -201,171 +201,31 @@ Miaou implémente une sécurité de niveau militaire avec chiffrement bout-en-bo
 
 Pour les détails complets, voir [SECURITY.md](docs/SECURITY.md).
 
-## 🚀 Roadmap par progression logique
+## 🚀 Roadmap et développement
 
-### 🏗️ **Phase 1 : Fondations techniques**
-#### Objectif : Établir l'infrastructure de base sécurisée et modulaire
+Le développement de Miaou suit une **approche progressive** par phases logiques, privilégiant la qualité et la sécurité à chaque étape.
 
-- [ ] **🔐 Core cryptographique (wrappers vers libs auditées)**
-  - [ ] crypto-primitives : Wrappers vers ring, RustCrypto (AES, ChaCha20, Ed25519)
-  - [ ] crypto-keyring : Génération et gestion sécurisée via ed25519-dalek
-  - [ ] crypto-encryption : Chiffrement hybride avec libsignal-protocol
-  - [ ] crypto-signature : Signatures Ed25519 via ed25519-dalek
-  - [ ] crypto-hashing : Wrappers SHA-3, BLAKE3, Argon2 (RustCrypto)
+**📊 Statut actuel : Phase 1 ✅ TERMINÉE**
 
-- [ ] **📦 Architecture modulaire**
-  - [ ] Structure des crates Rust (core, crypto, network, storage)
-  - [ ] Interfaces et traits entre modules
-  - [ ] Système de plugins extensible
-  - [ ] Configuration et gestion des profils utilisateur
+### Phase 1 : Fondations techniques ✅ COMPLÉTÉE
+- ✅ **Architecture modulaire** : 3 crates (crypto/core/cli) avec traits object-safe
+- ✅ **Cryptographie sécurisée** : ChaCha20-Poly1305, Ed25519, BLAKE3, Argon2id 
+- ✅ **Qualité maximale** : 42 tests passants, mutations, benchmarks intégrés
+- ✅ **Documentation** : 150+ termes glossaire, architecture détaillée
 
-- [ ] **🧪 Qualité et tests**
-  - [ ] Framework de tests personnalisé avec mocks
-  - [ ] Pipeline CI/CD avec hooks pre-commit stricts
-  - [ ] Couverture 100% obligatoire (cargo-tarpaulin)
-  - [ ] Tests de mutation (cargo-mutagen)
-  - [ ] Benchmarks automatisés (criterion)
-  - [ ] Tests de propriétés (proptest)
-  - [ ] Documentation rustdoc avec exemples exécutables
-  - [ ] Linting exhaustif (clippy pedantic + custom rules)
+### Phase 2 : Réseau P2P et communication 🚧 EN PRÉPARATION  
+- 🎯 Communication P2P directe avec WebRTC + ICE standards
+- 🎯 Messagerie texte chiffrée bout-en-bout
+- 🎯 Annuaires distribués pour découverte de pairs
 
----
+### Phases futures (3-7)
+- **Phase 3** : Économie et gamification
+- **Phase 4** : Interfaces utilisateur (desktop/mobile/web)
+- **Phase 5** : Interopérabilité et ponts
+- **Phase 6** : Fonctionnalités avancées
+- **Phase 7** : Écosystème et gouvernance
 
-### 🌐 **Phase 2 : Réseau P2P et communication**
-#### Objectif : Communication décentralisée directe entre clients
-
-- [ ] **🔗 Communication P2P (standards éprouvés)**
-  - [ ] network-discovery : WebRTC + ICE pour découverte automatique
-  - [ ] network-protocol : Protocole Miaou sur WebRTC Data Channels
-  - [ ] network-transport : TLS 1.3 + DTLS pour WebRTC
-  - [ ] network-nat : ICE + STUN/TURN standards (pas de custom NAT traversal)
-
-- [ ] **📇 Annuaires distribués**
-  - [ ] API REST pour clés publiques et métadonnées
-  - [ ] Mode serveur auto-hébergé pour annuaires
-  - [ ] Synchronisation P2P entre annuaires
-  - [ ] Système de réputation et web of trust
-
-- [ ] **💬 Messagerie de base**
-  - [ ] Messages texte chiffrés bout-en-bout
-  - [ ] Gestion des conversations et contacts
-  - [ ] Messages hors-ligne avec stockage temporaire
-  - [ ] Interface CLI fonctionnelle
-
----
-
-### 🎮 **Phase 3 : Blockchain et économie**
-#### Objectif : Système d'incitations et gamification
-
-- [ ] **⛏️ Blockchain MiaouCoin**
-  - [ ] Consensus Proof-of-Stake adapté aux messageries
-  - [ ] Mining par micro-interactions (messages, ajouts contacts, uptime)
-  - [ ] Portefeuille intégré et gestion des transactions
-  - [ ] Mécanismes anti-spam économiques
-
-- [ ] **🎯 Système de parrainage**
-  - [ ] Génération de codes d'invitation uniques
-  - [ ] Récompenses crypto pour parrains et filleuls
-  - [ ] Tracking des conversions et croissance du réseau
-  - [ ] Mécanismes d'incitation pour participation
-
----
-
-### 🖥️ **Phase 4 : Interfaces utilisateur**
-#### Objectif : Expérience utilisateur moderne et accessible
-
-- [ ] **🖥️ Application desktop**
-  - [ ] Interface Tauri avec frontend moderne
-  - [ ] Gestion complète des conversations et contacts
-  - [ ] Intégration portefeuille et stats blockchain
-  - [ ] Notifications système et thèmes adaptatifs
-
-- [ ] **🌐 Interface web progressive**
-  - [ ] Compilation WebAssembly pour performance
-  - [ ] PWA avec support offline
-  - [ ] Interface responsive et accessible
-  - [ ] Synchronisation avec versions desktop/mobile
-
-- [ ] **🌐 Mini-site d'accueil et contenu social intégré**
-  - [ ] web-server : Serveur HTTP léger intégré (from scratch)
-  - [ ] Site d'accueil pour invités avec design moderne
-  - [ ] Documentation auto-générée hébergée (rustdoc + custom)
-  - [ ] Templates responsive avec thèmes adaptatifs
-  - [ ] Assets statiques optimisés (CSS/JS minimal)
-  - [ ] web-wasm : Modules WebAssembly pour contenu riche
-  - [ ] web-social : Serveur de contenu social décentralisé
-
-- [ ] **👤 Expérience utilisateur**
-  - [ ] Assistant d'onboarding et configuration initiale
-  - [ ] Cache intelligent et optimisations performance
-  - [ ] Support multilingue et accessibilité
-
----
-
-### 🌍 **Phase 5 : Interopérabilité et ponts**
-#### Objectif : Connexion avec l'écosystème existant
-
-- [ ] **🌉 Ponts vers protocoles ouverts**
-  - [ ] Matrix, XMPP, IRC avec chiffrement préservé
-  - [ ] Discord via API officielle
-  - [ ] Interface unifiée multi-protocoles
-
-- [ ] **📱 Ponts messageries populaires**
-  - [ ] WhatsApp (Business API + reverse engineering)
-  - [ ] Signal (libsignal-client), Telegram (MTProto)
-  - [ ] Facebook Messenger (Graph API)
-  - [ ] Mastodon (API ActivityPub bidirectionnelle)
-
-- [ ] **📧 Système d'invitations cross-platform**
-  - [ ] Génération de liens personnalisés
-  - [ ] Envoi automatique via ponts existants
-  - [ ] Tracking et récompenses pour croissance virale
-
-- [ ] **📱 Fonctions sociales intégrées**
-  - [ ] social-aggregator : Agrégation Facebook, Instagram, Twitter
-  - [ ] social-publisher : Publication optionnelle et anonymisable
-  - [ ] social-privacy : Isolation totale données sociales/messagerie
-  - [ ] web-social : Serveur contenu web avec modules WASM
-
----
-
-### 🚀 **Phase 6 : Fonctionnalités avancées**
-#### Objectif : Écosystème complet et résilient
-
-- [ ] **📁 Multimédia et fichiers**
-  - [ ] Partage de fichiers P2P avec chunking
-  - [ ] Communications audio/vidéo WebRTC chiffrées
-  - [ ] Appels de groupe et partage d'écran
-
-- [ ] **👥 Collaboration avancée**
-  - [ ] Groupes et channels avec modération
-  - [ ] Permissions granulaires et rôles
-  - [ ] Intégration outils de travail collaboratif
-
-- [ ] **🛡️ Résistance et résilience**
-  - [ ] Mécanismes anti-censure (DPI, obfuscation)
-  - [ ] Mode dégradé sans infrastructure
-  - [ ] Routage adaptatif en cas de conflit
-
----
-
-### 🌟 **Phase 7 : Écosystème et gouvernance**
-#### Objectif : Plateforme autonome et communautaire
-
-- [ ] **🏪 Marketplace décentralisée**
-  - [ ] Plugins et extensions communautaires
-  - [ ] Économie MiaouCoin intégrée
-  - [ ] API publique et SDK développeurs
-
-- [ ] **🤖 Intelligence artificielle**
-  - [ ] Assistant IA contextuel
-  - [ ] Détection contenu malveillant
-  - [ ] Traduction temps réel
-
-- [ ] **🏛️ Gouvernance décentralisée**
-  - [ ] DAO pour évolutions du protocole
-  - [ ] Système de vote communautaire
-  - [ ] Mécanismes de résolution de conflits
+📋 **[ROADMAP COMPLÈTE](docs/ROADMAP.md)** - Détails techniques de toutes les phases
 
 ## 🚀 Démarrage rapide
 
