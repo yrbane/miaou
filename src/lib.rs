@@ -25,18 +25,18 @@ pub use miaou_crypto as crypto;
 
 // Re-exports pour compatibilité API
 pub use miaou_core::{
-    version_info, initialize, VERSION, VERSION_NAME, DEVELOPMENT_PHASE,
-    PlatformInterface,
-    storage::{SecureStorage, ProfileId, ProfileHandle},
+    initialize,
+    storage::{ProfileHandle, ProfileId, SecureStorage},
+    version_info, PlatformInterface, DEVELOPMENT_PHASE, VERSION, VERSION_NAME,
 };
 
 pub use miaou_crypto::{
-    CryptoError, CryptoResult, CryptoProvider, DefaultCryptoProvider,
-    aead::{AeadKeyRef, SealedData, encrypt_auto_nonce, decrypt},
-    hash::{blake3_32, Blake3Engine, HashingEngine},
-    kdf::{Argon2Config, hash_password, verify_password},
-    sign::{Keypair, SigningKeyRef, VerifyingKeyRef, Signature},
+    aead::{decrypt, encrypt_auto_nonce, AeadKeyRef, SealedData},
     constants,
+    hash::{blake3_32, Blake3Engine, HashingEngine},
+    kdf::{hash_password, verify_password, Argon2Config},
+    sign::{Keypair, Signature, SigningKeyRef, VerifyingKeyRef},
+    CryptoError, CryptoProvider, CryptoResult, DefaultCryptoProvider,
 };
 
 #[cfg(test)]
@@ -48,14 +48,14 @@ mod tests {
         // Test que les re-exports fonctionnent
         let info = version_info();
         assert!(info.contains("Miaou"));
-        
+
         // Test crypto
         assert!(crypto::test_crypto_availability().is_ok());
-        
+
         // Test core
         assert!(initialize().is_ok());
     }
-    
+
     #[test]
     fn test_crypto_re_exports() {
         // Test AEAD
@@ -63,17 +63,17 @@ mod tests {
         let plaintext = b"test";
         let aad = b"test_aad";
         let mut rng = rand_core::OsRng;
-        
+
         let encrypted = encrypt_auto_nonce(&key, aad, plaintext, &mut rng).unwrap();
         let decrypted = decrypt(&key, aad, &encrypted).unwrap();
         assert_eq!(&decrypted, plaintext);
-        
+
         // Test signatures
         let keypair = Keypair::generate();
         let message = b"test message";
         let signature = keypair.sign(message);
         assert!(keypair.verify(message, &signature).is_ok());
-        
+
         // Test hachage
         let hash1 = blake3_32(b"test");
         let hash2 = blake3_32(b"test");

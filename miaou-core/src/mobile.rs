@@ -36,17 +36,18 @@ impl PlatformInterface for MobilePlatform {
 // Interface Android via JNI
 #[cfg(target_os = "android")]
 pub mod android {
-    use jni::JNIEnv;
+    use super::*;
     use jni::objects::{JClass, JString};
     use jni::sys::jstring;
-    use super::*;
+    use jni::JNIEnv;
 
     #[no_mangle]
     pub extern "system" fn Java_net_nethttp_miaou_MiaouLib_hello(
         env: JNIEnv,
         _class: JClass,
     ) -> jstring {
-        let output = env.new_string("Miaou Android")
+        let output = env
+            .new_string("Miaou Android")
             .expect("Impossible de créer une string Java");
         output.into_inner()
     }
@@ -64,9 +65,9 @@ pub mod android {
 // Interface iOS via Objective-C
 #[cfg(target_os = "ios")]
 pub mod ios {
+    use super::*;
     use std::ffi::{CStr, CString};
     use std::os::raw::c_char;
-    use super::*;
 
     #[no_mangle]
     pub extern "C" fn miaou_hello() -> *const c_char {

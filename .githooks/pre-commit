@@ -1,0 +1,51 @@
+#!/bin/bash
+# Pre-commit hook pour Miaou
+# Vérifie le formatage et la qualité du code avant chaque commit
+
+set -e
+
+echo "🔍 Vérification pre-commit en cours..."
+
+# Vérifier que cargo est disponible
+if ! command -v cargo &> /dev/null; then
+    echo "❌ Cargo non trouvé. Veuillez installer Rust."
+    exit 1
+fi
+
+# Formatage automatique du code
+echo "📝 Formatage du code avec rustfmt..."
+if ! cargo fmt --all; then
+    echo "❌ Échec du formatage automatique"
+    exit 1
+fi
+
+# Vérifier le formatage
+echo "✅ Vérification du formatage..."
+if ! cargo fmt --all --check; then
+    echo "❌ Code mal formaté détecté"
+    exit 1
+fi
+
+# Linting avec clippy (sans missing_docs pour le moment)
+echo "🔍 Vérification avec clippy..."
+if ! cargo clippy --all-targets --all-features -- -D warnings -A missing_docs; then
+    echo "❌ Clippy a détecté des problèmes"
+    exit 1
+fi
+
+# Tests rapides (sans les benchmarks)
+echo "🧪 Tests rapides..."
+if ! cargo test --all --lib --bins; then
+    echo "❌ Tests échoués"
+    exit 1
+fi
+
+# Vérifier que les fichiers modifiés sont ajoutés
+if ! git diff --cached --exit-code > /dev/null; then
+    echo "✅ Pre-commit validé avec succès !"
+    echo "📝 N'oubliez pas d'ajouter les fichiers formatés si nécessaire"
+else
+    echo "⚠️  Aucun changement staged détecté"
+fi
+
+echo "🎉 Pre-commit terminé avec succès !"

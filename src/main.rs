@@ -4,13 +4,13 @@
 fn main() {
     println!("Miaou v{}", env!("CARGO_PKG_VERSION"));
     println!("Communication décentralisée");
-    
+
     #[cfg(target_os = "android")]
     println!("Support Android activé");
-    
+
     #[cfg(target_os = "ios")]
     println!("Support iOS activé");
-    
+
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     println!("Version desktop");
 }

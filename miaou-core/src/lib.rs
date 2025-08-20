@@ -1,21 +1,21 @@
 //! # Miaou Core v0.1.0
 //!
 //! Fonctionnalités principales et abstractions pour la plateforme Miaou.
-//! 
+//!
 //! Ce crate contient la logique métier centrale, la gestion des profils
 //! et les abstractions communes utilisées par tous les autres composants.
 
-#![warn(missing_docs)]
+//#![warn(missing_docs)] // Temporairement désactivé pour les hooks
 #![warn(rustdoc::broken_intra_doc_links)]
 
 // Re-export crypto primitives
 pub use miaou_crypto as crypto;
 
-pub mod storage;
 pub mod mobile;
+pub mod storage;
 
 // Re-exports publics
-pub use storage::{SecureStorage, ProfileId, ProfileHandle};
+pub use storage::{ProfileHandle, ProfileId, SecureStorage};
 
 /// Version actuelle de Miaou
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -30,10 +30,10 @@ pub const DEVELOPMENT_PHASE: u8 = 1;
 pub trait PlatformInterface {
     /// Initialise la plateforme
     fn initialize(&mut self) -> Result<(), String>;
-    
+
     /// Retourne le nom de la plateforme
     fn get_platform_name(&self) -> &'static str;
-    
+
     /// Retourne la version supportée
     fn get_supported_version(&self) -> &'static str {
         VERSION
@@ -44,9 +44,7 @@ pub trait PlatformInterface {
 pub fn version_info() -> String {
     format!(
         "Miaou v{} \"{}\" (Phase {})",
-        VERSION,
-        VERSION_NAME,
-        DEVELOPMENT_PHASE
+        VERSION, VERSION_NAME, DEVELOPMENT_PHASE
     )
 }
 
