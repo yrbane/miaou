@@ -18,6 +18,29 @@ name = "miaou-cli"
 path = "src/bin/cli.rs"
 
 [dependencies]
+# Cryptographie auditée (versions stables)
+ring = "0.16"
+ed25519-dalek = { version = "1.0", features = ["rand"] }
+chacha20poly1305 = "0.8"
+blake3 = "1.0"
+argon2 = "0.4"
+
+# Utilitaires cryptographiques
+rand = "0.8"
+rand_core = { version = "0.6", features = ["std"] }
+zeroize = { version = "1.5", features = ["zeroize_derive"] }
+
+# Sérialisation sécurisée
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3"
+
+# Gestion d'erreurs
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Sécurité additionnelle
+subtle = "2.4"
+rand_chacha = "0.3"
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21"
@@ -46,3 +69,13 @@ copyright = "Copyright (c) yrbane 2024"
 category = "social-networking"
 short_description = "Communication décentralisée"
 long_description = "Plateforme de communication peer-to-peer sécurisée et décentralisée"
+
+# Tests et dev
+[dev-dependencies]
+criterion = { version = "0.5.1", features = ["html_reports"] }
+proptest = "1.4.0"
+hex = "0.4.3"
+
+[[bench]]
+name = "crypto_benchmarks"
+harness = false
