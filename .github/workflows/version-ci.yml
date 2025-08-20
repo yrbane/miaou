@@ -3,6 +3,7 @@ name: 🔍 Validation par Version
 on:
   push:
     branches: 
+      - main        # Branche principale
       - 'v*.*.*-*'  # Branches de version (ex: v0.1.0-premiere-griffe)
       - 'feature/*'
       - 'fix/*'
