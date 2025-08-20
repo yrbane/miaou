@@ -1,5 +1,12 @@
-// CLI interactif pour Miaou v0.1.0 avec stockage sécurisé
-// Interface de ligne de commande avec gestion des profils et tests crypto
+//! # Miaou CLI v0.1.0
+//!
+//! Interface de ligne de commande interactive pour Miaou.
+//!
+//! Fournit une CLI complète pour la gestion des profils, tests cryptographiques,
+//! et toutes les fonctionnalités de base de Miaou.
+
+#![warn(missing_docs)]
+#![warn(rustdoc::broken_intra_doc_links)]
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};

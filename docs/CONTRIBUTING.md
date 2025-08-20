@@ -25,6 +25,7 @@
 - **🧪 Tests KAT crypto** : Vecteurs officiels pour primitives cryptographiques
 - **🚫 Zéro commit** si tests critiques échouent
 - **📝 Commentaires exhaustifs** en français
+- **📚 Documentation stricte obligatoire** : `#![warn(missing_docs)]` dans TOUS les crates
 - **🔐 Sécurité by design** : Validation et sanitization systématiques
 
 ### **🧩 Architecture modulaire**
@@ -106,7 +107,7 @@ cargo test
 - [ ] **Couverture >= 95%** : `cargo tarpaulin --verbose`
 - [ ] **Linting clean** : `cargo clippy -- -D warnings`
 - [ ] **Format Rust** : `cargo fmt`
-- [ ] **Documentation** : `cargo doc --no-deps`
+- [ ] **Documentation stricte** : `cargo doc --no-deps` + pas d'avertissements missing_docs
 - [ ] **Commentaires en français** pour la logique métier
 - [ ] **Pas de `println!` ou `dbg!`** dans le code final
 
@@ -168,8 +169,19 @@ pub fn decrypt_message(ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
 }
 ```
 
-### **📝 Documentation obligatoire**
+### **📝 Documentation stricte obligatoire**
+
+**🚫 RÈGLES NON NÉGOCIABLES :**
+- **TOUS les crates** doivent avoir `#![warn(missing_docs)]` en début de `lib.rs` ou `main.rs`
+- **TOUS les items publics** doivent être documentés (modules, fonctions, structs, enums, champs)
+- **TOUS les paramètres** et valeurs de retour doivent être expliqués
+- **TOUS les types d'erreur** possibles doivent être documentés
+
 ```rust
+//! Documentation du crate obligatoire
+#![warn(missing_docs)]
+#![warn(rustdoc::broken_intra_doc_links)]
+
 /// Chiffre un message avec l'algorithme ChaCha20-Poly1305.
 /// 
 /// Cette fonction implémente le chiffrement authentifié AEAD en utilisant
@@ -200,6 +212,14 @@ pub fn encrypt_message(
     associated_data: &[u8]
 ) -> Result<EncryptedMessage, CryptoError> {
     // Implémentation...
+}
+
+/// Structure représentant un profil utilisateur
+pub struct ProfileInfo {
+    /// Nom du profil choisi par l'utilisateur
+    pub name: String,
+    /// Identifiant unique généré automatiquement
+    pub id: ProfileId,
 }
 ```
 
