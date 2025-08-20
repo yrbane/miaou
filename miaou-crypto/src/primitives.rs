@@ -255,7 +255,7 @@ pub struct SecureIdGenerator {
 
 impl SecureIdGenerator {
     /// Crée un nouveau générateur avec un ID de nœud aléatoire
-    /// 
+    ///
     /// # Errors
     /// Cette fonction ne peut actuellement pas échouer avec `OsRng`, mais retourne
     /// un `Result` pour cohérence avec l'API et extensibilité future.
@@ -268,7 +268,7 @@ impl SecureIdGenerator {
     }
 
     /// Génère un ID unique de 16 bytes
-    /// 
+    ///
     /// # Panics
     /// Peut paniquer si l'horloge système est défaillante (très rare).
     #[must_use]
