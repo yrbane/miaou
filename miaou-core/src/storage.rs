@@ -55,6 +55,9 @@ pub struct SecureStorage {
 
 impl SecureStorage {
     /// Crée une nouvelle instance de stockage
+    ///
+    /// # Errors
+    /// Échec si les répertoires ne peuvent pas être créés ou accédés.
     pub fn new<P: AsRef<Path>>(storage_root: P) -> Result<Self> {
         let storage_root = storage_root.as_ref().to_path_buf();
 
@@ -67,6 +70,9 @@ impl SecureStorage {
     }
 
     /// Crée un nouveau profil utilisateur
+    ///
+    /// # Errors
+    /// Échec si le profil existe déjà ou si les opérations cryptographiques échouent.
     pub fn create_profile(&self, name: &str, password: &SecretString) -> Result<ProfileId> {
         let profile_id = ProfileId::new(name);
         let profile_path = self.get_profile_path(&profile_id);
@@ -135,6 +141,9 @@ impl SecureStorage {
     }
 
     /// Charge un profil utilisateur avec authentification
+    ///
+    /// # Errors
+    /// Échec si le profil n'existe pas, si le mot de passe est incorrect, ou si les données sont corrompues.
     pub fn load_profile(
         &self,
         profile_id: &ProfileId,
@@ -199,6 +208,9 @@ impl SecureStorage {
     }
 
     /// Liste tous les profils disponibles
+    ///
+    /// # Errors
+    /// Échec si le répertoire de profils ne peut pas être lu.
     pub fn list_profiles(&self) -> Result<Vec<ProfileInfo>> {
         let profiles_dir = self.storage_root.join("profiles");
         let mut profiles = Vec::new();
@@ -233,6 +245,9 @@ impl SecureStorage {
     }
 
     /// Supprime un profil
+    ///
+    /// # Errors
+    /// Échec si le profil n'existe pas ou si la suppression échoue.
     pub fn delete_profile(&self, profile_id: &ProfileId) -> Result<()> {
         let profile_path = self.get_profile_path(profile_id);
 
@@ -281,6 +296,7 @@ pub struct ProfileId {
 
 impl ProfileId {
     /// Crée un nouvel identifiant de profil
+    #[must_use]
     pub fn new(name: &str) -> Self {
         let hash = hex::encode(blake3_32(name.as_bytes()));
         Self {
@@ -290,6 +306,7 @@ impl ProfileId {
     }
 
     /// Retourne un nom de fichier sécurisé pour ce profil
+    #[must_use]
     pub fn safe_name(&self) -> String {
         format!("{}_{}", sanitize_filename(&self.name), &self.hash[..8])
     }
@@ -342,7 +359,7 @@ pub struct AuthenticationData {
     pub password_hash: String,
     /// Sel utilisé pour la dérivation de clé
     pub salt: String,
-    /// Configuration Argon2 utilisée (balanced, secure, fast_insecure)
+    /// Configuration Argon2 utilisée (balanced, secure, `fast_insecure`)
     pub config_type: String,
 }
 

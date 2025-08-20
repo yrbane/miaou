@@ -56,7 +56,8 @@ impl Default for Argon2Config {
 
 impl Argon2Config {
     /// Configuration rapide pour tests (INSÉCURISÉ pour la production)
-    pub fn fast_insecure() -> Self {
+    #[must_use]
+    pub const fn fast_insecure() -> Self {
         Self {
             memory_cost: 1024, // 1 MiB
             time_cost: 1,      // 1 itération
@@ -66,11 +67,12 @@ impl Argon2Config {
     }
 
     /// Configuration sécurisée pour production
-    pub fn secure() -> Self {
+    #[must_use]
+    pub const fn secure() -> Self {
         Self {
-            memory_cost: 131072, // 128 MiB
-            time_cost: 4,        // 4 itérations
-            parallelism: 4,      // 4 threads
+            memory_cost: 131_072, // 128 MiB
+            time_cost: 4,         // 4 itérations
+            parallelism: 4,       // 4 threads
             output_length: 32,
         }
     }
@@ -78,26 +80,33 @@ impl Argon2Config {
 
 impl Blake3Output {
     /// Crée un hash à partir de bytes
-    pub fn from_bytes(bytes: [u8; 32]) -> Self {
+    #[must_use]
+    pub const fn from_bytes(bytes: [u8; 32]) -> Self {
         Self { hash: bytes }
     }
 
     /// Retourne les bytes du hash
-    pub fn as_bytes(&self) -> &[u8; 32] {
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8; 32] {
         &self.hash
     }
 
     /// Convertit en slice
-    pub fn as_slice(&self) -> &[u8] {
+    #[must_use]
+    pub const fn as_slice(&self) -> &[u8] {
         &self.hash
     }
 
     /// Encode en hexadécimal
+    #[must_use]
     pub fn to_hex(&self) -> String {
         hex::encode(self.hash)
     }
 
     /// Décode depuis hexadécimal
+    ///
+    /// # Errors
+    /// Échec si `hex_str` n'est pas une chaîne hex valide de 32 octets.
     pub fn from_hex(hex_str: &str) -> CryptoResult<Self> {
         let bytes = hex::decode(hex_str).map_err(|_| CryptoError::InvalidInput)?;
 
@@ -132,6 +141,7 @@ impl HashingEngine for Blake3Hasher {
 
 impl Blake3Hasher {
     /// Hache plusieurs éléments en une seule opération
+    #[must_use]
     pub fn hash_multiple(items: &[&[u8]]) -> Blake3Output {
         let mut hasher = blake3::Hasher::new();
         for item in items {
@@ -142,6 +152,7 @@ impl Blake3Hasher {
     }
 
     /// Hache avec une clé
+    #[must_use]
     pub fn hash_keyed(key: &[u8; 32], data: &[u8]) -> Blake3Output {
         let mut hasher = blake3::Hasher::new_keyed(key);
         hasher.update(data);
@@ -152,6 +163,9 @@ impl Blake3Hasher {
 
 impl Argon2Hasher {
     /// Dérive une clé avec Argon2 (version simplifiée)
+    ///
+    /// # Errors
+    /// Échec si la dérivation de clé échoue.
     pub fn derive_key(
         password: &[u8],
         salt: &[u8],
@@ -167,6 +181,9 @@ impl Argon2Hasher {
     }
 
     /// Hache un mot de passe avec un sel généré
+    ///
+    /// # Errors
+    /// Échec si la sérialisation Argon2 échoue.
     pub fn hash_password(password: &[u8], config: &Argon2Config) -> CryptoResult<String> {
         use rand_core::{OsRng, RngCore};
         let mut salt = [0u8; 16];
@@ -177,10 +194,13 @@ impl Argon2Hasher {
         let salt_hex = hex::encode(salt);
         let hash_hex = hex::encode(derived);
 
-        Ok(format!("blake3${}${}", salt_hex, hash_hex))
+        Ok(format!("blake3${salt_hex}${hash_hex}"))
     }
 
     /// Vérifie un mot de passe contre un hash
+    ///
+    /// # Errors
+    /// Échec si le format est invalide ou si la vérification échoue.
     pub fn verify_password(password: &[u8], hash: &str) -> CryptoResult<bool> {
         let parts: Vec<&str> = hash.split('$').collect();
         if parts.len() != 3 || parts[0] != "blake3" {
@@ -191,7 +211,8 @@ impl Argon2Hasher {
         let expected_hash = hex::decode(parts[2]).map_err(|_| CryptoError::InvalidInput)?;
 
         let config = Argon2Config {
-            output_length: expected_hash.len() as u32,
+            output_length: u32::try_from(expected_hash.len())
+                .map_err(|_| CryptoError::Truncation)?,
             ..Default::default()
         };
         let computed = Self::derive_key(password, &salt, &config)?;

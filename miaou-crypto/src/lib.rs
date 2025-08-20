@@ -24,7 +24,7 @@ pub use sign::{Keypair, Signature, SigningKeyRef, VerifyingKeyRef};
 use thiserror::Error;
 
 /// Erreurs cryptographiques principales
-#[derive(Error, Debug, Clone, PartialEq)]
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 pub enum CryptoError {
     /// Opération de chiffrement échouée
     #[error("Encryption operation failed")]
@@ -66,6 +66,10 @@ pub enum CryptoError {
     /// Erreur de hachage
     #[error("Hashing operation failed")]
     HashingFailed,
+
+    /// Erreur de troncature (cast impossible)
+    #[error("Truncation error during cast")]
+    Truncation,
 }
 
 /// Type de résultat cryptographique
@@ -98,6 +102,9 @@ pub mod constants {
 /// Interface commune pour les fournisseurs cryptographiques
 pub trait CryptoProvider: Send + Sync {
     /// Chiffre des données avec AAD obligatoire
+    ///
+    /// # Errors
+    /// Échec si l'AEAD échoue ou si les paramètres sont invalides.
     fn seal(
         &self,
         key: &AeadKeyRef,
@@ -107,13 +114,22 @@ pub trait CryptoProvider: Send + Sync {
     ) -> CryptoResult<SealedData>;
 
     /// Déchiffre des données avec AAD
+    ///
+    /// # Errors
+    /// Échec si l'authentification échoue (tag invalide) ou en cas d'erreur interne.
     fn open(&self, key: &AeadKeyRef, aad: &[u8], sealed_data: &SealedData)
         -> CryptoResult<Vec<u8>>;
 
     /// Signe un message
+    ///
+    /// # Errors
+    /// Échec si la signature ne peut pas être produite.
     fn sign(&self, signing_key: &SigningKeyRef, message: &[u8]) -> CryptoResult<Signature>;
 
     /// Vérifie une signature
+    ///
+    /// # Errors
+    /// Échec si la signature est invalide.
     fn verify(
         &self,
         verifying_key: &VerifyingKeyRef,
@@ -122,6 +138,9 @@ pub trait CryptoProvider: Send + Sync {
     ) -> CryptoResult<()>;
 
     /// Calcule un hash cryptographique
+    ///
+    /// # Errors
+    /// Échec si le calcul de hachage échoue.
     fn hash(&self, data: &[u8]) -> CryptoResult<[u8; 32]>;
 }
 
@@ -167,6 +186,9 @@ impl CryptoProvider for DefaultCryptoProvider {
 }
 
 /// Test de disponibilité des primitives cryptographiques
+///
+/// # Errors
+/// Retourne une erreur si un des autotests crypto échoue.
 pub fn test_crypto_availability() -> Result<(), String> {
     use rand_core::OsRng;
 
@@ -177,10 +199,10 @@ pub fn test_crypto_availability() -> Result<(), String> {
     let mut rng = OsRng;
 
     let encrypted = encrypt_auto_nonce(&key, aad, plaintext, &mut rng)
-        .map_err(|e| format!("AEAD test failed: {}", e))?;
+        .map_err(|e| format!("AEAD test failed: {e}"))?;
 
     let decrypted =
-        decrypt(&key, aad, &encrypted).map_err(|e| format!("AEAD decrypt test failed: {}", e))?;
+        decrypt(&key, aad, &encrypted).map_err(|e| format!("AEAD decrypt test failed: {e}"))?;
 
     if decrypted != plaintext {
         return Err("AEAD roundtrip test failed".to_string());
@@ -193,7 +215,7 @@ pub fn test_crypto_availability() -> Result<(), String> {
     let signature = keypair.sign(message);
     keypair
         .verify(message, &signature)
-        .map_err(|e| format!("Signature test failed: {}", e))?;
+        .map_err(|e| format!("Signature test failed: {e}"))?;
 
     // Test hachage
     let _hash = blake3_32(b"test data");

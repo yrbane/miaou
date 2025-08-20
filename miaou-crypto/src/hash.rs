@@ -7,11 +7,13 @@ use sha3::{Digest, Sha3_256};
 // use zeroize::{Zeroize, Zeroizing}; // Pour l'instant non utilisé
 
 /// BLAKE3 32 octets (rapide, sécurisé)
+#[must_use]
 pub fn blake3_32(input: &[u8]) -> [u8; 32] {
     *blake3::hash(input).as_bytes()
 }
 
 /// BLAKE3 avec contexte (domaine de séparation)
+#[must_use]
 pub fn blake3_with_context(input: &[u8], context: &str) -> [u8; 32] {
     let mut hasher = Blake3Hasher::new_derive_key(context);
     hasher.update(input);
@@ -19,6 +21,7 @@ pub fn blake3_with_context(input: &[u8], context: &str) -> [u8; 32] {
 }
 
 /// BLAKE3 avec clé (HMAC-like)
+#[must_use]
 pub fn blake3_keyed(key: &[u8; 32], input: &[u8]) -> [u8; 32] {
     let mut hasher = Blake3Hasher::new_keyed(key);
     hasher.update(input);
@@ -26,6 +29,7 @@ pub fn blake3_keyed(key: &[u8; 32], input: &[u8]) -> [u8; 32] {
 }
 
 /// BLAKE3 pour plusieurs éléments (ordre sensible)
+#[must_use]
 pub fn blake3_multiple(items: &[&[u8]]) -> [u8; 32] {
     let mut hasher = Blake3Hasher::new();
     for item in items {
@@ -35,6 +39,7 @@ pub fn blake3_multiple(items: &[&[u8]]) -> [u8; 32] {
 }
 
 /// SHA3-256 (compatibilité standards)
+#[must_use]
 pub fn sha3_256(input: &[u8]) -> [u8; 32] {
     let mut hasher = Sha3_256::new();
     hasher.update(input);
@@ -49,16 +54,19 @@ pub struct Blake3Output {
 
 impl Blake3Output {
     /// Crée depuis un hash BLAKE3
-    pub fn new(hash: Blake3Hash) -> Self {
+    #[must_use]
+    pub const fn new(hash: Blake3Hash) -> Self {
         Self { hash }
     }
 
     /// Hash des données
+    #[must_use]
     pub fn hash(input: &[u8]) -> Self {
         Self::new(blake3::hash(input))
     }
 
     /// Hash avec contexte
+    #[must_use]
     pub fn hash_with_context(input: &[u8], context: &str) -> Self {
         let mut hasher = Blake3Hasher::new_derive_key(context);
         hasher.update(input);
@@ -66,6 +74,7 @@ impl Blake3Output {
     }
 
     /// Hash avec clé
+    #[must_use]
     pub fn hash_keyed(key: &[u8; 32], input: &[u8]) -> Self {
         let mut hasher = Blake3Hasher::new_keyed(key);
         hasher.update(input);
@@ -73,6 +82,7 @@ impl Blake3Output {
     }
 
     /// Hash de plusieurs éléments
+    #[must_use]
     pub fn hash_multiple(items: &[&[u8]]) -> Self {
         let mut hasher = Blake3Hasher::new();
         for item in items {
@@ -82,16 +92,21 @@ impl Blake3Output {
     }
 
     /// Retourne les octets du hash
-    pub fn as_bytes(&self) -> &[u8; 32] {
+    #[must_use]
+    pub const fn as_bytes(&self) -> &[u8; 32] {
         self.hash.as_bytes()
     }
 
     /// Encode en hexadécimal
+    #[must_use]
     pub fn to_hex(&self) -> String {
         hex::encode(self.as_bytes())
     }
 
     /// Décode depuis l'hexadécimal
+    ///
+    /// # Errors
+    /// Échec si `hex_str` n'est pas une chaîne hex valide de 32 octets.
     pub fn from_hex(hex_str: &str) -> Result<Self, hex::FromHexError> {
         let bytes = hex::decode(hex_str)?;
         if bytes.len() != 32 {
@@ -161,6 +176,7 @@ impl HashingEngine for Blake3Engine {
 }
 
 /// Comparaison sécurisée (constant-time)
+#[must_use]
 pub fn secure_compare(a: &[u8], b: &[u8]) -> bool {
     use subtle::ConstantTimeEq;
     if a.len() != b.len() {

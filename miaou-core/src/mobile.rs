@@ -11,7 +11,8 @@ pub struct MobilePlatform {
 
 impl MobilePlatform {
     /// Crée une nouvelle plateforme mobile
-    pub fn new(platform_name: &'static str) -> Self {
+    #[must_use]
+    pub const fn new(platform_name: &'static str) -> Self {
         Self {
             initialized: false,
             platform_name,

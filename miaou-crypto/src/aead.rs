@@ -19,6 +19,7 @@ pub struct AeadKeyRef {
 
 impl AeadKeyRef {
     /// Construit une clé AEAD depuis 32 octets.
+    #[must_use]
     pub fn from_bytes(k: [u8; 32]) -> Self {
         Self {
             key: Key::from_slice(&k).to_owned(),
@@ -26,6 +27,7 @@ impl AeadKeyRef {
     }
 
     /// Génère une nouvelle clé AEAD aléatoire.
+    #[must_use]
     pub fn generate(rng: &mut dyn RngCore) -> Self {
         let mut key_bytes = [0u8; 32];
         rng.fill_bytes(&mut key_bytes);
@@ -35,7 +37,8 @@ impl AeadKeyRef {
     }
 
     /// Retourne une référence vers la clé interne (usage interne).
-    pub(crate) fn as_key(&self) -> &Key {
+    #[must_use]
+    pub(crate) const fn as_key(&self) -> &Key {
         &self.key
     }
 }
@@ -50,32 +53,38 @@ impl std::fmt::Debug for AeadKeyRef {
 /// Données scellées avec nonce intégré
 #[derive(Clone, Debug)]
 pub struct SealedData {
-    /// Nonce ChaCha20 (96-bit)
+    /// Nonce `ChaCha20` (96-bit)
     pub nonce: [u8; 12],
-    /// Données chiffrées avec tag Poly1305 inclus
+    /// Données chiffrées avec tag `Poly1305` inclus
     pub ciphertext: Vec<u8>,
 }
 
 impl SealedData {
-    /// Crée un nouveau SealedData
-    pub fn new(nonce: [u8; 12], ciphertext: Vec<u8>) -> Self {
+    /// Crée un nouveau `SealedData`
+    #[must_use]
+    pub const fn new(nonce: [u8; 12], ciphertext: Vec<u8>) -> Self {
         Self { nonce, ciphertext }
     }
 
     /// Retourne la taille totale (nonce + ciphertext)
-    pub fn total_size(&self) -> usize {
+    #[must_use]
+    pub const fn total_size(&self) -> usize {
         12 + self.ciphertext.len()
     }
 }
 
-/// Génère un nonce aléatoire 12 octets pour ChaCha20.
+/// Génère un nonce aléatoire 12 octets pour `ChaCha20`.
+#[must_use]
 pub fn random_nonce(rng: &mut dyn RngCore) -> [u8; 12] {
     let mut nonce = [0u8; 12];
     rng.fill_bytes(&mut nonce);
     nonce
 }
 
-/// Chiffre avec ChaCha20-Poly1305 (nonce externe).
+/// Chiffre avec `ChaCha20-Poly1305` (nonce externe).
+///
+/// # Errors
+/// Retourne une erreur si l'AEAD échoue (clé invalide, AAD non concordante, ou impl. sous-jacente en échec).
 pub fn encrypt(
     key: &AeadKeyRef,
     nonce: [u8; 12],
@@ -87,7 +96,7 @@ pub fn encrypt(
         return Err(CryptoError::EmptyAad);
     }
 
-    let aead = ChaCha20Poly1305::new(key.as_key());
+    let cipher = ChaCha20Poly1305::new(key.as_key());
     let nonce_ref = Nonce::from_slice(&nonce);
 
     let payload = Payload {
@@ -95,21 +104,24 @@ pub fn encrypt(
         aad,
     };
 
-    let ciphertext = aead
+    let ciphertext = cipher
         .encrypt(nonce_ref, payload)
         .map_err(|_| CryptoError::EncryptionFailed)?;
 
     Ok(SealedData::new(nonce, ciphertext))
 }
 
-/// Déchiffre avec ChaCha20-Poly1305.
+/// Déchiffre avec `ChaCha20-Poly1305`.
+///
+/// # Errors
+/// Retourne une erreur si l'authentification échoue (tag invalide), si le nonce est incorrect ou sur erreur interne.
 pub fn decrypt(key: &AeadKeyRef, aad: &[u8], sealed: &SealedData) -> Result<Vec<u8>, CryptoError> {
     // AAD ne doit jamais être vide
     if aad.is_empty() {
         return Err(CryptoError::EmptyAad);
     }
 
-    let aead = ChaCha20Poly1305::new(key.as_key());
+    let cipher = ChaCha20Poly1305::new(key.as_key());
     let nonce_ref = Nonce::from_slice(&sealed.nonce);
 
     let payload = Payload {
@@ -117,11 +129,15 @@ pub fn decrypt(key: &AeadKeyRef, aad: &[u8], sealed: &SealedData) -> Result<Vec<
         aad,
     };
 
-    aead.decrypt(nonce_ref, payload)
+    cipher
+        .decrypt(nonce_ref, payload)
         .map_err(|_| CryptoError::DecryptionFailed)
 }
 
 /// Chiffre avec génération automatique de nonce.
+///
+/// # Errors
+/// Retourne une erreur si le chiffrement échoue.
 pub fn encrypt_auto_nonce(
     key: &AeadKeyRef,
     aad: &[u8],

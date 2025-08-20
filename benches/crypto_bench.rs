@@ -15,12 +15,12 @@ fn bench_blake3_hashing(c: &mut Criterion) {
     let mut group = c.benchmark_group("blake3_hashing");
 
     // Test différentes tailles de données
-    for size in [1024, 4096, 16384, 65536, 262144, 1048576].iter() {
+    for size in &[1024, 4096, 16384, 65536, 262_144, 1_048_576] {
         group.throughput(Throughput::Bytes(*size as u64));
         let data = vec![0u8; *size];
 
         group.bench_with_input(BenchmarkId::new("hash", size), size, |b, &_size| {
-            b.iter(|| blake3_32(black_box(&data)))
+            b.iter(|| blake3_32(black_box(&data)));
         });
     }
     group.finish();
@@ -41,8 +41,8 @@ fn bench_ed25519_operations(c: &mut Criterion) {
         b.iter(|| {
             keypair
                 .verify(black_box(message), black_box(&signature))
-                .unwrap()
-        })
+                .unwrap();
+        });
     });
 
     group.finish();
@@ -56,17 +56,17 @@ fn bench_chacha20_poly1305(c: &mut Criterion) {
     let mut rng = OsRng;
 
     // Test différentes tailles de données
-    for size in [64, 256, 1024, 4096, 16384].iter() {
+    for size in &[64, 256, 1024, 4096, 16384] {
         group.throughput(Throughput::Bytes(*size as u64));
         let data = vec![0u8; *size];
         let encrypted = encrypt_auto_nonce(&key, aad, &data, &mut rng).unwrap();
 
         group.bench_with_input(BenchmarkId::new("encrypt", size), size, |b, &_size| {
-            b.iter(|| encrypt_auto_nonce(&key, aad, black_box(&data), &mut rng).unwrap())
+            b.iter(|| encrypt_auto_nonce(&key, aad, black_box(&data), &mut rng).unwrap());
         });
 
         group.bench_with_input(BenchmarkId::new("decrypt", size), size, |b, &_size| {
-            b.iter(|| decrypt(&key, aad, black_box(&encrypted)).unwrap())
+            b.iter(|| decrypt(&key, aad, black_box(&encrypted)).unwrap());
         });
     }
     group.finish();
@@ -79,17 +79,17 @@ fn bench_argon2_kdf(c: &mut Criterion) {
 
     group.bench_function("fast_insecure", |b| {
         let config = Argon2Config::fast_insecure();
-        b.iter(|| hash_password(black_box(&password), black_box(&config)).unwrap())
+        b.iter(|| hash_password(black_box(&password), black_box(&config)).unwrap());
     });
 
     group.bench_function("balanced", |b| {
         let config = Argon2Config::balanced();
-        b.iter(|| hash_password(black_box(&password), black_box(&config)).unwrap())
+        b.iter(|| hash_password(black_box(&password), black_box(&config)).unwrap());
     });
 
     group.bench_function("secure", |b| {
         let config = Argon2Config::secure();
-        b.iter(|| hash_password(black_box(&password), black_box(&config)).unwrap())
+        b.iter(|| hash_password(black_box(&password), black_box(&config)).unwrap());
     });
 
     group.finish();
@@ -122,7 +122,7 @@ fn bench_combined_workflow(c: &mut Criterion) {
             let _hash = blake3_32(&combined);
 
             (encrypted, signature)
-        })
+        });
     });
 
     group.finish();

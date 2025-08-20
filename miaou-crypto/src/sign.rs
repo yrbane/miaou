@@ -16,6 +16,7 @@ pub struct SigningKeyRef {
 
 impl SigningKeyRef {
     /// Crée une clé de signature depuis 32 octets.
+    #[must_use]
     pub fn from_bytes(bytes: [u8; 32]) -> Self {
         Self {
             inner: SigningKey::from_bytes(&bytes),
@@ -23,6 +24,7 @@ impl SigningKeyRef {
     }
 
     /// Génère une nouvelle clé de signature aléatoire.
+    #[must_use]
     pub fn generate<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
         Self {
             inner: SigningKey::generate(rng),
@@ -30,6 +32,7 @@ impl SigningKeyRef {
     }
 
     /// Retourne la clé publique correspondante.
+    #[must_use]
     pub fn verifying_key(&self) -> VerifyingKeyRef {
         VerifyingKeyRef {
             inner: self.inner.verifying_key(),
@@ -37,11 +40,13 @@ impl SigningKeyRef {
     }
 
     /// Retourne les octets de la clé secrète (usage keystore).
+    #[must_use]
     pub fn to_bytes(&self) -> [u8; 32] {
         self.inner.to_bytes()
     }
 
     /// Signe un message.
+    #[must_use]
     pub fn sign(&self, msg: &[u8]) -> Signature {
         Signature {
             inner: self.inner.sign(msg),
@@ -64,6 +69,9 @@ pub struct VerifyingKeyRef {
 
 impl VerifyingKeyRef {
     /// Crée une clé de vérification depuis 32 octets.
+    ///
+    /// # Errors
+    /// Échec si les octets ne représentent pas une clé publique Ed25519 valide.
     pub fn from_bytes(bytes: [u8; 32]) -> Result<Self, CryptoError> {
         VerifyingKey::from_bytes(&bytes)
             .map(|inner| Self { inner })
@@ -71,11 +79,15 @@ impl VerifyingKeyRef {
     }
 
     /// Retourne les octets de la clé publique.
+    #[must_use]
     pub fn to_bytes(&self) -> [u8; 32] {
         self.inner.to_bytes()
     }
 
     /// Vérifie une signature.
+    ///
+    /// # Errors
+    /// Échec si la signature est invalide pour le message donné.
     pub fn verify(&self, msg: &[u8], sig: &Signature) -> Result<(), CryptoError> {
         self.inner
             .verify(msg, &sig.inner)
@@ -83,11 +95,15 @@ impl VerifyingKeyRef {
     }
 
     /// Encode la clé publique en hexadécimal.
+    #[must_use]
     pub fn to_hex(&self) -> String {
         hex::encode(self.to_bytes())
     }
 
     /// Décode une clé publique depuis l'hexadécimal.
+    ///
+    /// # Errors
+    /// Échec si `hex_str` n'est pas une chaîne hexadécimale valide de 32 octets.
     pub fn from_hex(hex_str: &str) -> Result<Self, CryptoError> {
         let bytes = hex::decode(hex_str).map_err(|_| CryptoError::InvalidInput)?;
 
@@ -110,6 +126,9 @@ pub struct Signature {
 
 impl Signature {
     /// Crée une signature depuis 64 octets.
+    ///
+    /// # Errors
+    /// Échec si les octets ne représentent pas une signature Ed25519 valide.
     pub fn from_bytes(bytes: [u8; 64]) -> Result<Self, CryptoError> {
         Ok(Self {
             inner: DalekSignature::from_bytes(&bytes),
@@ -117,16 +136,21 @@ impl Signature {
     }
 
     /// Retourne les octets de la signature.
+    #[must_use]
     pub fn to_bytes(&self) -> [u8; 64] {
         self.inner.to_bytes()
     }
 
     /// Encode la signature en hexadécimal.
+    #[must_use]
     pub fn to_hex(&self) -> String {
         hex::encode(self.to_bytes())
     }
 
     /// Décode une signature depuis l'hexadécimal.
+    ///
+    /// # Errors
+    /// Échec si `hex_str` n'est pas une chaîne hexadécimale valide de 64 octets.
     pub fn from_hex(hex_str: &str) -> Result<Self, CryptoError> {
         let bytes = hex::decode(hex_str).map_err(|_| CryptoError::InvalidInput)?;
 
@@ -151,6 +175,7 @@ pub struct Keypair {
 
 impl Keypair {
     /// Génère une paire Ed25519.
+    #[must_use]
     pub fn generate() -> Self {
         let secret = SigningKeyRef {
             inner: SigningKey::generate(&mut OsRng),
@@ -160,6 +185,7 @@ impl Keypair {
     }
 
     /// Génère une paire avec un RNG spécifique.
+    #[must_use]
     pub fn generate_with_rng<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
         let secret = SigningKeyRef::generate(rng);
         let public = secret.verifying_key();
@@ -167,12 +193,16 @@ impl Keypair {
     }
 
     /// Crée une paire depuis une clé secrète.
+    #[must_use]
     pub fn from_secret_key(secret: SigningKeyRef) -> Self {
         let public = secret.verifying_key();
         Self { secret, public }
     }
 
     /// Crée une paire depuis les octets d'une clé privée.
+    ///
+    /// # Errors
+    /// Cette fonction ne peut pas échouer car `SigningKeyRef::from_bytes` est infaillible.
     pub fn from_private_bytes(bytes: [u8; 32]) -> Result<Self, CryptoError> {
         let secret = SigningKeyRef::from_bytes(bytes);
         let public = secret.verifying_key();
@@ -180,32 +210,40 @@ impl Keypair {
     }
 
     /// Signe un message.
+    #[must_use]
     pub fn sign(&self, msg: &[u8]) -> Signature {
         self.secret.sign(msg)
     }
 
     /// Vérifie une signature.
+    ///
+    /// # Errors
+    /// Échec si la signature est invalide pour le message donné.
     pub fn verify(&self, msg: &[u8], sig: &Signature) -> Result<(), CryptoError> {
         self.public.verify(msg, sig)
     }
 
     /// Retourne les octets de la clé publique.
+    #[must_use]
     pub fn public_bytes(&self) -> [u8; 32] {
         self.public.to_bytes()
     }
 
     /// Retourne les octets de la clé secrète (usage keystore).
+    #[must_use]
     pub fn secret_bytes(&self) -> [u8; 32] {
         self.secret.to_bytes()
     }
 
     /// Retourne une référence vers la clé publique.
-    pub fn public_key(&self) -> &VerifyingKeyRef {
+    #[must_use]
+    pub const fn public_key(&self) -> &VerifyingKeyRef {
         &self.public
     }
 
     /// Retourne une référence vers la clé secrète.
-    pub fn secret_key(&self) -> &SigningKeyRef {
+    #[must_use]
+    pub const fn secret_key(&self) -> &SigningKeyRef {
         &self.secret
     }
 }

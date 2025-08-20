@@ -32,6 +32,9 @@ pub const DEVELOPMENT_PHASE: u8 = 1;
 /// Interface commune pour toutes les plateformes
 pub trait PlatformInterface {
     /// Initialise la plateforme
+    ///
+    /// # Errors
+    /// Échec si l'initialisation de la plateforme échoue.
     fn initialize(&mut self) -> Result<(), String>;
 
     /// Retourne le nom de la plateforme
@@ -44,14 +47,15 @@ pub trait PlatformInterface {
 }
 
 /// Informations sur la version et compilation
+#[must_use]
 pub fn version_info() -> String {
-    format!(
-        "Miaou v{} \"{}\" (Phase {})",
-        VERSION, VERSION_NAME, DEVELOPMENT_PHASE
-    )
+    format!("Miaou v{VERSION} \"{VERSION_NAME}\" (Phase {DEVELOPMENT_PHASE})")
 }
 
 /// Fonction principale d'initialisation de Miaou
+///
+/// # Errors
+/// Échec si la vérification des dépendances cryptographiques échoue.
 pub fn initialize() -> Result<(), String> {
     // Vérification des dépendances cryptographiques
     crypto::test_crypto_availability()?;

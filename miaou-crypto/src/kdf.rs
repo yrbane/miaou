@@ -26,7 +26,8 @@ pub struct Argon2Config {
 
 impl Argon2Config {
     /// Configuration rapide (tests uniquement - non sécurisée)
-    pub fn fast_insecure() -> Self {
+    #[must_use]
+    pub const fn fast_insecure() -> Self {
         Self {
             memory_cost: 1024, // 1 MiB
             time_cost: 1,
@@ -36,7 +37,8 @@ impl Argon2Config {
     }
 
     /// Configuration par défaut (équilibrée)
-    pub fn balanced() -> Self {
+    #[must_use]
+    pub const fn balanced() -> Self {
         Self {
             memory_cost: 65536, // 64 MiB
             time_cost: 2,
@@ -46,9 +48,10 @@ impl Argon2Config {
     }
 
     /// Configuration sécurisée (haute sécurité)
-    pub fn secure() -> Self {
+    #[must_use]
+    pub const fn secure() -> Self {
         Self {
-            memory_cost: 131072, // 128 MiB
+            memory_cost: 131_072, // 128 MiB
             time_cost: 3,
             parallelism: 2,
             output_length: 32,
@@ -63,6 +66,9 @@ impl Default for Argon2Config {
 }
 
 /// Dérive une clé 32 octets à partir d'un mot de passe + sel.
+///
+/// # Errors
+/// Échec si Argon2 échoue ou si les entrées sont invalides.
 pub fn derive_key_32(
     password: &SecretString,
     salt: &SaltString,
@@ -95,6 +101,9 @@ pub fn derive_key_32(
 }
 
 /// Dérive une clé avec configuration par défaut.
+///
+/// # Errors
+/// Échec si Argon2 échoue ou si les entrées sont invalides.
 pub fn derive_key_default(
     password: &SecretString,
     salt: &SaltString,
@@ -103,6 +112,9 @@ pub fn derive_key_default(
 }
 
 /// Hash un mot de passe avec Argon2id (pour vérification).
+///
+/// # Errors
+/// Échec si la sérialisation Argon2 échoue.
 pub fn hash_password(
     password: &SecretString,
     config: &Argon2Config,
@@ -128,6 +140,9 @@ pub fn hash_password(
 }
 
 /// Vérifie un hash argon2 sérialisé.
+///
+/// # Errors
+/// Échec si le format est invalide ou si la vérification échoue.
 pub fn verify_password(
     password: &SecretString,
     serialized_hash: &str,
@@ -140,6 +155,9 @@ pub fn verify_password(
 }
 
 /// Dérive une sous-clé avec HKDF-SHA3-256.
+///
+/// # Errors
+/// Échec si la longueur demandée n'est pas supportée.
 pub fn derive_subkey_hkdf(
     master_key: &[u8],
     info: &[u8],
@@ -159,6 +177,9 @@ pub fn derive_subkey_hkdf(
 }
 
 /// Dérive une sous-clé 32 octets avec HKDF.
+///
+/// # Errors
+/// Échec si l'expansion HKDF échoue.
 pub fn derive_subkey_32(master_key: &[u8], info: &[u8]) -> Result<[u8; 32], CryptoError> {
     let derived = derive_subkey_hkdf(master_key, info, 32)?;
     let mut output = [0u8; 32];
