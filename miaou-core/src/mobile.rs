@@ -37,19 +37,19 @@ impl PlatformInterface for MobilePlatform {
 #[cfg(target_os = "android")]
 pub mod android {
     use super::*;
-    use jni::objects::{JClass, JString};
+    use jni::objects::JClass;
     use jni::sys::jstring;
     use jni::JNIEnv;
 
     #[no_mangle]
     pub extern "system" fn Java_net_nethttp_miaou_MiaouLib_hello(
-        env: JNIEnv,
+        mut env: JNIEnv,
         _class: JClass,
     ) -> jstring {
         let output = env
             .new_string("Miaou Android")
             .expect("Impossible de créer une string Java");
-        output.into_inner()
+        output.into_raw()
     }
 
     #[no_mangle]

@@ -34,6 +34,17 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 secrecy = "0.8"
 zeroize = "1.7"
 
+# Android JNI (conditionally compiled)
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+
+# Configuration spécifique WASM
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+# Pour WASM, utiliser tokio avec runtime minimal compatible
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+
 [features]
 default = ["desktop"]
 desktop = []

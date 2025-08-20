@@ -39,4 +39,12 @@ criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.5"
 tempfile = "3.5"
 
+# Configuration spécifique Android pour blake3 (pure Rust, pas d'optimisations C/ASM)
+[target.'cfg(target_os = "android")'.dependencies]
+blake3 = { version = "1", features = ["zeroize", "pure"] }
+
+# Configuration spécifique WASM pour getrandom
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+
 # Benchmarks centralisés au niveau workspace
