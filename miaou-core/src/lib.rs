@@ -5,13 +5,16 @@
 //! Ce crate contient la logique métier centrale, la gestion des profils
 //! et les abstractions communes utilisées par tous les autres composants.
 
-//#![warn(missing_docs)] // Temporairement désactivé pour les hooks
+#![warn(missing_docs)]
 #![warn(rustdoc::broken_intra_doc_links)]
 
 // Re-export crypto primitives
 pub use miaou_crypto as crypto;
 
+/// Module mobile pour les abstractions spécifiques aux plateformes mobiles
 pub mod mobile;
+
+/// Module de stockage sécurisé pour la gestion des profils utilisateur
 pub mod storage;
 
 // Re-exports publics

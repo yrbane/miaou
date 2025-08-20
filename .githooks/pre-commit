@@ -26,9 +26,9 @@ if ! cargo fmt --all --check; then
     exit 1
 fi
 
-# Linting avec clippy (sans missing_docs pour le moment)
+# Linting avec clippy
 echo "🔍 Vérification avec clippy..."
-if ! cargo clippy --all-targets --all-features -- -D warnings -A missing_docs; then
+if ! cargo clippy --all-targets --all-features -- -D warnings; then
     echo "❌ Clippy a détecté des problèmes"
     exit 1
 fi

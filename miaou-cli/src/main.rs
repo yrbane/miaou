@@ -93,7 +93,7 @@ enum ProfileAction {
 
 struct MiaouCli {
     data_dir: PathBuf,
-    verbose: bool,
+    _verbose: bool, // Prévu pour les logs verbeux futurs
     storage: SecureStorage,
 }
 
@@ -109,7 +109,7 @@ impl MiaouCli {
 
         Ok(Self {
             data_dir,
-            verbose,
+            _verbose: verbose,
             storage,
         })
     }

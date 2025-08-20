@@ -18,24 +18,31 @@ use std::path::{Path, PathBuf};
 /// Erreurs de stockage
 #[derive(Debug, thiserror::Error)]
 pub enum StorageError {
+    /// Erreur d'entrée/sortie système
     #[error("Erreur d'E/S: {0}")]
     Io(#[from] std::io::Error),
 
+    /// Erreur de sérialisation JSON
     #[error("Erreur de sérialisation: {0}")]
     Serialization(#[from] serde_json::Error),
 
+    /// Erreur cryptographique
     #[error("Erreur cryptographique: {0}")]
     Crypto(#[from] CryptoError),
 
+    /// Profil introuvable
     #[error("Profil non trouvé: {0}")]
     ProfileNotFound(String),
 
+    /// Tentative de création d'un profil existant
     #[error("Profil déjà existant: {0}")]
     ProfileAlreadyExists(String),
 
+    /// Mot de passe incorrect
     #[error("Mot de passe invalide")]
     InvalidPassword,
 
+    /// Données de profil corrompues
     #[error("Données corrompues ou version incompatible")]
     CorruptedData,
 }
@@ -266,11 +273,14 @@ impl SecureStorage {
 /// Identifiant unique d'un profil
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ProfileId {
+    /// Nom du profil choisi par l'utilisateur
     pub name: String,
-    pub hash: String, // Hash du nom pour éviter les collisions
+    /// Hash du nom pour éviter les collisions et créer un nom de fichier sûr
+    pub hash: String,
 }
 
 impl ProfileId {
+    /// Crée un nouvel identifiant de profil
     pub fn new(name: &str) -> Self {
         let hash = hex::encode(blake3_32(name.as_bytes()));
         Self {
@@ -279,6 +289,7 @@ impl ProfileId {
         }
     }
 
+    /// Retourne un nom de fichier sécurisé pour ce profil
     pub fn safe_name(&self) -> String {
         format!("{}_{}", sanitize_filename(&self.name), &self.hash[..8])
     }
@@ -287,43 +298,62 @@ impl ProfileId {
 /// Informations publiques sur un profil
 #[derive(Debug, Clone)]
 pub struct ProfileInfo {
+    /// Identifiant unique du profil
     pub id: ProfileId,
+    /// Nom du profil
     pub name: String,
+    /// Date de création
     pub created: DateTime<Utc>,
+    /// Dernier accès
     pub last_access: DateTime<Utc>,
+    /// Empreinte de la clé publique (hex)
     pub public_key_fingerprint: String,
 }
 
 /// Handle vers un profil chargé en mémoire
 pub struct ProfileHandle {
+    /// Métadonnées du profil
     pub metadata: ProfileMetadata,
+    /// Paire de clés d'identité (déchiffrée)
     pub identity_keypair: Keypair,
+    /// Paramètres utilisateur
     pub settings: ProfileSettings,
 }
 
 /// Métadonnées d'un profil
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProfileMetadata {
+    /// Identifiant unique
     pub id: ProfileId,
+    /// Nom du profil
     pub name: String,
+    /// Version de Miaou utilisée pour créer le profil
     pub version: String,
+    /// Date de création
     pub created: DateTime<Utc>,
+    /// Dernier accès
     pub last_access: DateTime<Utc>,
 }
 
 /// Données d'authentification
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthenticationData {
+    /// Hash Argon2 du mot de passe
     pub password_hash: String,
+    /// Sel utilisé pour la dérivation de clé
     pub salt: String,
+    /// Configuration Argon2 utilisée (balanced, secure, fast_insecure)
     pub config_type: String,
 }
 
 /// Données cryptographiques
 #[derive(Debug)]
 pub struct KeyData {
+    /// Clé publique d'identité Ed25519 (32 bytes)
     pub public_identity: [u8; 32],
+    /// Clé privée chiffrée avec le mot de passe utilisateur
     pub encrypted_private_identity: crate::crypto::aead::SealedData,
+    /// Empreinte BLAKE3 de la clé publique
     pub key_fingerprint: [u8; 32],
 }
 
@@ -475,9 +505,13 @@ impl<'de> Deserialize<'de> for KeyData {
 /// Paramètres utilisateur
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProfileSettings {
+    /// Accepter automatiquement les demandes d'ami
     pub auto_accept_friends: bool,
+    /// Niveau de chiffrement (balanced, secure, fast)
     pub encryption_level: String,
+    /// Sauvegarde automatique activée
     pub backup_enabled: bool,
+    /// Thème de l'interface (dark, light)
     pub theme: String,
 }
 
