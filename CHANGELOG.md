@@ -5,9 +5,10 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2024-08-20 - "Première Griffe"
+## [0.1.0] - 2025-08-20 - "Première Griffe"
 
 ### Ajouté
+- **Architecture workspace modulaire** avec 3 crates spécialisés (crypto/core/cli)
 - **Fondations cryptographiques sécurisées** avec stack cohérente (RustCrypto + Dalek)
 - **Chiffrement symétrique** ChaCha20-Poly1305 avec AAD obligatoire et nonces automatiques
 - **Signatures numériques** Ed25519 avec zeroization et traits object-safe
@@ -16,11 +17,12 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **CLI interactive complète** avec gestion des profils et tests crypto
 - **Système de stockage sécurisé** avec chiffrement des clés privées
 - **Support multi-plateforme** (Linux, macOS, Windows, Android, iOS)
-- **Architecture modulaire** préparée pour séparation en crates
-- **Tests cryptographiques complets** (34 tests, 100% réussite)
+- **Tests cryptographiques complets** (42 tests workspace, 100% réussite)
 - **Benchmarks de performance** intégrés au CLI
 - **Gestion des profils utilisateur** avec authentification par mot de passe
-- **Documentation complète** avec spécifications techniques détaillées
+- **Documentation technique enrichie** avec architecture et glossaire 150+ termes
+- **Glossaire HTML interactif** avec recherche en temps réel
+- **Refactoring complet** avec nettoyage automatique des warnings
 
 ### Sécurité
 - **Zeroization automatique** des secrets en mémoire
@@ -34,7 +36,8 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **BLAKE3**: ~2000 MiB/s (hachage 1MB)
 - **Ed25519**: ~8000 signatures/s
 - **ChaCha20-Poly1305**: ~3000 opérations/s (1KB)
-- **Tests crypto**: 34 tests en < 50ms
+- **Tests workspace**: 42 tests en < 10s
+- **Compilation workspace**: Optimisée avec dépendances partagées
 
 ### Infrastructure
 - **Workspace Rust** avec configuration multi-plateforme

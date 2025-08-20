@@ -1,12 +1,36 @@
-# Miaou 🐱
+# 🐱 Miaou v0.1.0 "Première Griffe"
 
-> *La messagerie qui fait ronronner les cryptographes et qui vous récompense à chaque miaou* 
+**Plateforme de communication décentralisée et sécurisée**
 
-**Miaou** est l'application de messagerie décentralisée qui transforme chaque conversation en aventure : indépendante comme un chat de gouttière, sécurisée comme un coffre-fort suisse, et généreuse comme une grand-mère qui distribue des croquettes à chaque contribution. Parce qu'au final, vos conversations méritent mieux qu'un simple serveur quelque part dans un datacenter.
+[![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-42%20passing-green.svg)](tests/)
 
-## 📖 Description détaillée
+Miaou v0.1.0 établit les **fondations cryptographiques sécurisées** pour une future plateforme de communication peer-to-peer. Cette version se concentre sur la robustesse, la sécurité et l'architecture modulaire.
 
-**Miaou** représente une approche révolutionnaire de la messagerie moderne, conçue selon les principes de souveraineté numérique et de confidentialité absolue. Cette application décentralisée exploite une architecture peer-to-peer sophistiquée où chaque utilisateur devient un acteur autonome du réseau, éliminant ainsi les points de défaillance centralisés et les risques de surveillance de masse.
+## ✨ Fonctionnalités
+
+### 🔐 **Cryptographie de niveau militaire**
+- **ChaCha20-Poly1305** : Chiffrement authentifié avec AAD obligatoire
+- **Ed25519** : Signatures numériques haute performance
+- **BLAKE3** : Hachage cryptographique ultra-rapide
+- **Argon2id** : Dérivation de clés résistante aux attaques
+
+### 🏗️ **Architecture modulaire**
+- **miaou-crypto** : Primitives cryptographiques pures
+- **miaou-core** : Logique métier et abstractions
+- **miaou-cli** : Interface en ligne de commande interactive
+
+### 👤 **Gestion des profils sécurisée**
+- Stockage chiffré des identités cryptographiques
+- Authentification par mot de passe avec Argon2id
+- Isolation complète des données sensibles
+
+### 🖥️ **CLI interactive complète**
+- Tests cryptographiques intégrés
+- Benchmarks de performance
+- Gestion des profils utilisateur
+- Mode interactif avec aide contextuelle
 
 L'application s'appuie sur une cryptographie de bout-en-bout basée sur des bibliothèques auditées (ring, RustCrypto), garantissant que seuls les destinataires légitimes peuvent accéder au contenu des communications. Son système d'annuaires distribués permet une redondance géographique naturelle, assurant la continuité de service même en cas de tentatives de censure ou de conflits régionaux.
 

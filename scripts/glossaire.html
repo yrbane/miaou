@@ -314,6 +314,9 @@
                 <li><a href="#nouveaux-termes-postcritiques" class="section-link">Nouveaux termes (post-critiques) <span class="term-count">(6)</span></a></li>
                 <li><a href="#nouveaux-termes-v010" class="section-link">Nouveaux termes v0.1.0 <span class="term-count">(6)</span></a></li>
                 <li><a href="#termes-spcifiques-miaou" class="section-link">Termes spécifiques à Miaou <span class="term-count">(6)</span></a></li>
+                <li><a href="#termes-supplmentaires-pour-dbutants" class="section-link">Termes supplémentaires pour débutants <span class="term-count">(30)</span></a></li>
+                <li><a href="#termes-spcifiques-rust" class="section-link">Termes spécifiques Rust <span class="term-count">(8)</span></a></li>
+                <li><a href="#termes-rseau-et-scurit" class="section-link">Termes réseau et sécurité <span class="term-count">(6)</span></a></li>
             </ul>
         </nav>
         
@@ -491,7 +494,7 @@
                             <a href="#cicd-continuous-integrationcontinuous-deployment" class="permalink" title="Lien permanent">#</a>
                         </h3>
                         <div class="term-definition">
-                            <p>Pratiques d'intégration et déploiement continus pour automatiser les tests et livraisons.</p>
+                            <p>Pratiques d'intégration et <a href="#dploiement" class="term-link">Déploiement</a> continus pour automatiser les tests et livraisons.</p>
                         </div>
                     </div>
 
@@ -531,7 +534,7 @@
                             <a href="#crates" class="permalink" title="Lien permanent">#</a>
                         </h3>
                         <div class="term-definition">
-                            <p>Unités de compilation et distribution dans l'écosystème Rust. Équivalent des packages/bibliothèques.</p>
+                            <p>Unités de <a href="#compilation" class="term-link">Compilation</a> et distribution dans l'écosystème Rust. Équivalent des packages/bibliothèques.</p>
                         </div>
                     </div>
 
@@ -1065,7 +1068,7 @@
                             <a href="#slsa-supplychain-levels-for-software-artifacts" class="permalink" title="Lien permanent">#</a>
                         </h3>
                         <div class="term-definition">
-                            <p>Framework pour sécuriser la chaîne d'approvisionnement logicielle.</p>
+                            <p><a href="#framework" class="term-link">Framework</a> pour sécuriser la chaîne d'approvisionnement logicielle.</p>
                         </div>
                     </div>
 
@@ -1151,7 +1154,7 @@
                             <a href="#tuf-the-update-framework" class="permalink" title="Lien permanent">#</a>
                         </h3>
                         <div class="term-definition">
-                            <p>Framework pour sécuriser les mises à jour logicielles contre diverses attaques.</p>
+                            <p><a href="#framework" class="term-link">Framework</a> pour sécuriser les mises à jour logicielles contre diverses attaques.</p>
                         </div>
                     </div>
 
@@ -1371,7 +1374,7 @@
                             <a href="#objectsafe-traits" class="permalink" title="Lien permanent">#</a>
                         </h3>
                         <div class="term-definition">
-                            <p>Contrainte Rust permettant l'utilisation de trait objects pour le polymorphisme dynamique. Essentiel pour l'architecture modulaire crypto de Miaou.</p>
+                            <p>Contrainte Rust permettant l'utilisation de <a href="#trait" class="term-link">Trait</a> objects pour le polymorphisme dynamique. Essentiel pour l'architecture modulaire crypto de Miaou.</p>
                         </div>
                     </div>
 
@@ -1391,7 +1394,7 @@
                             <a href="#zeroization" class="permalink" title="Lien permanent">#</a>
                         </h3>
                         <div class="term-definition">
-                            <p>Effacement sécurisé automatique des clés cryptographiques en mémoire via le trait ZeroizeOnDrop, implémenté dans toutes les structures sensibles.</p><p>---</p>
+                            <p>Effacement sécurisé automatique des clés cryptographiques en mémoire via le <a href="#trait" class="term-link">Trait</a> ZeroizeOnDrop, implémenté dans toutes les structures sensibles.</p><p>---</p>
                         </div>
                     </div>
                 </div>
@@ -1457,7 +1460,465 @@
                             <a href="#socialprivacy" class="permalink" title="Lien permanent">#</a>
                         </h3>
                         <div class="term-definition">
-                            <p>Module d'anonymisation et d'isolation garantissant que les données sociales n'interfèrent pas avec la messagerie privée.</p><p>---</p><p><em>Ce glossaire sera mis à jour au fur et à mesure de l'évolution du projet.</em></p>
+                            <p>Module d'anonymisation et d'isolation garantissant que les données sociales n'interfèrent pas avec la messagerie privée.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="termes-supplmentaires-pour-dbutants">
+                <h2>Termes supplémentaires pour débutants</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="api-gateway" data-term="api gateway">
+                        <h3 class="term-title">
+                            <strong>API Gateway</strong>
+                            <a href="#api-gateway" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Point d'entrée unique qui route les requêtes vers les bons services dans une architecture <a href="#microservices" class="term-link">Microservices</a>. Comme une réceptionniste qui dirige les visiteurs.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="backendfrontend" data-term="backend/frontend">
+                        <h3 class="term-title">
+                            <strong>Backend/Frontend</strong>
+                            <a href="#backendfrontend" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Backend = partie serveur invisible aux utilisateurs. Frontend = interface utilisateur visible. Comme la cuisine (backend) et la salle de restaurant (frontend).</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="bug" data-term="bug">
+                        <h3 class="term-title">
+                            <strong>Bug</strong>
+                            <a href="#bug" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Erreur dans le code qui cause un comportement inattendu. Vient d'un vrai insecte trouvé dans un ordinateur en 1947 !</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="cache" data-term="cache">
+                        <h3 class="term-title">
+                            <strong>Cache</strong>
+                            <a href="#cache" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mémoire temporaire pour stocker des données fréquemment utilisées. Comme garder ses clés sur la table d'entrée au lieu de les chercher partout.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="compilation" data-term="compilation">
+                        <h3 class="term-title">
+                            <strong>Compilation</strong>
+                            <a href="#compilation" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Processus qui transforme le code source humain en code machine exécutable. Comme traduire un livre français en chinois.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="cookie" data-term="cookie">
+                        <h3 class="term-title">
+                            <strong>Cookie</strong>
+                            <a href="#cookie" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Petit fichier stocké par le navigateur pour se souvenir des informations sur un site. Comme un bracelet d'identification dans un parc d'attractions.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="debugging" data-term="debugging">
+                        <h3 class="term-title">
+                            <strong>Debugging</strong>
+                            <a href="#debugging" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Processus de recherche et correction des bugs. Comme jouer au détective pour résoudre un mystère.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="dploiement" data-term="déploiement">
+                        <h3 class="term-title">
+                            <strong>Déploiement</strong>
+                            <a href="#dploiement" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Action de mettre une application en production pour que les utilisateurs puissent l'utiliser. Comme ouvrir un magasin au public.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="devops" data-term="devops">
+                        <h3 class="term-title">
+                            <strong>DevOps</strong>
+                            <a href="#devops" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Pratiques combinant développement (Dev) et opérations (Ops) pour livrer rapidement et fiablement. Comme une équipe de F1 ultra-coordonnée.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="docker" data-term="docker">
+                        <h3 class="term-title">
+                            <strong>Docker</strong>
+                            <a href="#docker" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Outil pour empaqueter une application avec toutes ses dépendances dans un "conteneur" portable. Comme une valise parfaitement organisée.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="framework" data-term="framework">
+                        <h3 class="term-title">
+                            <strong>Framework</strong>
+                            <a href="#framework" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Structure de base réutilisable pour développer des applications. Comme un kit de construction avec des pièces pré-assemblées.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="git" data-term="git">
+                        <h3 class="term-title">
+                            <strong>Git</strong>
+                            <a href="#git" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Système de contrôle de version pour suivre les modifications du code. Comme un historique magique qui permet de revenir en arrière.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="httphttps" data-term="http/https">
+                        <h3 class="term-title">
+                            <strong>HTTP/HTTPS</strong>
+                            <a href="#httphttps" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocoles de communication web. HTTP = conversation normale, HTTPS = conversation chuchotée et sécurisée.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ide-integrated-development-environment" data-term="ide (integrated development environment)">
+                        <h3 class="term-title">
+                            <strong>IDE (Integrated Development Environment)</strong>
+                            <a href="#ide-integrated-development-environment" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Logiciel tout-en-un pour écrire du code (éditeur, debugger, etc.). Comme un atelier complet pour bricoleur.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="json-javascript-object-notation" data-term="json (javascript object notation)">
+                        <h3 class="term-title">
+                            <strong>JSON (JavaScript Object Notation)</strong>
+                            <a href="#json-javascript-object-notation" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Format simple pour échanger des données entre applications. Comme un formulaire structuré et lisible.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="latence" data-term="latence">
+                        <h3 class="term-title">
+                            <strong>Latence</strong>
+                            <a href="#latence" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Temps d'attente avant qu'une réponse arrive. Comme le délai entre poser une question et entendre la réponse.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="load-balancer" data-term="load balancer">
+                        <h3 class="term-title">
+                            <strong>Load Balancer</strong>
+                            <a href="#load-balancer" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Répartit la charge entre plusieurs serveurs pour éviter la surcharge. Comme un régulateur de trafic intelligent.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="microservices" data-term="microservices">
+                        <h3 class="term-title">
+                            <strong>Microservices</strong>
+                            <a href="#microservices" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Architecture divisant une grosse application en petits services indépendants. Comme remplacer un gros camion par une flotte de scooters.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="nodejs" data-term="node.js">
+                        <h3 class="term-title">
+                            <strong>Node.js</strong>
+                            <a href="#nodejs" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Environnement permettant d'exécuter JavaScript côté serveur. Comme parler français en Chine grâce à un traducteur.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="open-source" data-term="open source">
+                        <h3 class="term-title">
+                            <strong>Open Source</strong>
+                            <a href="#open-source" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Code source disponible publiquement que tout le monde peut voir et modifier. Comme une recette de cuisine partagée.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ram-random-access-memory" data-term="ram (random access memory)">
+                        <h3 class="term-title">
+                            <strong>RAM (Random Access Memory)</strong>
+                            <a href="#ram-random-access-memory" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mémoire temporaire ultra-rapide de l'ordinateur. Comme un bureau où on étale les documents sur lesquels on travaille.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="repository-repo" data-term="repository (repo)">
+                        <h3 class="term-title">
+                            <strong>Repository (Repo)</strong>
+                            <a href="#repository-repo" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Dossier contenant tout le code d'un projet avec son historique. Comme une bibliothèque pour un projet spécifique.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="saas-software-as-a-service" data-term="saas (software as a service)">
+                        <h3 class="term-title">
+                            <strong>SaaS (Software as a Service)</strong>
+                            <a href="#saas-software-as-a-service" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Logiciel utilisé via internet sans installation. Comme louer une voiture au lieu de l'acheter.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="sql-structured-query-language" data-term="sql (structured query language)">
+                        <h3 class="term-title">
+                            <strong>SQL (Structured Query Language)</strong>
+                            <a href="#sql-structured-query-language" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Langage pour interroger et manipuler les bases de données. Comme poser des questions très précises à un bibliothécaire.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="stack-technique" data-term="stack technique">
+                        <h3 class="term-title">
+                            <strong>Stack technique</strong>
+                            <a href="#stack-technique" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Ensemble des technologies utilisées dans un projet. Comme la liste d'ingrédients d'une recette.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="url-uniform-resource-locator" data-term="url (uniform resource locator)">
+                        <h3 class="term-title">
+                            <strong>URL (Uniform Resource Locator)</strong>
+                            <a href="#url-uniform-resource-locator" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Adresse web d'une ressource. Comme l'adresse postale d'une maison sur internet.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="version-control" data-term="version control">
+                        <h3 class="term-title">
+                            <strong>Version Control</strong>
+                            <a href="#version-control" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Système pour suivre et gérer les modifications du code. Comme tenir un journal détaillé de tous les changements.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="virtual-machine-vm" data-term="virtual machine (vm)">
+                        <h3 class="term-title">
+                            <strong>Virtual Machine (VM)</strong>
+                            <a href="#virtual-machine-vm" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Ordinateur simulé dans un ordinateur réel. Comme avoir plusieurs appartements dans le même immeuble.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="webhook" data-term="webhook">
+                        <h3 class="term-title">
+                            <strong>Webhook</strong>
+                            <a href="#webhook" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mécanisme permettant à une application d'envoyer automatiquement des données à une autre. Comme un facteur qui livre automatiquement le courrier.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="workspace" data-term="workspace">
+                        <h3 class="term-title">
+                            <strong>Workspace</strong>
+                            <a href="#workspace" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Environnement de travail organisé pour un projet. Comme un bureau bien rangé avec tous les outils nécessaires.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="termes-spcifiques-rust">
+                <h2>Termes spécifiques Rust</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="cargo" data-term="cargo">
+                        <h3 class="term-title">
+                            <strong>Cargo</strong>
+                            <a href="#cargo" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Gestionnaire de paquets et outil de build pour Rust. Comme un assistant personnel pour développeur Rust.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="crate" data-term="crate">
+                        <h3 class="term-title">
+                            <strong>Crate</strong>
+                            <a href="#crate" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Paquet/bibliothèque Rust. Comme une boîte à outils spécialisée qu'on peut réutiliser.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ownership" data-term="ownership">
+                        <h3 class="term-title">
+                            <strong>Ownership</strong>
+                            <a href="#ownership" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Système unique de Rust pour gérer la mémoire sans garbage collector. Comme des règles strictes de propriété d'objets.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="trait" data-term="trait">
+                        <h3 class="term-title">
+                            <strong>Trait</strong>
+                            <a href="#trait" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Interface définissant des comportements que les types peuvent implémenter. Comme un contrat de comportement.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="lifetime" data-term="lifetime">
+                        <h3 class="term-title">
+                            <strong>Lifetime</strong>
+                            <a href="#lifetime" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Durée de vie d'une référence en Rust. Comme la date d'expiration d'un produit.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="match" data-term="match">
+                        <h3 class="term-title">
+                            <strong>Match</strong>
+                            <a href="#match" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Système de correspondance de motifs très puissant en Rust. Comme un aiguilleur ultra-intelligent.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="borrowing" data-term="borrowing">
+                        <h3 class="term-title">
+                            <strong>Borrowing</strong>
+                            <a href="#borrowing" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mécanisme permettant d'utiliser une valeur sans en prendre possession. Comme emprunter un livre à la bibliothèque.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="panic" data-term="panic">
+                        <h3 class="term-title">
+                            <strong>Panic</strong>
+                            <a href="#panic" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Arrêt brutal du programme en cas d'erreur critique. Comme le bouton d'arrêt d'urgence d'une machine.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="termes-rseau-et-scurit">
+                <h2>Termes réseau et sécurité</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="firewall" data-term="firewall">
+                        <h3 class="term-title">
+                            <strong>Firewall</strong>
+                            <a href="#firewall" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Barrière de sécurité filtrant le trafic réseau. Comme un vigile à l'entrée d'un bâtiment.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="load-testing" data-term="load testing">
+                        <h3 class="term-title">
+                            <strong>Load Testing</strong>
+                            <a href="#load-testing" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Tests simulant une forte charge pour vérifier la résistance du système. Comme tester un pont avec des camions lourds.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="penetration-testing" data-term="penetration testing">
+                        <h3 class="term-title">
+                            <strong>Penetration Testing</strong>
+                            <a href="#penetration-testing" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Tests de sécurité simulant des attaques réelles. Comme faire appel à un cambrioleur professionnel pour tester ses serrures.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="rate-limiting" data-term="rate limiting">
+                        <h3 class="term-title">
+                            <strong>Rate Limiting</strong>
+                            <a href="#rate-limiting" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Limitation du nombre de requêtes par unité de temps. Comme un péage qui régule le flux de voitures.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ssl-certificate" data-term="ssl certificate">
+                        <h3 class="term-title">
+                            <strong>SSL Certificate</strong>
+                            <a href="#ssl-certificate" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Certificat prouvant l'identité d'un site web. Comme une carte d'identité pour sites internet.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="vpn-virtual-private-network" data-term="vpn (virtual private network)">
+                        <h3 class="term-title">
+                            <strong>VPN (Virtual Private Network)</strong>
+                            <a href="#vpn-virtual-private-network" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Tunnel sécurisé pour protéger sa connexion internet. Comme un passage secret pour naviguer anonymement.</p><p>---</p><p><em>Ce glossaire enrichi contient maintenant plus de 150 termes pour aider les débutants à mieux comprendre l'écosystème technique de Miaou.</em></p>
                         </div>
                     </div>
                 </div>
@@ -1466,7 +1927,7 @@
         </main>
         
         <footer class="glossary-footer">
-            <p>📊 <strong>99</strong> termes dans <strong>24</strong> sections</p>
+            <p>📊 <strong>143</strong> termes dans <strong>27</strong> sections</p>
             <p>Généré automatiquement depuis <code>docs/GLOSSAIRE.md</code></p>
             <p class="miaou-signature">🐱 <strong>Miaou v0.1.0</strong> - Glossaire Technique</p>
         </footer>

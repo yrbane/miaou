@@ -1,6 +1,8 @@
-# GLOSSAIRE TECHNIQUE
+# GLOSSAIRE TECHNIQUE MIAOU
 
-*Définitions des termes, acronymes et concepts techniques utilisés dans le projet Miaou*
+*Définitions complètes des termes, acronymes et concepts techniques utilisés dans le projet Miaou*
+
+**🎯 Pour les débutants :** Ce glossaire contient plus de 150 termes techniques expliqués simplement !
 
 ---
 
@@ -400,4 +402,148 @@ Module d'anonymisation et d'isolation garantissant que les données sociales n'i
 
 ---
 
-*Ce glossaire sera mis à jour au fur et à mesure de l'évolution du projet.*
+## Termes supplémentaires pour débutants
+
+### **API Gateway**
+Point d'entrée unique qui route les requêtes vers les bons services dans une architecture microservices. Comme une réceptionniste qui dirige les visiteurs.
+
+### **Backend/Frontend**
+Backend = partie serveur invisible aux utilisateurs. Frontend = interface utilisateur visible. Comme la cuisine (backend) et la salle de restaurant (frontend).
+
+### **Bug**
+Erreur dans le code qui cause un comportement inattendu. Vient d'un vrai insecte trouvé dans un ordinateur en 1947 !
+
+### **Cache**
+Mémoire temporaire pour stocker des données fréquemment utilisées. Comme garder ses clés sur la table d'entrée au lieu de les chercher partout.
+
+### **Compilation**
+Processus qui transforme le code source humain en code machine exécutable. Comme traduire un livre français en chinois.
+
+### **Cookie**
+Petit fichier stocké par le navigateur pour se souvenir des informations sur un site. Comme un bracelet d'identification dans un parc d'attractions.
+
+### **Debugging**
+Processus de recherche et correction des bugs. Comme jouer au détective pour résoudre un mystère.
+
+### **Déploiement**
+Action de mettre une application en production pour que les utilisateurs puissent l'utiliser. Comme ouvrir un magasin au public.
+
+### **DevOps**
+Pratiques combinant développement (Dev) et opérations (Ops) pour livrer rapidement et fiablement. Comme une équipe de F1 ultra-coordonnée.
+
+### **Docker**
+Outil pour empaqueter une application avec toutes ses dépendances dans un "conteneur" portable. Comme une valise parfaitement organisée.
+
+### **Framework**
+Structure de base réutilisable pour développer des applications. Comme un kit de construction avec des pièces pré-assemblées.
+
+### **Git**
+Système de contrôle de version pour suivre les modifications du code. Comme un historique magique qui permet de revenir en arrière.
+
+### **HTTP/HTTPS**
+Protocoles de communication web. HTTP = conversation normale, HTTPS = conversation chuchotée et sécurisée.
+
+### **IDE (Integrated Development Environment)**
+Logiciel tout-en-un pour écrire du code (éditeur, debugger, etc.). Comme un atelier complet pour bricoleur.
+
+### **JSON (JavaScript Object Notation)**
+Format simple pour échanger des données entre applications. Comme un formulaire structuré et lisible.
+
+### **Latence**
+Temps d'attente avant qu'une réponse arrive. Comme le délai entre poser une question et entendre la réponse.
+
+### **Load Balancer**
+Répartit la charge entre plusieurs serveurs pour éviter la surcharge. Comme un régulateur de trafic intelligent.
+
+### **Microservices**
+Architecture divisant une grosse application en petits services indépendants. Comme remplacer un gros camion par une flotte de scooters.
+
+### **Node.js**
+Environnement permettant d'exécuter JavaScript côté serveur. Comme parler français en Chine grâce à un traducteur.
+
+### **Open Source**
+Code source disponible publiquement que tout le monde peut voir et modifier. Comme une recette de cuisine partagée.
+
+### **RAM (Random Access Memory)**
+Mémoire temporaire ultra-rapide de l'ordinateur. Comme un bureau où on étale les documents sur lesquels on travaille.
+
+### **Repository (Repo)**
+Dossier contenant tout le code d'un projet avec son historique. Comme une bibliothèque pour un projet spécifique.
+
+### **SaaS (Software as a Service)**
+Logiciel utilisé via internet sans installation. Comme louer une voiture au lieu de l'acheter.
+
+### **SQL (Structured Query Language)**
+Langage pour interroger et manipuler les bases de données. Comme poser des questions très précises à un bibliothécaire.
+
+### **Stack technique**
+Ensemble des technologies utilisées dans un projet. Comme la liste d'ingrédients d'une recette.
+
+### **URL (Uniform Resource Locator)**
+Adresse web d'une ressource. Comme l'adresse postale d'une maison sur internet.
+
+### **Version Control**
+Système pour suivre et gérer les modifications du code. Comme tenir un journal détaillé de tous les changements.
+
+### **Virtual Machine (VM)**
+Ordinateur simulé dans un ordinateur réel. Comme avoir plusieurs appartements dans le même immeuble.
+
+### **Webhook**
+Mécanisme permettant à une application d'envoyer automatiquement des données à une autre. Comme un facteur qui livre automatiquement le courrier.
+
+### **Workspace**
+Environnement de travail organisé pour un projet. Comme un bureau bien rangé avec tous les outils nécessaires.
+
+---
+
+## Termes spécifiques Rust
+
+### **Cargo**
+Gestionnaire de paquets et outil de build pour Rust. Comme un assistant personnel pour développeur Rust.
+
+### **Crate**
+Paquet/bibliothèque Rust. Comme une boîte à outils spécialisée qu'on peut réutiliser.
+
+### **Ownership**
+Système unique de Rust pour gérer la mémoire sans garbage collector. Comme des règles strictes de propriété d'objets.
+
+### **Trait**
+Interface définissant des comportements que les types peuvent implémenter. Comme un contrat de comportement.
+
+### **Lifetime**
+Durée de vie d'une référence en Rust. Comme la date d'expiration d'un produit.
+
+### **Match**
+Système de correspondance de motifs très puissant en Rust. Comme un aiguilleur ultra-intelligent.
+
+### **Borrowing**
+Mécanisme permettant d'utiliser une valeur sans en prendre possession. Comme emprunter un livre à la bibliothèque.
+
+### **Panic**
+Arrêt brutal du programme en cas d'erreur critique. Comme le bouton d'arrêt d'urgence d'une machine.
+
+---
+
+## Termes réseau et sécurité
+
+### **Firewall**
+Barrière de sécurité filtrant le trafic réseau. Comme un vigile à l'entrée d'un bâtiment.
+
+### **Load Testing**
+Tests simulant une forte charge pour vérifier la résistance du système. Comme tester un pont avec des camions lourds.
+
+### **Penetration Testing**
+Tests de sécurité simulant des attaques réelles. Comme faire appel à un cambrioleur professionnel pour tester ses serrures.
+
+### **Rate Limiting**
+Limitation du nombre de requêtes par unité de temps. Comme un péage qui régule le flux de voitures.
+
+### **SSL Certificate**
+Certificat prouvant l'identité d'un site web. Comme une carte d'identité pour sites internet.
+
+### **VPN (Virtual Private Network)**
+Tunnel sécurisé pour protéger sa connexion internet. Comme un passage secret pour naviguer anonymement.
+
+---
+
+*Ce glossaire enrichi contient maintenant plus de 150 termes pour aider les débutants à mieux comprendre l'écosystème technique de Miaou.*

@@ -14,7 +14,7 @@ use miaou_core::{
         kdf::{Argon2Config, hash_password, verify_password},
         hash::blake3_32,
     },
-    storage::{SecureStorage, ProfileId},
+    storage::SecureStorage,
 };
 
 #[derive(Parser)]

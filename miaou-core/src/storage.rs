@@ -3,8 +3,8 @@
 
 use std::path::{Path, PathBuf};
 use std::fs;
-use anyhow::{Result, Context};
-use secrecy::{SecretString, ExposeSecret, Zeroize};
+use anyhow::Result;
+use secrecy::{SecretString, Zeroize};
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
 use chrono::{DateTime, Utc};
 use crate::crypto::{
