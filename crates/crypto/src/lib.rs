@@ -74,8 +74,14 @@ pub trait Signer {
     /// Renvoie la clé publique (octets).
     fn public_key(&self) -> Vec<u8>;
     /// Signe un message arbitraire et renvoie la signature.
+    ///
+    /// # Errors
+    /// Retourne une erreur si l'opération de signature échoue.
     fn sign(&self, msg: &[u8]) -> MiaouResult<Vec<u8>>;
     /// Vérifie une signature pour un message arbitraire.
+    ///
+    /// # Errors
+    /// Retourne une erreur si la vérification de signature échoue.
     fn verify(&self, msg: &[u8], sig: &[u8]) -> MiaouResult<bool>;
 }
 
@@ -94,6 +100,9 @@ impl Ed25519Signer {
     }
 
     /// Construit depuis une clé privée 32 octets.
+    ///
+    /// # Panics
+    /// Panique si la conversion de slice échoue (ne devrait pas arriver avec une entrée valide).
     pub fn from_secret_key_bytes(sk: &[u8]) -> MiaouResult<Self> {
         if sk.len() != 32 {
             return Err(MiaouError::InvalidInput);
@@ -105,6 +114,7 @@ impl Ed25519Signer {
     }
 
     /// Renvoie une copie des 32 octets de la clé secrète (utilisation prudente).
+    #[must_use]
     pub fn secret_key_bytes(&self) -> [u8; 32] {
         self.sk.to_bytes()
     }
@@ -128,6 +138,7 @@ impl Signer for Ed25519Signer {
 }
 
 /// Hash BLAKE3 (utilitaire simple).
+#[must_use]
 pub fn blake3_hash(data: &[u8]) -> [u8; 32] {
     *blake3::hash(data).as_bytes()
 }
