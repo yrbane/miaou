@@ -1,0 +1,16 @@
+[package]
+name = "miaou-crypto"
+version = "0.1.0"
+edition = "2021"
+ 
+[dependencies]
+miaou-core = { path = "../core" }
+aead = { workspace = true }
+chacha20poly1305 = { workspace = true }
+ed25519-dalek = { workspace = true }
+rand_core = { workspace = true }
+blake3 = { workspace = true }
+thiserror = { workspace = true }
+ 
+[dev-dependencies]
+rand = { workspace = true }
