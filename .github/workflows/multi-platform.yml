@@ -12,18 +12,24 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  # Test de base sur Linux avant les builds multiplateformes
-  test-core:
-    runs-on: ubuntu-latest
+  # Validation multi-OS (formatage, linting, tests, couverture)
+  validation:
+    name: 🧪 Validation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install Rust
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
       with:
-        components: clippy, rustfmt
-    
-    - name: Cache cargo registry
+        components: rustfmt, clippy
+        
+    - name: 📦 Cache dependencies
       uses: actions/cache@v4
       with:
         path: |
@@ -31,14 +37,41 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: 🎨 Check formatting
+      run: cargo fmt --all -- --check
+      
+    - name: 🔍 Lint with clippy
+      run: cargo clippy --all-features --all-targets -- -D warnings -D clippy::pedantic -D clippy::nursery -D clippy::cargo -A clippy::multiple_crate_versions -A clippy::cargo_common_metadata
+          
+    - name: 🧪 Run tests
+      run: cargo test --all-features --verbose
+      
+    - name: 📚 Test documentation
+      run: cargo test --doc
+
+  # Couverture de code et validation seuil (Ubuntu uniquement)
+  coverage:
+    name: 📊 Couverture de Code
+    runs-on: ubuntu-latest
     
-    - name: Check formatting
-      run: cargo fmt --all --check
-    
-    - name: Run clippy
-      run: cargo clippy --all-targets --all-features -- -D warnings
-    
-    - name: Run tests with coverage validation
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: 📦 Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-coverage-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: 📈 Generate coverage with validation
       run: |
         cargo install cargo-llvm-cov --locked
         cargo llvm-cov --workspace --cobertura --output-path cobertura.xml
@@ -53,22 +86,68 @@ jobs:
           echo "❌ Coverage below 90%: ${COVERAGE}%"
           exit 1
         fi
-    
-    - name: Upload coverage report
+        
+    - name: 📤 Upload coverage report
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: cobertura.xml
+
+  # Audit de sécurité
+  security:
+    name: 🔒 Audit de Sécurité  
+    runs-on: ubuntu-latest
     
-    - name: Run mutation tests
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: 🔍 Install cargo-audit
+      run: cargo install cargo-audit --locked
+      
+    - name: 🛡️ Security audit
+      run: cargo audit
+
+  # Tests cryptographiques avancés
+  crypto-tests:
+    name: 🔐 Tests Cryptographiques
+    runs-on: ubuntu-latest
+    if: contains(github.ref, 'premiere-griffe') || contains(github.ref, 'radar-moustaches') || contains(github.ref, 'ronron-bonheur')
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: 🔐 Run crypto tests
+      run: cargo test --release --verbose --features crypto-tests
+      
+  # Tests mutation (robustesse du code)
+  mutation-tests:
+    name: 🧬 Tests de Mutation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: 🧬 Run mutation tests
       run: |
         cargo install cargo-mutants --locked
         cargo mutants --check --timeout 30
 
   # Builds desktop multiplateformes
   build-desktop:
-    needs: test-core
+    needs: [validation, coverage]
     strategy:
       matrix:
         include:
@@ -135,7 +214,7 @@ jobs:
 
   # Build pour Android (nécessite SDK Android)
   build-android:
-    needs: test-core
+    needs: [validation, coverage]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -189,7 +268,7 @@ jobs:
 
   # Build WebAssembly
   build-wasm:
-    needs: test-core
+    needs: [validation, coverage]
     runs-on: ubuntu-latest
     
     steps:
@@ -221,9 +300,32 @@ jobs:
           target/wasm32-unknown-unknown/release-wasm/*.wasm
           target/wasm32-wasip1/release-wasm/*.wasm
 
+  # Documentation
+  documentation:
+    name: 📚 Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: 📚 Generate documentation
+      run: |
+        cargo doc --all-features --no-deps --document-private-items
+        
+    - name: 🌐 Deploy documentation (main branch only)
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./target/doc
+
   # Benchmarks de performance (Linux seulement)
   benchmarks:
-    needs: test-core
+    needs: [validation, coverage]
     runs-on: ubuntu-latest
     
     steps:
@@ -253,7 +355,7 @@ jobs:
   # Release automatique pour les tags
   release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build-desktop, build-android, build-wasm]
+    needs: [validation, coverage, security, build-desktop, build-android, build-wasm, documentation, benchmarks]
     runs-on: ubuntu-latest
     
     steps:
