@@ -39,3 +39,13 @@ aead = "0.5"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 blake3 = "1"
 argon2 = "0.5"
+
+# WASM-specific deps
+getrandom = { version = "0.2", features = ["js"] }
+
+[profile.release-wasm]
+inherits = "release"
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
