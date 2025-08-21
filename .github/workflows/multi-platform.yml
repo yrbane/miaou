@@ -41,6 +41,20 @@ jobs:
     - name: Run tests
       run: cargo test --workspace --verbose
     
+    - name: Generate coverage report
+      run: |
+        cargo install cargo-llvm-cov --locked
+        cargo llvm-cov --workspace --cobertura --output-path cobertura.xml
+    
+    - name: Check coverage threshold
+      run: ./coverage_check.sh
+    
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: cobertura.xml
+    
     - name: Run mutation tests
       run: |
         cargo install cargo-mutants --locked
