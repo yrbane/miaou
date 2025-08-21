@@ -38,15 +38,24 @@ jobs:
     - name: Run clippy
       run: cargo clippy --all-targets --all-features -- -D warnings
     
-    - name: Run tests with coverage
+    - name: Run tests with coverage validation
       run: |
         cargo install cargo-llvm-cov --locked
         cargo llvm-cov --workspace --cobertura --output-path cobertura.xml
-    
-    - name: Check coverage threshold
-      run: ./coverage_check.sh
+        
+        # Extract and validate coverage threshold
+        COVERAGE=$(grep -oP 'line-rate="\K[^"]*' cobertura.xml | head -1 | awk '{printf "%.1f", $1*100}')
+        echo "Coverage: ${COVERAGE}%"
+        
+        if awk "BEGIN {exit !($COVERAGE >= 90)}"; then
+          echo "✅ Coverage above 90%: ${COVERAGE}%"
+        else
+          echo "❌ Coverage below 90%: ${COVERAGE}%"
+          exit 1
+        fi
     
     - name: Upload coverage report
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
