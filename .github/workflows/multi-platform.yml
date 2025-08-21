@@ -126,7 +126,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
         
     - name: 🔐 Run crypto tests
-      run: cargo test --release --verbose --features crypto-tests
+      run: cargo test --release --verbose -p miaou-crypto
       
   # Tests mutation (robustesse du code)
   mutation-tests:
