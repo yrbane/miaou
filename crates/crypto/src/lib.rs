@@ -17,8 +17,14 @@ use miaou_core::{IntoMiaouError, MiaouError, MiaouResult};
 /// Interface AEAD (chiffrement authentifié) indépendante de l'implémentation.
 pub trait AeadCipher {
     /// Chiffre `plaintext` avec `nonce` (12 octets) et `aad`.
+    ///
+    /// # Errors
+    /// Retourne une erreur si l'opération de chiffrement échoue.
     fn encrypt(&self, plaintext: &[u8], nonce: &[u8], aad: &[u8]) -> MiaouResult<Vec<u8>>;
     /// Déchiffre `ciphertext` avec `nonce` (12 octets) et `aad`.
+    ///
+    /// # Errors
+    /// Retourne une erreur si l'opération de déchiffrement échoue.
     fn decrypt(&self, ciphertext: &[u8], nonce: &[u8], aad: &[u8]) -> MiaouResult<Vec<u8>>;
 }
 
@@ -29,6 +35,9 @@ pub struct Chacha20Poly1305Cipher {
 
 impl Chacha20Poly1305Cipher {
     /// Construit depuis une clé 32 octets.
+    ///
+    /// # Errors
+    /// Retourne une erreur si la clé n'a pas la longueur requise (32 octets).
     pub fn from_key_bytes(key: &[u8]) -> MiaouResult<Self> {
         if key.len() != 32 {
             return Err(MiaouError::InvalidInput);
@@ -100,6 +109,9 @@ impl Ed25519Signer {
     }
 
     /// Construit depuis une clé privée 32 octets.
+    ///
+    /// # Errors
+    /// Retourne une erreur si la clé secrète n'a pas la longueur requise (32 octets).
     ///
     /// # Panics
     /// Panique si la conversion de slice échoue (ne devrait pas arriver avec une entrée valide).

@@ -35,10 +35,19 @@ impl Drop for KeyEntry {
 /// API de key store minimal.
 pub trait KeyStore {
     /// Génère et enregistre une nouvelle clé Ed25519, renvoie son `KeyId`.
+    ///
+    /// # Errors
+    /// Retourne une erreur si la génération ou l'enregistrement de la clé échoue.
     fn generate_ed25519(&mut self) -> MiaouResult<KeyId>;
     /// Exporte la clé publique binaire.
+    ///
+    /// # Errors
+    /// Retourne une erreur si la clé n'existe pas ou si l'export échoue.
     fn export_public(&self, id: &KeyId) -> MiaouResult<Vec<u8>>;
     /// Signe un message arbitraire avec la clé désignée.
+    ///
+    /// # Errors
+    /// Retourne une erreur si la clé n'existe pas ou si la signature échoue.
     fn sign(&self, id: &KeyId, msg: &[u8]) -> MiaouResult<Vec<u8>>;
 }
 
@@ -50,6 +59,7 @@ pub struct MemoryKeyStore {
 
 impl MemoryKeyStore {
     /// Construit un key store vide.
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -57,12 +67,12 @@ impl MemoryKeyStore {
 
 impl From<String> for KeyId {
     fn from(s: String) -> Self {
-        KeyId(s)
+        Self(s)
     }
 }
 impl From<&str> for KeyId {
     fn from(s: &str) -> Self {
-        KeyId(s.to_string())
+        Self(s.to_string())
     }
 }
 
@@ -160,7 +170,7 @@ mod tests {
         let cloned = id.clone();
         assert_eq!(id, cloned);
 
-        let debug_str = format!("{:?}", id);
+        let debug_str = format!("{id:?}");
         assert!(debug_str.contains("test-debug"));
     }
 

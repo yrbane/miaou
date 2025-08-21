@@ -60,7 +60,7 @@ fn main() -> ExitCode {
     match run(cli) {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("error: {}", e);
+            eprintln!("error: {e}");
             ExitCode::from(1)
         }
     }
@@ -168,7 +168,7 @@ fn from_hex(s: &str) -> Result<Vec<u8>, MiaouError> {
     Ok(out)
 }
 
-fn hex_val(c: u8) -> u8 {
+const fn hex_val(c: u8) -> u8 {
     match c {
         b'0'..=b'9' => c - b'0',
         b'a'..=b'f' => 10 + (c - b'a'),
@@ -241,7 +241,7 @@ mod tests {
     #[test]
     fn test_command_variants() {
         // Test all command variants can be created
-        let _cmds = vec![
+        let cmds = vec![
             Command::KeyGenerate,
             Command::KeyExport {
                 id: "test".to_string(),
@@ -268,7 +268,7 @@ mod tests {
                 ciphertext_hex: "ct".to_string(),
             },
         ];
-        assert_eq!(_cmds.len(), 6);
+        assert_eq!(cmds.len(), 6);
     }
 
     #[test]
@@ -371,7 +371,7 @@ mod tests {
             cmd: Command::AeadEncrypt {
                 key_hex: "invalid".to_string(), // Wrong length
                 nonce_hex: "000000000000000000000000".to_string(),
-                aad_hex: "".to_string(),
+                aad_hex: String::new(),
                 plaintext: "test".to_string(),
             },
         };
@@ -388,7 +388,7 @@ mod tests {
             cmd: Command::AeadDecrypt {
                 key_hex: "invalid".to_string(), // Wrong length
                 nonce_hex: "000000000000000000000000".to_string(),
-                aad_hex: "".to_string(),
+                aad_hex: String::new(),
                 ciphertext_hex: "abcd".to_string(),
             },
         };
@@ -420,9 +420,7 @@ mod tests {
 
         let cli = Cli {
             log: "error".to_string(),
-            cmd: Command::KeyExport {
-                id: key_id.0.clone(),
-            },
+            cmd: Command::KeyExport { id: key_id.0 },
         };
 
         // This should work since we have the key in our local keystore
@@ -469,7 +467,7 @@ mod tests {
                 key_hex: "0000000000000000000000000000000000000000000000000000000000000000"
                     .to_string(), // 32 bytes
                 nonce_hex: "000000000000000000000000".to_string(), // 12 bytes
-                aad_hex: "".to_string(),
+                aad_hex: String::new(),
                 plaintext: "hello world".to_string(),
             },
         };
@@ -511,7 +509,7 @@ mod tests {
                 key_hex: "0000000000000000000000000000000000000000000000000000000000000000"
                     .to_string(),
                 nonce_hex: "invalid".to_string(), // Wrong format/length
-                aad_hex: "".to_string(),
+                aad_hex: String::new(),
                 plaintext: "test".to_string(),
             },
         };
@@ -528,7 +526,7 @@ mod tests {
                 key_hex: "0000000000000000000000000000000000000000000000000000000000000000"
                     .to_string(),
                 nonce_hex: "000000000000000000000000".to_string(),
-                aad_hex: "".to_string(),
+                aad_hex: String::new(),
                 ciphertext_hex: "invalid_hex_not_even_length".to_string(),
             },
         };
@@ -619,17 +617,17 @@ mod tests {
     fn test_hex_val_all_cases() {
         // Test digits 0-9
         for (i, c) in b"0123456789".iter().enumerate() {
-            assert_eq!(hex_val(*c), i as u8);
+            assert_eq!(hex_val(*c), u8::try_from(i).unwrap());
         }
 
         // Test lowercase a-f
         for (i, c) in b"abcdef".iter().enumerate() {
-            assert_eq!(hex_val(*c), 10 + i as u8);
+            assert_eq!(hex_val(*c), 10 + u8::try_from(i).unwrap());
         }
 
         // Test uppercase A-F
         for (i, c) in b"ABCDEF".iter().enumerate() {
-            assert_eq!(hex_val(*c), 10 + i as u8);
+            assert_eq!(hex_val(*c), 10 + u8::try_from(i).unwrap());
         }
 
         // Test invalid characters
@@ -705,7 +703,7 @@ mod tests {
         ];
 
         for cmd in commands {
-            let debug_str = format!("{:?}", cmd);
+            let debug_str = format!("{cmd:?}");
             assert!(!debug_str.is_empty());
         }
     }
@@ -717,7 +715,7 @@ mod tests {
             cmd: Command::KeyGenerate,
         };
 
-        let debug_str = format!("{:?}", cli);
+        let debug_str = format!("{cli:?}");
         assert!(!debug_str.is_empty());
         assert!(debug_str.contains("log"));
         assert!(debug_str.contains("cmd"));
