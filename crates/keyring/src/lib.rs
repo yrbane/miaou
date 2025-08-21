@@ -120,4 +120,87 @@ mod tests {
         assert!(signer.verify(b"miaou", &sig).unwrap());
         assert_eq!(pk, signer.public_key());
     }
+
+    #[test]
+    fn test_key_id_from_string() {
+        let id1 = KeyId::from("test-key".to_string());
+        let id2 = KeyId::from("test-key");
+        assert_eq!(id1, id2);
+        assert_eq!(id1.0, "test-key");
+        assert_eq!(id2.0, "test-key");
+    }
+
+    #[test]
+    fn test_export_public_invalid_key() {
+        let ks = MemoryKeyStore::new();
+        let invalid_id = KeyId::from("nonexistent");
+        let result = ks.export_public(&invalid_id);
+        assert!(matches!(result, Err(MiaouError::InvalidInput)));
+    }
+
+    #[test]
+    fn test_sign_invalid_key() {
+        let ks = MemoryKeyStore::new();
+        let invalid_id = KeyId::from("nonexistent");
+        let result = ks.sign(&invalid_id, b"message");
+        assert!(matches!(result, Err(MiaouError::InvalidInput)));
+    }
+
+    #[test]
+    fn test_memory_keystore_default() {
+        let ks1 = MemoryKeyStore::new();
+        let ks2 = MemoryKeyStore::default();
+        assert_eq!(ks1.map.len(), 0);
+        assert_eq!(ks2.map.len(), 0);
+    }
+
+    #[test]
+    fn test_key_id_debug_and_clone() {
+        let id = KeyId::from("test-debug");
+        let cloned = id.clone();
+        assert_eq!(id, cloned);
+
+        let debug_str = format!("{:?}", id);
+        assert!(debug_str.contains("test-debug"));
+    }
+
+    #[test]
+    fn test_hex_function() {
+        assert_eq!(hex(&[]), "");
+        assert_eq!(hex(&[0]), "00");
+        assert_eq!(hex(&[255]), "ff");
+        assert_eq!(hex(&[0, 15, 255]), "000fff");
+        assert_eq!(hex(&[0x12, 0x34, 0xab, 0xcd]), "1234abcd");
+    }
+
+    #[test]
+    fn test_key_entry_drop() {
+        let entry = KeyEntry {
+            sk: vec![1, 2, 3, 4, 5],
+        };
+        // Le drop sera appelé automatiquement et zeroize les données
+        drop(entry);
+        // Note: On ne peut pas tester directement la zeroization car entry est moved
+    }
+
+    #[test]
+    fn test_multiple_keys() {
+        let mut ks = MemoryKeyStore::new();
+
+        // Génère plusieurs clés
+        let id1 = ks.generate_ed25519().unwrap();
+        let id2 = ks.generate_ed25519().unwrap();
+
+        // Vérifie qu'elles sont différentes
+        assert_ne!(id1, id2);
+
+        // Vérifie que chaque clé fonctionne
+        let pk1 = ks.export_public(&id1).unwrap();
+        let pk2 = ks.export_public(&id2).unwrap();
+        assert_ne!(pk1, pk2);
+
+        let sig1 = ks.sign(&id1, b"message1").unwrap();
+        let sig2 = ks.sign(&id2, b"message2").unwrap();
+        assert_ne!(sig1, sig2);
+    }
 }

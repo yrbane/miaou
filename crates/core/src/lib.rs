@@ -67,3 +67,103 @@ impl<T, E: core::fmt::Display> IntoMiaouError<T> for Result<T, E> {
         self.map_err(|e| MiaouError::Crypto(e.to_string()))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sensitive_bytes_basic() {
+        let mut sb = SensitiveBytes::default();
+        assert_eq!(sb.len(), 0);
+
+        sb.push(42);
+        sb.push(100);
+        assert_eq!(sb.len(), 2);
+        assert_eq!(sb[0], 42);
+        assert_eq!(sb[1], 100);
+    }
+
+    #[test]
+    fn test_sensitive_bytes_deref() {
+        let mut sb = SensitiveBytes(vec![1, 2, 3]);
+
+        // Test Deref
+        assert_eq!(sb.len(), 3);
+        assert_eq!(&sb[..], &[1, 2, 3]);
+
+        // Test DerefMut
+        sb[1] = 99;
+        assert_eq!(sb[1], 99);
+    }
+
+    #[test]
+    fn test_sensitive_bytes_drop() {
+        let data = vec![1, 2, 3, 4, 5];
+        let sb = SensitiveBytes(data.clone());
+
+        // Vérifie que les données sont présentes
+        assert_eq!(sb.0, data);
+
+        // Le drop sera appelé automatiquement et zeroize les données
+        drop(sb);
+        // Note: On ne peut pas tester directement la zeroization car sb est moved
+    }
+
+    #[test]
+    fn test_miaou_error_display() {
+        let err1 = MiaouError::Init("test init".to_string());
+        assert_eq!(err1.to_string(), "Initialization failed: test init");
+
+        let err2 = MiaouError::InvalidInput;
+        assert_eq!(err2.to_string(), "Invalid input");
+
+        let err3 = MiaouError::Crypto("test crypto".to_string());
+        assert_eq!(err3.to_string(), "Crypto error: test crypto");
+
+        let err4 = MiaouError::Io("test io".to_string());
+        assert_eq!(err4.to_string(), "I/O error: test io");
+    }
+
+    #[test]
+    fn test_into_miaou_error_success() {
+        let result: Result<i32, &str> = Ok(42);
+        let miaou_result = result.miaou();
+        assert_eq!(miaou_result.unwrap(), 42);
+    }
+
+    #[test]
+    fn test_into_miaou_error_failure() {
+        let result: Result<i32, &str> = Err("test error");
+        let miaou_result = result.miaou();
+
+        match miaou_result {
+            Err(MiaouError::Crypto(msg)) => assert_eq!(msg, "test error"),
+            _ => panic!("Expected Crypto error"),
+        }
+    }
+
+    #[test]
+    fn test_miaou_error_debug() {
+        let err = MiaouError::Init("debug test".to_string());
+        let debug_str = format!("{:?}", err);
+        assert!(debug_str.contains("Init"));
+        assert!(debug_str.contains("debug test"));
+    }
+
+    #[test]
+    fn test_into_miaou_error_with_different_types() {
+        // Test avec différents types d'erreur pour couvrir tous les cas
+        let io_err: Result<(), std::io::Error> = Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "file not found",
+        ));
+        let miaou_result = io_err.miaou();
+        assert!(matches!(miaou_result, Err(MiaouError::Crypto(_))));
+
+        // Test avec un autre type
+        let parse_err: Result<i32, std::num::ParseIntError> = "not_a_number".parse();
+        let miaou_result = parse_err.miaou();
+        assert!(matches!(miaou_result, Err(MiaouError::Crypto(_))));
+    }
+}
