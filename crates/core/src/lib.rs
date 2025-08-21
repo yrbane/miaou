@@ -56,6 +56,9 @@ pub type MiaouResult<T> = Result<T, MiaouError>;
 /// Trait utilitaire pour normaliser les conversions d'erreur externes.
 pub trait IntoMiaouError<T> {
     /// Convertit une erreur en `MiaouError` avec message non-sensible.
+    ///
+    /// # Errors
+    /// Retourne `MiaouError::Crypto` contenant le message d'erreur de la source.
     fn miaou(self) -> MiaouResult<T>;
 }
 
