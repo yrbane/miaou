@@ -233,35 +233,8 @@ jobs:
         name: ${{ matrix.asset_name }}
         path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
 
-  # Build Android avec profil optimisé
-  build-android:
-    name: 📱 Android Build (${{ matrix.target }})
-    needs: [validation, coverage]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android]
-    
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-    
-    - name: 🦀 Install Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        targets: ${{ matrix.target }}
-    
-    - name: 📦 Cache cargo
-      uses: Swatinem/rust-cache@v2
-    
-    - name: 📱 Build for Android (release-mobile profile)
-      run: cargo build --target ${{ matrix.target }} --profile release-mobile -p miaou-cli
-    
-    - name: 📤 Upload Android artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: miaou-android-${{ matrix.target }}
-        path: target/${{ matrix.target }}/release-mobile/miaou-cli
+  # Android builds disponibles localement avec: cargo build --target i686-linux-android --profile release-mobile -p miaou-cli
+  # Temporairement désactivé dans CI en attendant configuration NDK appropriée
 
   # Build WebAssembly avec profil optimisé
   build-wasm:
@@ -352,7 +325,7 @@ jobs:
   release:
     name: 🚀 Create Release
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [validation, coverage, security-audit, build-desktop, build-android, build-wasm, documentation, benchmarks]
+    needs: [validation, coverage, security-audit, build-desktop, build-wasm, documentation, benchmarks]
     runs-on: ubuntu-latest
     
     steps:
@@ -385,9 +358,9 @@ jobs:
           
           ### 📦 Artifacts Inclus
           - **Desktop**: Linux (x86_64, ARM64), Windows (x86_64), macOS (x86_64, ARM64)
-          - **Mobile**: Android (ARM64, ARMv7, x86, x86_64)
           - **Web**: WebAssembly (WASM + WASIP1)
           - **Documentation**: API docs et coverage reports
+          - **Mobile**: Android builds disponibles via compilation locale
           
           ### ✅ Quality Metrics
           - Tests: 54 tests passés
