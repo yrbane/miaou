@@ -49,6 +49,9 @@ argon2 = "0.5"
 # WASM-specific deps
 getrandom = { version = "0.2", features = ["js"] }
 
+# Network discovery deps
+mdns-sd = "0.11"
+
 [profile.release-wasm]
 inherits = "release"
 opt-level = "s"

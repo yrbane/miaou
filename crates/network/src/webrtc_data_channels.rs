@@ -216,13 +216,17 @@ pub struct WebRtcConnection {
     pub negotiated_address: Option<SocketAddr>,
     /// Candidats ICE utilisés
     pub local_candidate: Option<IceCandidate>,
+    /// Candidat ICE distant (si disponible)
     pub remote_candidate: Option<IceCandidate>,
     /// Timestamp de connexion
     pub connected_at: Option<u64>,
     /// Statistiques de transfert
     pub bytes_sent: u64,
+    /// Nombre de bytes reçus
     pub bytes_received: u64,
+    /// Nombre de messages envoyés
     pub messages_sent: u64,
+    /// Nombre de messages reçus
     pub messages_received: u64,
 }
 
@@ -496,6 +500,11 @@ impl WebRtcDataChannelManager {
         });
 
         Ok(())
+    }
+
+    /// Retourne la configuration du manager
+    pub fn config(&self) -> &WebRtcConnectionConfig {
+        &self.config
     }
 }
 

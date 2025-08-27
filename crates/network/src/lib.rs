@@ -14,7 +14,6 @@
 //! - **I**nterface Segregation : Traits minimaux et spécifiques
 //! - **D**ependency Inversion : Dépend d'abstractions, pas d'implémentations
 
-pub mod connection;
 pub mod dht;
 pub mod directory;
 pub mod discovery;
@@ -28,6 +27,8 @@ pub mod ratchet;
 pub mod store;
 pub mod transport;
 pub mod unified_discovery;
+pub mod connection;
+pub mod p2p_connection;
 pub mod webrtc_data_channels;
 pub mod webrtc_transport;
 
