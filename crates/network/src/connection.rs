@@ -109,9 +109,9 @@ impl Connection {
             .await
             .map_err(|e| NetworkError::TransportError(e.to_string()))?;
 
-        let mut stats = self.stats.lock().unwrap();
-        stats.frames_sent += 1;
-        stats.bytes_sent += payload_len;
+        let mut connection_stats = self.stats.lock().unwrap();
+        connection_stats.frames_sent += 1;
+        connection_stats.bytes_sent += payload_len;
 
         Ok(())
     }
@@ -170,8 +170,8 @@ impl Connection {
         *state = new_state;
 
         if new_state == ConnectionState::Connected {
-            let mut stats = self.stats.lock().unwrap();
-            stats.established_at = Some(Instant::now());
+            let mut connection_stats = self.stats.lock().unwrap();
+            connection_stats.established_at = Some(Instant::now());
         }
     }
 

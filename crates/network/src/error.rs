@@ -18,6 +18,10 @@ pub enum NetworkError {
     #[error("Échec du handshake : {0}")]
     HandshakeFailed(String),
 
+    /// Erreur dans le protocole de handshake
+    #[error("Erreur de handshake : {0}")]
+    HandshakeError(String),
+
     /// Timeout
     #[error("Timeout après {0} secondes")]
     Timeout(u64),

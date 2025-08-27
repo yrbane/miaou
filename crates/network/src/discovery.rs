@@ -11,7 +11,7 @@ use std::time::Duration;
 use tokio::sync::RwLock;
 
 /// Méthodes de découverte disponibles
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DiscoveryMethod {
     /// Découverte mDNS sur le réseau local
     Mdns,
