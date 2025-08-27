@@ -1,12 +1,15 @@
 //! Tests d'intégration WebRTC + mDNS pour validation CLI
-//! 
+//!
 //! TDD GREEN v0.2.0: Tests pour valider l'étape 2 du plan
 
 #[cfg(test)]
 mod webrtc_integration_tests {
     use crate::{run_with_keystore, Cli, Command};
     use miaou_keyring::MemoryKeyStore;
-    use miaou_network::{WebRtcDataChannelManager, WebRtcConnectionConfig, DataChannelMessage, PeerId, NatConfig, WebRtcDataChannels};
+    use miaou_network::{
+        DataChannelMessage, NatConfig, PeerId, WebRtcConnectionConfig, WebRtcDataChannelManager,
+        WebRtcDataChannels,
+    };
 
     #[tokio::test]
     async fn test_webrtc_manager_creation() {
@@ -23,7 +26,7 @@ mod webrtc_integration_tests {
         };
 
         let manager = WebRtcDataChannelManager::new(config, peer_id);
-        
+
         // Vérifier configuration
         assert_eq!(manager.config().connection_timeout_seconds, 5);
         assert_eq!(manager.config().ice_gathering_timeout_seconds, 3);
@@ -60,7 +63,8 @@ mod webrtc_integration_tests {
 
         // Message binaire
         let binary_data = vec![0x01, 0x02, 0x03, 0x04];
-        let binary_msg = DataChannelMessage::binary(alice.clone(), bob.clone(), binary_data.clone());
+        let binary_msg =
+            DataChannelMessage::binary(alice.clone(), bob.clone(), binary_data.clone());
         assert_eq!(binary_msg.payload, binary_data);
 
         // Sérialisation/désérialisation
@@ -76,7 +80,7 @@ mod webrtc_integration_tests {
     async fn test_net_connect_with_webrtc_integration() {
         // TDD GREEN v0.2.0: Test CLI net-connect avec WebRTC (sans pair réel)
         // Ce test valide que l'intégration compile et fonctionne structurellement
-        
+
         let cli = Cli {
             log: "error".to_string(), // Réduire le bruit des logs
             cmd: Command::NetConnect {
@@ -85,7 +89,7 @@ mod webrtc_integration_tests {
         };
 
         let result = run_with_keystore(cli, MemoryKeyStore::new()).await;
-        
+
         // TDD GREEN v0.2.0: En test isolé, attendu = pair non trouvé
         // L'important c'est que WebRTC compile et s'intègre sans panic
         if let Err(err) = &result {
@@ -97,34 +101,36 @@ mod webrtc_integration_tests {
                 err_msg
             );
         }
-        
+
         println!("✅ Test WebRTC integration: {:?}", result);
     }
 
-    #[tokio::test] 
+    #[tokio::test]
     async fn test_webrtc_connection_simulation() {
         // TDD GREEN v0.2.0: Test simulation connexion WebRTC (sans réseau réel)
         let local_peer = PeerId::from_bytes(b"local-sim".to_vec());
         let remote_peer = PeerId::from_bytes(b"remote-sim".to_vec());
-        
+
         let config = WebRtcConnectionConfig::default();
         let mut manager = WebRtcDataChannelManager::new(config, local_peer.clone());
-        
+
         // Démarrer le gestionnaire
         manager.start().await.unwrap();
-        
+
         // Pour le MVP, la connexion échouera (pas de réseau réel)
         // Mais elle ne doit pas panic
         let remote_addr = "127.0.0.1:8080".parse().unwrap();
-        let connection_result = manager.connect_to_peer(remote_peer.clone(), remote_addr).await;
-        
+        let connection_result = manager
+            .connect_to_peer(remote_peer.clone(), remote_addr)
+            .await;
+
         // Dans un environnement de test isolé, c'est normal que ça échoue
         if connection_result.is_err() {
             println!("✅ Connexion WebRTC échouée comme attendu en test isolé");
         } else {
             println!("✅ Connexion WebRTC réussie (surprenant mais OK)");
         }
-        
+
         // Arrêter proprement
         manager.stop().await.unwrap();
     }
@@ -133,13 +139,15 @@ mod webrtc_integration_tests {
     fn test_webrtc_config_defaults() {
         // TDD GREEN v0.2.0: Test valeurs par défaut configuration WebRTC
         let config = WebRtcConnectionConfig::default();
-        
+
         // Vérifier des valeurs sensées
         assert!(config.connection_timeout_seconds > 0);
         assert!(config.ice_gathering_timeout_seconds > 0);
         assert!(config.keepalive_interval_seconds > 0);
-        
+
         // NAT config doit exister
-        assert!(config.nat_config.stun_servers.len() > 0 || config.nat_config.turn_servers.len() >= 0);
+        assert!(
+            config.nat_config.stun_servers.len() > 0 || config.nat_config.turn_servers.len() >= 0
+        );
     }
 }

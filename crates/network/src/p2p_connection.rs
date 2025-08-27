@@ -4,9 +4,9 @@
 //! SOLID Architecture: Each component has single responsibility
 
 use crate::{NetworkError, PeerId, PeerInfo};
-use std::sync::Arc;
-use std::collections::HashMap;
 use async_trait::async_trait;
+use std::collections::HashMap;
+use std::sync::Arc;
 
 // ========== TDD: Start with minimal interfaces (SOLID - ISP) ==========
 
@@ -21,11 +21,11 @@ pub struct P2pConnectionManager {
 impl P2pConnectionManager {
     /// Create new connection manager with dependency injection (SOLID - DIP)
     pub fn new(
-        peer_id: PeerId, 
+        peer_id: PeerId,
         factory: Arc<dyn P2pConnectionFactory>,
         handshake: Arc<dyn P2pHandshakeProtocol>,
     ) -> Self {
-        Self { 
+        Self {
             peer_id,
             factory,
             handshake,
@@ -34,17 +34,23 @@ impl P2pConnectionManager {
     }
 
     /// Connect to peer (TDD: GREEN - Now implemented!)
-    pub async fn connect_to_peer(&self, peer_info: &PeerInfo) -> Result<P2pConnectionId, NetworkError> {
+    pub async fn connect_to_peer(
+        &self,
+        peer_info: &PeerInfo,
+    ) -> Result<P2pConnectionId, NetworkError> {
         // GREEN: Real implementation using injected dependencies
-        let connection = self.factory.create_connection(peer_info, Arc::clone(&self.handshake)).await?;
+        let connection = self
+            .factory
+            .create_connection(peer_info, Arc::clone(&self.handshake))
+            .await?;
         let conn_id = P2pConnectionId::new(format!("{:?}-{:?}", self.peer_id, peer_info.id));
-        
+
         // Store connection
         {
             let mut connections = self.connections.write().await;
             connections.insert(conn_id.clone(), connection);
         }
-        
+
         Ok(conn_id)
     }
 
@@ -56,7 +62,10 @@ impl P2pConnectionManager {
     }
 
     /// Get connection by ID  
-    pub async fn get_connection(&self, conn_id: &P2pConnectionId) -> Option<Arc<dyn P2pConnection>> {
+    pub async fn get_connection(
+        &self,
+        conn_id: &P2pConnectionId,
+    ) -> Option<Arc<dyn P2pConnection>> {
         let connections = self.connections.read().await;
         connections.get(conn_id).cloned()
     }
@@ -67,6 +76,7 @@ impl P2pConnectionManager {
 pub struct P2pConnectionId(String);
 
 impl P2pConnectionId {
+    /// Create new P2P connection ID
     pub fn new(id: String) -> Self {
         Self(id)
     }
@@ -78,7 +88,10 @@ impl P2pConnectionId {
 #[async_trait]
 pub trait P2pHandshakeProtocol: Send + Sync {
     /// Initiate handshake with peer
-    async fn initiate_handshake(&self, peer_info: &PeerInfo) -> Result<HandshakeResult, NetworkError>;
+    async fn initiate_handshake(
+        &self,
+        peer_info: &PeerInfo,
+    ) -> Result<HandshakeResult, NetworkError>;
     /// Verify handshake data
     async fn verify_handshake(&self, data: &[u8]) -> Result<bool, NetworkError>;
 }
@@ -97,7 +110,10 @@ pub struct MockHandshakeProtocol;
 
 #[async_trait]
 impl P2pHandshakeProtocol for MockHandshakeProtocol {
-    async fn initiate_handshake(&self, _peer_info: &PeerInfo) -> Result<HandshakeResult, NetworkError> {
+    async fn initiate_handshake(
+        &self,
+        _peer_info: &PeerInfo,
+    ) -> Result<HandshakeResult, NetworkError> {
         Ok(HandshakeResult {
             session_key: vec![0u8; 32],
             peer_verified: true,
@@ -157,14 +173,18 @@ impl MockP2pConnection {
 impl P2pConnection for MockP2pConnection {
     async fn send_message(&self, _data: &[u8]) -> Result<(), NetworkError> {
         if !self.active {
-            return Err(NetworkError::HandshakeError("Connection not active".to_string()));
+            return Err(NetworkError::HandshakeError(
+                "Connection not active".to_string(),
+            ));
         }
         Ok(())
     }
 
     async fn receive_message(&self) -> Result<Vec<u8>, NetworkError> {
         if !self.active {
-            return Err(NetworkError::HandshakeError("Connection not active".to_string()));
+            return Err(NetworkError::HandshakeError(
+                "Connection not active".to_string(),
+            ));
         }
         Ok(b"mock message".to_vec())
     }
@@ -209,9 +229,12 @@ mod tests {
         let factory = Arc::new(MockP2pConnectionFactory);
         let handshake = Arc::new(MockHandshakeProtocol);
         let manager = P2pConnectionManager::new(peer_id, factory, handshake);
-        
+
         let connections = manager.list_connections().await;
-        assert!(connections.is_empty(), "New manager should have no connections");
+        assert!(
+            connections.is_empty(),
+            "New manager should have no connections"
+        );
     }
 
     #[tokio::test]
@@ -221,19 +244,19 @@ mod tests {
         let factory = Arc::new(MockP2pConnectionFactory);
         let handshake = Arc::new(MockHandshakeProtocol);
         let manager = P2pConnectionManager::new(peer_id, factory, handshake);
-        
+
         let remote_peer_id = PeerId::from_bytes(b"remote-peer".to_vec());
         let mut peer_info = PeerInfo::new(remote_peer_id.clone());
         peer_info.add_address("127.0.0.1:8080".parse().unwrap());
 
         // GREEN: Now this works!
         let conn_id = manager.connect_to_peer(&peer_info).await.unwrap();
-        
+
         // Verify connection was created
         let connections = manager.list_connections().await;
         assert_eq!(connections.len(), 1);
         assert_eq!(connections[0], conn_id);
-        
+
         // Verify we can get the connection
         let connection = manager.get_connection(&conn_id).await;
         assert!(connection.is_some());
@@ -252,7 +275,7 @@ mod tests {
         let id1 = P2pConnectionId::new("same-id".to_string());
         let id2 = P2pConnectionId::new("same-id".to_string());
         let id3 = P2pConnectionId::new("different-id".to_string());
-        
+
         assert_eq!(id1, id2);
         assert_ne!(id1, id3);
     }
@@ -269,9 +292,9 @@ mod handshake_tests {
         // GREEN: Simple test that should pass
         let protocol = MockHandshakeProtocol;
         let peer_info = create_test_peer();
-        
+
         let result = protocol.initiate_handshake(&peer_info).await.unwrap();
-        
+
         assert_eq!(result.session_key.len(), 32);
         assert!(result.peer_verified);
     }
@@ -281,7 +304,7 @@ mod handshake_tests {
         // GREEN: Verification test
         let protocol = MockHandshakeProtocol;
         let test_data = b"test handshake data";
-        
+
         let is_valid = protocol.verify_handshake(test_data).await.unwrap();
         assert!(is_valid);
     }
@@ -305,18 +328,18 @@ mod connection_tests {
         // GREEN: Basic connection functionality
         let peer_id = PeerId::from_bytes(b"connection-test-peer".to_vec());
         let connection = MockP2pConnection::new(peer_id.clone());
-        
+
         // Test sending
         let result = connection.send_message(b"test message").await;
         assert!(result.is_ok());
-        
+
         // Test receiving
         let received = connection.receive_message().await.unwrap();
         assert_eq!(received, b"mock message");
-        
+
         // Test peer ID
         assert_eq!(connection.peer_id(), &peer_id);
-        
+
         // Test active status
         assert!(connection.is_active());
     }
@@ -326,13 +349,16 @@ mod connection_tests {
         // GREEN: Factory pattern test
         let factory = MockP2pConnectionFactory;
         let handshake = Arc::new(MockHandshakeProtocol);
-        
+
         let peer_id = PeerId::from_bytes(b"factory-test-peer".to_vec());
         let mut peer_info = PeerInfo::new(peer_id.clone());
         peer_info.add_address("127.0.0.1:7000".parse().unwrap());
-        
-        let connection = factory.create_connection(&peer_info, handshake).await.unwrap();
-        
+
+        let connection = factory
+            .create_connection(&peer_info, handshake)
+            .await
+            .unwrap();
+
         assert_eq!(connection.peer_id(), &peer_id);
         assert!(connection.is_active());
     }
@@ -340,10 +366,10 @@ mod connection_tests {
 
 // ========== SUMMARY ==========
 // This module demonstrates SOLID + TDD:
-// 
+//
 // SOLID Principles Applied:
 // ✅ Single Responsibility: Each struct has one clear responsibility
-// ✅ Open/Closed: Extensible via traits without modifying existing code  
+// ✅ Open/Closed: Extensible via traits without modifying existing code
 // ✅ Liskov Substitution: All implementations are interchangeable
 // ✅ Interface Segregation: Small, focused traits
 // ✅ Dependency Inversion: Depend on abstractions (traits), not concretions

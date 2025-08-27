@@ -35,6 +35,11 @@ impl PeerId {
         }
     }
 
+    /// Retourne l'identifiant complet en hexadécimal
+    pub fn to_hex(&self) -> String {
+        hex::encode(&self.0)
+    }
+
     #[cfg(test)]
     pub(crate) fn new_mock() -> Self {
         Self(vec![1, 2, 3, 4, 5, 6, 7, 8])

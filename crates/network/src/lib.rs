@@ -14,6 +14,7 @@
 //! - **I**nterface Segregation : Traits minimaux et spécifiques
 //! - **D**ependency Inversion : Dépend d'abstractions, pas d'implémentations
 
+pub mod connection;
 pub mod dht;
 pub mod directory;
 pub mod discovery;
@@ -22,15 +23,15 @@ pub mod handshake;
 pub mod mdns_discovery;
 pub mod messaging;
 pub mod nat_traversal;
+pub mod p2p_connection;
 pub mod peer;
 pub mod ratchet;
 pub mod store;
 pub mod transport;
 pub mod unified_discovery;
-pub mod connection;
-pub mod p2p_connection;
 pub mod webrtc_data_channels;
 pub mod webrtc_transport;
+pub mod message_queue;
 
 pub use connection::{Connection, ConnectionState};
 pub use dht::{DhtConfig, DhtMessage, DistributedHashTable, KademliaDht, RoutingTable};
@@ -69,6 +70,15 @@ pub use webrtc_data_channels::{
     WebRtcDataChannels,
 };
 pub use webrtc_transport::WebRtcTransport;
+pub use message_queue::{
+    MessageQueue as ProductionMessageQueue, 
+    MessageStore as ProductionMessageStore, 
+    FileMessageStore, 
+    QueuedMessage as ProductionQueuedMessage, 
+    MessageId, 
+    MessagePriority, 
+    QueueStats
+};
 
 #[cfg(test)]
 mod tests {

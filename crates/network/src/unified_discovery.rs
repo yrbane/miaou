@@ -86,27 +86,28 @@ impl UnifiedDiscovery {
     /// Démarre mDNS avec interior mutability
     async fn start_mdns_internal(&self) -> Result<(), NetworkError> {
         info!("🔍 Démarrage découverte mDNS...");
-        
+
         let mdns = MdnsDiscovery::new(self.config.clone());
         mdns.start().await?;
-        
+
         // Stocker l'instance pour pouvoir l'utiliser dans announce()
         {
             let mut mdns_guard = self.mdns_discovery.lock().await;
             *mdns_guard = Some(Arc::new(mdns));
         }
-        
+
         // Mettre à jour l'état
         let mut states = self.method_states.write().await;
         if let Some(state) = states.get_mut(&DiscoveryMethod::Mdns) {
             state.active = true;
         }
-        
+
         info!("✅ mDNS découverte démarrée et stockée");
         Ok(())
     }
 
     /// Démarre une méthode de découverte spécifique
+    #[allow(dead_code)]
     async fn start_method(&mut self, method: &DiscoveryMethod) -> Result<(), NetworkError> {
         match method {
             DiscoveryMethod::Mdns => {
@@ -204,6 +205,7 @@ impl UnifiedDiscovery {
     }
 
     /// Arrête une méthode de découverte spécifique
+    #[allow(dead_code)]
     async fn stop_method(&mut self, method: &DiscoveryMethod) -> Result<(), NetworkError> {
         match method {
             DiscoveryMethod::Mdns => {
@@ -386,10 +388,7 @@ impl Discovery for UnifiedDiscovery {
         let states = self.method_states.read().await;
 
         // mDNS
-        if states
-            .get(&DiscoveryMethod::Mdns)
-            .map_or(false, |s| s.active)
-        {
+        if states.get(&DiscoveryMethod::Mdns).is_some_and(|s| s.active) {
             let mdns_guard = self.mdns_discovery.lock().await;
             if let Some(mdns) = &*mdns_guard {
                 info!("📢 Appel announce() sur instance mDNS");
@@ -400,10 +399,7 @@ impl Discovery for UnifiedDiscovery {
         }
 
         // DHT
-        if states
-            .get(&DiscoveryMethod::Dht)
-            .map_or(false, |s| s.active)
-        {
+        if states.get(&DiscoveryMethod::Dht).is_some_and(|s| s.active) {
             if let Some(dht) = &self.dht {
                 let dht = dht.read().await;
                 dht.announce().await?;
@@ -423,10 +419,7 @@ impl Discovery for UnifiedDiscovery {
 
         // Chercher via DHT si actif
         let states = self.method_states.read().await;
-        if states
-            .get(&DiscoveryMethod::Dht)
-            .map_or(false, |s| s.active)
-        {
+        if states.get(&DiscoveryMethod::Dht).is_some_and(|s| s.active) {
             if let Some(dht) = &self.dht {
                 let dht = dht.read().await;
 
@@ -905,7 +898,7 @@ mod tests {
         // TDD: Test que start_mdns_internal stocke bien l'instance mDNS
         let mut config = DiscoveryConfig::default();
         config.methods = vec![DiscoveryMethod::Mdns];
-        
+
         let local_id = PeerId::from_bytes(b"test_peer".to_vec());
         let local_info = PeerInfo::new(local_id.clone());
         let discovery = UnifiedDiscovery::new(config, local_id, local_info);
@@ -932,12 +925,12 @@ mod tests {
         assert!(mdns_state.active);
     }
 
-    #[tokio::test] 
+    #[tokio::test]
     async fn test_unified_discovery_announce_with_stored_mdns() {
         // TDD: Test que announce() utilise bien l'instance mDNS stockée
         let mut config = DiscoveryConfig::default();
         config.methods = vec![DiscoveryMethod::Mdns];
-        
+
         let local_id = PeerId::from_bytes(b"test_peer".to_vec());
         let mut local_info = PeerInfo::new(local_id.clone());
         local_info.add_address("127.0.0.1:4242".parse().unwrap());
@@ -959,7 +952,7 @@ mod tests {
         // TDD: Test que start() appelle bien start_mdns_internal pour mDNS
         let mut config = DiscoveryConfig::default();
         config.methods = vec![DiscoveryMethod::Mdns];
-        
+
         let local_id = PeerId::from_bytes(b"test_peer".to_vec());
         let local_info = PeerInfo::new(local_id.clone());
         let discovery = UnifiedDiscovery::new(config, local_id, local_info);
@@ -987,7 +980,7 @@ mod tests {
         // TDD: Test que collect_peers fonctionne avec l'instance mDNS stockée
         let mut config = DiscoveryConfig::default();
         config.methods = vec![DiscoveryMethod::Mdns];
-        
+
         let local_id = PeerId::from_bytes(b"test_peer".to_vec());
         let local_info = PeerInfo::new(local_id.clone());
         let discovery = UnifiedDiscovery::new(config, local_id, local_info);

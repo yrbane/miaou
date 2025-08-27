@@ -6,14 +6,14 @@
 use crate::{Discovery, DiscoveryConfig, NetworkError, PeerId, PeerInfo};
 use async_trait::async_trait;
 use std::collections::HashMap;
+use std::net::UdpSocket;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
-use std::net::{UdpSocket, SocketAddr};
 use tokio::task::JoinHandle;
 use tracing::{debug, info, warn};
 
 #[cfg(feature = "mdns-discovery")]
-use mdns_sd::{ServiceDaemon, ServiceInfo, ServiceEvent};
+use mdns_sd::{ServiceDaemon, ServiceEvent, ServiceInfo};
 
 /// Message pour communiquer avec la tâche mDNS
 #[cfg(feature = "mdns-discovery")]
@@ -91,7 +91,7 @@ impl MdnsDiscovery {
     async fn parse_service_info(service_info: &ServiceInfo) -> Option<PeerInfo> {
         // Extraire le peer_id depuis les propriétés TXT
         let mut peer_id_hex = None;
-        
+
         let properties = service_info.get_properties();
         if let Some(value) = properties.get("peer_id") {
             // Convertir TxtProperty en string
@@ -99,26 +99,25 @@ impl MdnsDiscovery {
                 peer_id_hex = Some(String::from_utf8_lossy(bytes).to_string());
             }
         }
-        
+
         if let Some(peer_id_str) = peer_id_hex {
             // Décoder le peer ID depuis l'hex
             if let Ok(peer_id_bytes) = hex::decode(&peer_id_str) {
                 let peer_id = PeerId::from_bytes(peer_id_bytes);
                 let mut peer_info = PeerInfo::new(peer_id);
-                
+
                 // Ajouter les adresses du service
                 for addr in service_info.get_addresses() {
                     let socket_addr = std::net::SocketAddr::new(*addr, service_info.get_port());
                     peer_info.add_address(socket_addr);
                 }
-                
+
                 return Some(peer_info);
             }
         }
-        
+
         None
     }
-
 }
 
 #[async_trait]
@@ -134,20 +133,20 @@ impl Discovery for MdnsDiscovery {
         #[cfg(feature = "mdns-discovery")]
         {
             info!("🟢 Démarrage mDNS discovery avec mdns-sd - DEBUT");
-            
+
             // Créer canal de shutdown
             let (shutdown_tx, mut shutdown_rx) = mpsc::unbounded_channel();
             *self.shutdown_tx.lock().unwrap() = Some(shutdown_tx);
-            
+
             // Créer canal pour messages mDNS
             let (mdns_tx, mut mdns_rx) = mpsc::unbounded_channel();
             *self.mdns_tx.lock().unwrap() = Some(mdns_tx);
-            
+
             // Lancer la tâche de découverte en arrière-plan
             let peers = Arc::clone(&self.peers);
             let max_peers = self.config.max_peers;
             let listen_port = self.listen_port;
-            
+
             let discovery_task = tokio::spawn(async move {
                 // Créer UN daemon pour annonce et UN autre pour découverte
                 let announce_daemon = match ServiceDaemon::new() {
@@ -157,7 +156,7 @@ impl Discovery for MdnsDiscovery {
                         return;
                     }
                 };
-                
+
                 let discover_daemon = match ServiceDaemon::new() {
                     Ok(daemon) => daemon,
                     Err(e) => {
@@ -175,7 +174,7 @@ impl Discovery for MdnsDiscovery {
                     }
                 };
                 debug!("mDNS browser créé, écoute des services _miaou._tcp.local.");
-                
+
                 loop {
                     tokio::select! {
                         _ = shutdown_rx.recv() => {
@@ -186,26 +185,26 @@ impl Discovery for MdnsDiscovery {
                             match msg {
                                 Some(MdnsMessage::Announce(peer_info)) => {
                                     debug!("Annonce service mDNS pour peer {}", peer_info.id);
-                                    
+
                                     // Créer et enregistrer le service mDNS
                                     let service_name = format!("miaou-{}", peer_info.id.to_hex());
-                                    
+
                                     // Obtenir l'adresse IP locale réelle (pas 127.0.0.1)
                                     let local_ip = Self::get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
                                     // Utiliser un hostname simple et valide
                                     let hostname = "localhost.local.";
-                                    
+
                                     debug!("Enregistrement service mDNS: {} sur {}:{}", service_name, local_ip, listen_port);
-                                    
+
                                     let mut properties = std::collections::HashMap::new();
                                     properties.insert("peer_id".to_string(), peer_info.id.to_hex());
                                     properties.insert("version".to_string(), "0.2.0".to_string());
                                     properties.insert("port".to_string(), listen_port.to_string());
-                                    
+
                                     if !peer_info.addresses.is_empty() {
                                         properties.insert("address".to_string(), peer_info.addresses[0].to_string());
                                     }
-                                    
+
                                     let service_info = ServiceInfo::new(
                                         "_miaou._tcp.local.",
                                         &service_name,
@@ -214,7 +213,7 @@ impl Discovery for MdnsDiscovery {
                                         listen_port,
                                         Some(properties),
                                     ).unwrap();
-                                    
+
                                     if let Err(e) = announce_daemon.register(service_info) {
                                         warn!("Erreur enregistrement service mDNS: {}", e);
                                     } else {
@@ -231,7 +230,7 @@ impl Discovery for MdnsDiscovery {
                             match event {
                                 Ok(ServiceEvent::ServiceResolved(info)) => {
                                     debug!("Service mDNS découvert: {}", info.get_fullname());
-                                    
+
                                     // Parser les infos du service pour créer un PeerInfo
                                     if let Some(peer_info) = Self::parse_service_info(&info).await {
                                         let mut peers_guard = peers.lock().unwrap();
@@ -256,10 +255,10 @@ impl Discovery for MdnsDiscovery {
                         }
                     }
                 }
-                
+
                 info!("mDNS discovery task terminée");
             });
-            
+
             *self.discovery_task.lock().unwrap() = Some(discovery_task);
         }
 
@@ -284,17 +283,13 @@ impl Discovery for MdnsDiscovery {
         info!("Arrêt mDNS discovery");
 
         // Envoyer signal d'arrêt
-        let shutdown_tx = {
-            self.shutdown_tx.lock().unwrap().take()
-        };
+        let shutdown_tx = { self.shutdown_tx.lock().unwrap().take() };
         if let Some(tx) = shutdown_tx {
             let _ = tx.send(());
         }
 
         // Attendre la fin de la tâche
-        let task = {
-            self.discovery_task.lock().unwrap().take()
-        };
+        let task = { self.discovery_task.lock().unwrap().take() };
         if let Some(task) = task {
             let _ = task.await;
         }
@@ -304,7 +299,7 @@ impl Discovery for MdnsDiscovery {
             let mut active = self.active.lock().unwrap();
             *active = false;
         }
-        
+
         debug!("mDNS discovery arrêtée");
         Ok(())
     }
@@ -319,25 +314,29 @@ impl Discovery for MdnsDiscovery {
         #[cfg(feature = "mdns-discovery")]
         {
             info!("🔊 Envoi message d'annonce mDNS pour peer {}", peer_info.id);
-            
+
             // Envoyer message à la tâche mDNS pour enregistrer le service
             let mdns_tx = self.mdns_tx.lock().unwrap();
             if let Some(ref tx) = *mdns_tx {
                 if let Err(e) = tx.send(MdnsMessage::Announce(peer_info.clone())) {
-                    return Err(NetworkError::DiscoveryError(
-                        format!("Erreur envoi message mDNS: {}", e)
-                    ));
+                    return Err(NetworkError::DiscoveryError(format!(
+                        "Erreur envoi message mDNS: {}",
+                        e
+                    )));
                 }
             } else {
                 return Err(NetworkError::DiscoveryError(
-                    "Canal mDNS non disponible".to_string()
+                    "Canal mDNS non disponible".to_string(),
                 ));
             }
         }
 
         #[cfg(not(feature = "mdns-discovery"))]
         {
-            debug!("Annonce mDNS ignorée (feature manquante) pour peer {}", peer_info.id);
+            debug!(
+                "Annonce mDNS ignorée (feature manquante) pour peer {}",
+                peer_info.id
+            );
         }
 
         Ok(())
@@ -562,12 +561,12 @@ mod tests {
         let config = create_test_config();
         let discovery = MdnsDiscovery::new_with_port(config, 4243); // Port test
         let peer = PeerInfo::new_mock();
-        
+
         // Le service doit pouvoir être annoncé
         discovery.start().await.unwrap();
         let result = discovery.announce(&peer).await;
         assert!(result.is_ok());
-        
+
         discovery.stop().await.unwrap();
     }
 
@@ -576,36 +575,36 @@ mod tests {
     async fn test_mdns_service_discovery() {
         // TDD: Test découverte de service mDNS réel
         use tokio::time::{sleep, Duration};
-        
+
         let config1 = create_test_config();
         let config2 = create_test_config();
-        
+
         let discovery1 = MdnsDiscovery::new_with_port(config1, 4244);
         let discovery2 = MdnsDiscovery::new_with_port(config2, 4245);
-        
+
         let peer1 = PeerInfo::new_mock();
-        
+
         // Démarrer le premier service et l'annoncer
         discovery1.start().await.unwrap();
         discovery1.announce(&peer1).await.unwrap();
-        
+
         // Démarrer le second service pour écouter
         discovery2.start().await.unwrap();
-        
+
         // Attendre un peu pour la découverte
         sleep(Duration::from_millis(500)).await;
-        
+
         // Le second devrait voir le premier
-        let discovered = discovery2.discovered_peers().await;
+        let _discovered = discovery2.discovered_peers().await;
         // Note: Le test peut être flaky selon l'environnement réseau
         // En CI, on pourrait le désactiver ou l'adapter
-        
+
         discovery1.stop().await.unwrap();
         discovery2.stop().await.unwrap();
-        
+
         // Pour l'instant, on vérifie juste qu'il n'y a pas d'erreur
         // L'implémentation réelle viendra ensuite
-        assert!(discovered.len() >= 0); // Au moins pas d'erreur
+        // Au moins pas d'erreur - la longueur peut être 0 ou plus
     }
 
     #[cfg(feature = "mdns-discovery")]
@@ -614,7 +613,7 @@ mod tests {
         // TDD: Test format du nom de service mDNS
         let config = create_test_config();
         let discovery = MdnsDiscovery::new(config);
-        
+
         // Le nom de service doit suivre le format _miaou._tcp.local.
         let service_name = discovery.service_name();
         assert_eq!(service_name, "_miaou._tcp.local.");
@@ -626,17 +625,17 @@ mod tests {
         // TDD: Test plusieurs services mDNS sur ports différents
         let config1 = create_test_config();
         let config2 = create_test_config();
-        
+
         let discovery1 = MdnsDiscovery::new_with_port(config1, 4246);
         let discovery2 = MdnsDiscovery::new_with_port(config2, 4247);
-        
+
         // Les deux services doivent pouvoir démarrer sans conflit
         let result1 = discovery1.start().await;
         let result2 = discovery2.start().await;
-        
+
         assert!(result1.is_ok());
         assert!(result2.is_ok());
-        
+
         discovery1.stop().await.unwrap();
         discovery2.stop().await.unwrap();
     }

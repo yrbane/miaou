@@ -42,6 +42,10 @@ pub enum NetworkError {
     #[error("Erreur cryptographique : {0}")]
     CryptoError(String),
 
+    /// Erreur de stockage
+    #[error("Erreur de stockage : {0}")]
+    StorageError(String),
+
     /// Erreur générale
     #[error("Erreur réseau : {0}")]
     General(String),

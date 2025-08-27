@@ -5,7 +5,7 @@
 
 use crate::{Message, NetworkError, PeerId};
 use async_trait::async_trait;
-use miaou_crypto::{blake3_hash, Chacha20Poly1305Cipher, AeadCipher};
+use miaou_crypto::{blake3_hash, AeadCipher, Chacha20Poly1305Cipher};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -268,7 +268,9 @@ impl InMemoryMessageStore {
             .map_err(|e| NetworkError::General(format!("Erreur génération nonce: {e}")))?;
 
         // Chiffrer avec le cipher
-        let encrypted = self.cipher.encrypt(&serialized, &nonce, b"message_store")
+        let encrypted = self
+            .cipher
+            .encrypt(&serialized, &nonce, b"message_store")
             .map_err(|e| NetworkError::CryptoError(format!("Chiffrement échoué: {e:?}")))?;
 
         // Préfixer avec la nonce pour le déchiffrement
@@ -280,16 +282,21 @@ impl InMemoryMessageStore {
     /// Déchiffre un message stocké
     fn decrypt_stored_message(&self, encrypted: &[u8]) -> Result<StoredMessage, NetworkError> {
         if encrypted.len() < 12 {
-            return Err(NetworkError::General("Données chiffrées trop courtes".to_string()));
+            return Err(NetworkError::General(
+                "Données chiffrées trop courtes".to_string(),
+            ));
         }
 
         // Extraire la nonce (12 premiers bytes)
-        let nonce: [u8; 12] = encrypted[..12].try_into()
+        let nonce: [u8; 12] = encrypted[..12]
+            .try_into()
             .map_err(|_| NetworkError::General("Nonce invalide".to_string()))?;
-        
+
         // Déchiffrer le reste
         let ciphertext = &encrypted[12..];
-        let decrypted = self.cipher.decrypt(ciphertext, &nonce, b"message_store")
+        let decrypted = self
+            .cipher
+            .decrypt(ciphertext, &nonce, b"message_store")
             .map_err(|e| NetworkError::CryptoError(format!("Déchiffrement échoué: {e:?}")))?;
 
         let stored_msg: StoredMessage = serde_json::from_slice(&decrypted)

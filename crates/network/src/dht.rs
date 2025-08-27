@@ -100,6 +100,11 @@ impl KBucket {
         self.peers.len()
     }
 
+    /// Le bucket est-il vide?
+    pub fn is_empty(&self) -> bool {
+        self.peers.is_empty()
+    }
+
     /// Le bucket est-il plein?
     pub fn is_full(&self) -> bool {
         self.peers.len() >= self.k
@@ -137,29 +142,52 @@ impl Default for DhtConfig {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum DhtMessage {
     /// PING - vérifier qu'un nœud est vivant
-    Ping { sender_id: PeerId },
+    Ping {
+        /// ID du pair qui envoie le ping
+        sender_id: PeerId,
+    },
     /// PONG - réponse au ping
-    Pong { sender_id: PeerId },
+    Pong {
+        /// ID du pair qui répond au ping
+        sender_id: PeerId,
+    },
     /// FIND_NODE - trouver les K nœuds les plus proches d'un ID
     FindNode {
+        /// ID du pair qui fait la requête
         sender_id: PeerId,
+        /// ID cible à rechercher
         target_id: PeerId,
     },
     /// NODES - réponse avec les nœuds trouvés
     Nodes {
+        /// ID du pair qui répond
         sender_id: PeerId,
+        /// Liste des nœuds proches trouvés
         nodes: Vec<(PeerId, SocketAddr)>,
     },
     /// STORE - stocker une valeur dans le DHT
     Store {
+        /// ID du pair qui stocke
         sender_id: PeerId,
+        /// Clé de la valeur
         key: Vec<u8>,
+        /// Valeur à stocker
         value: Vec<u8>,
     },
     /// FIND_VALUE - chercher une valeur dans le DHT
-    FindValue { sender_id: PeerId, key: Vec<u8> },
+    FindValue {
+        /// ID du pair qui cherche
+        sender_id: PeerId,
+        /// Clé recherchée
+        key: Vec<u8>,
+    },
     /// VALUE - réponse avec la valeur trouvée
-    Value { sender_id: PeerId, value: Vec<u8> },
+    Value {
+        /// ID du pair qui répond
+        sender_id: PeerId,
+        /// Valeur trouvée
+        value: Vec<u8>,
+    },
 }
 
 /// Routing table basée sur Kademlia
@@ -188,6 +216,11 @@ impl RoutingTable {
             buckets,
             storage: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    /// Retourne la configuration DHT
+    pub fn config(&self) -> &DhtConfig {
+        &self.config
     }
 
     /// Calcule l'index du bucket pour un pair donné

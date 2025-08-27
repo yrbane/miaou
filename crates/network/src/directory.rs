@@ -446,6 +446,11 @@ impl DhtDistributedDirectory {
         Ok(removed_count)
     }
 
+    /// Retourne l'ID du pair local
+    pub fn local_peer_id(&self) -> &PeerId {
+        &self.local_peer_id
+    }
+
     /// Vérifie si on doit accepter une entrée (pas de doublons avec version inférieure)
     fn should_accept_entry(&self, entry: &DirectoryEntry) -> bool {
         let cache = self.local_cache.read().unwrap();
@@ -1386,7 +1391,7 @@ mod tests {
     async fn test_directory_entry_signatures_management() {
         // TDD: Test gestion des signatures d'entrées (Web of Trust)
         let peer1 = PeerId::from_bytes(b"peer1_sig".to_vec());
-        let peer2 = PeerId::from_bytes(b"peer2_sig".to_vec());
+        let _peer2 = PeerId::from_bytes(b"peer2_sig".to_vec()); // Réservé pour futures extensions
         let signer1 = PeerId::from_bytes(b"signer1".to_vec());
         let signer2 = PeerId::from_bytes(b"signer2".to_vec());
 
