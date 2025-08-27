@@ -38,6 +38,10 @@ pub enum NetworkError {
     #[error("Erreur de sérialisation : {0}")]
     SerializationError(String),
 
+    /// Erreur cryptographique
+    #[error("Erreur cryptographique : {0}")]
+    CryptoError(String),
+
     /// Erreur générale
     #[error("Erreur réseau : {0}")]
     General(String),

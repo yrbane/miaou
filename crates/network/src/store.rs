@@ -5,7 +5,7 @@
 
 use crate::{Message, NetworkError, PeerId};
 use async_trait::async_trait;
-use miaou_crypto::{blake3_hash, Chacha20Poly1305Cipher};
+use miaou_crypto::{blake3_hash, Chacha20Poly1305Cipher, AeadCipher};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -262,21 +262,37 @@ impl InMemoryMessageStore {
         let serialized = serde_json::to_vec(stored_msg)
             .map_err(|e| NetworkError::SerializationError(e.to_string()))?;
 
-        // TDD: Simulation de chiffrement pour MVP
-        // En réalité, ici on utiliserait AeadCipher::encrypt avec une nonce
-        let mock_encrypted = [b"encrypted_".as_slice(), &serialized].concat();
-        Ok(mock_encrypted)
+        // Générer une nonce aléatoire
+        let mut nonce = [0u8; 12];
+        getrandom::getrandom(&mut nonce)
+            .map_err(|e| NetworkError::General(format!("Erreur génération nonce: {e}")))?;
+
+        // Chiffrer avec le cipher
+        let encrypted = self.cipher.encrypt(&serialized, &nonce, b"message_store")
+            .map_err(|e| NetworkError::CryptoError(format!("Chiffrement échoué: {e:?}")))?;
+
+        // Préfixer avec la nonce pour le déchiffrement
+        let mut result = nonce.to_vec();
+        result.extend_from_slice(&encrypted);
+        Ok(result)
     }
 
     /// Déchiffre un message stocké
     fn decrypt_stored_message(&self, encrypted: &[u8]) -> Result<StoredMessage, NetworkError> {
-        // TDD: Simulation de déchiffrement pour MVP
-        if !encrypted.starts_with(b"encrypted_") {
-            return Err(NetworkError::General("Format chiffré invalide".to_string()));
+        if encrypted.len() < 12 {
+            return Err(NetworkError::General("Données chiffrées trop courtes".to_string()));
         }
 
-        let decrypted = &encrypted[10..]; // Skip "encrypted_" prefix
-        let stored_msg: StoredMessage = serde_json::from_slice(decrypted)
+        // Extraire la nonce (12 premiers bytes)
+        let nonce: [u8; 12] = encrypted[..12].try_into()
+            .map_err(|_| NetworkError::General("Nonce invalide".to_string()))?;
+        
+        // Déchiffrer le reste
+        let ciphertext = &encrypted[12..];
+        let decrypted = self.cipher.decrypt(ciphertext, &nonce, b"message_store")
+            .map_err(|e| NetworkError::CryptoError(format!("Déchiffrement échoué: {e:?}")))?;
+
+        let stored_msg: StoredMessage = serde_json::from_slice(&decrypted)
             .map_err(|e| NetworkError::SerializationError(e.to_string()))?;
 
         Ok(stored_msg)
