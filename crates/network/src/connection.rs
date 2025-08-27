@@ -197,6 +197,14 @@ impl Connection {
         conn.set_state(ConnectionState::Connected);
         conn
     }
+
+    #[cfg(test)]
+    pub(crate) async fn send_to_channel(&self, frame: Frame) -> Result<(), NetworkError> {
+        self.tx
+            .send(frame)
+            .await
+            .map_err(|e| NetworkError::TransportError(e.to_string()))
+    }
 }
 
 #[cfg(test)]
@@ -273,5 +281,75 @@ mod tests {
         conn.update_rtt(42);
         let stats = conn.stats();
         assert_eq!(stats.rtt_ms, Some(42));
+    }
+
+    #[tokio::test]
+    async fn test_receive_frame_when_connected() {
+        let conn = Connection::new(Some(PeerId::new_mock()));
+        conn.set_state(ConnectionState::Connected);
+
+        // Envoyer d'abord un frame dans le canal
+        let test_frame = Frame {
+            frame_type: FrameType::Data,
+            sequence: 42,
+            payload: vec![1, 2, 3, 4],
+        };
+
+        // Utiliser la méthode de test pour envoyer dans le canal
+        conn.send_to_channel(test_frame.clone()).await.unwrap();
+
+        // Maintenant recevoir le frame
+        let received_frame = conn.receive_frame().await.unwrap();
+
+        assert_eq!(received_frame.frame_type, FrameType::Data);
+        assert_eq!(received_frame.sequence, 42);
+        assert_eq!(received_frame.payload, vec![1, 2, 3, 4]);
+
+        // Vérifier que les stats sont mises à jour
+        let stats = conn.stats();
+        assert_eq!(stats.frames_received, 1);
+        assert_eq!(stats.bytes_received, 4);
+    }
+
+    #[tokio::test]
+    async fn test_receive_frame_when_disconnected() {
+        let conn = Connection::new(Some(PeerId::new_mock()));
+        // Ne pas set à Connected, rester en Connecting
+
+        let result = conn.receive_frame().await;
+        assert!(result.is_err());
+
+        if let Err(NetworkError::ConnectionFailed(msg)) = result {
+            assert_eq!(msg, "Connexion non active");
+        } else {
+            panic!("Expected ConnectionFailed error");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_receive_frame_timeout() {
+        let conn = Connection::new(Some(PeerId::new_mock()));
+        conn.set_state(ConnectionState::Connected);
+
+        // Test avec timeout - le channel est vide donc recv() va attendre
+        // Utilisons tokio::time::timeout pour simuler un timeout
+        let result =
+            tokio::time::timeout(std::time::Duration::from_millis(10), conn.receive_frame()).await;
+
+        // Le timeout doit se déclencher car aucun frame n'est disponible
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_connection_peer_id() {
+        let peer_id = PeerId::new_mock();
+        let conn = Connection::new(Some(peer_id.clone()));
+
+        let retrieved_id = conn.peer_id();
+        assert!(retrieved_id.is_some());
+        assert_eq!(retrieved_id.unwrap(), peer_id);
+
+        let conn_no_peer = Connection::new(None);
+        assert!(conn_no_peer.peer_id().is_none());
     }
 }

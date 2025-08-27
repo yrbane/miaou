@@ -283,4 +283,49 @@ mod tests {
         assert!(config.methods.contains(&DiscoveryMethod::Bootstrap));
         assert_eq!(config.max_peers, 100);
     }
+
+    #[tokio::test]
+    async fn test_announce_when_inactive() {
+        let manager = DiscoveryManager::new(DiscoveryConfig::default());
+        let peer = PeerInfo::new_mock();
+
+        // Le manager commence inactif
+        assert!(!manager.is_active().await);
+
+        let result = manager.announce(&peer).await;
+        assert!(result.is_err());
+
+        if let Err(NetworkError::DiscoveryError(msg)) = result {
+            assert_eq!(msg, "Découverte non active");
+        } else {
+            panic!("Expected DiscoveryError");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_announce_when_active() {
+        let manager = DiscoveryManager::new(DiscoveryConfig::default());
+        let peer = PeerInfo::new_mock();
+
+        // Activer le manager
+        manager.start().await.unwrap();
+        assert!(manager.is_active().await);
+
+        // L'announce doit réussir (même si elle ne fait rien pour le moment)
+        let result = manager.announce(&peer).await;
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_discovery_manager_config() {
+        let config = DiscoveryConfig {
+            max_peers: 42,
+            ..Default::default()
+        };
+        let manager = DiscoveryManager::new(config);
+
+        let retrieved_config = manager.config();
+        assert_eq!(retrieved_config.max_peers, 42);
+        assert_eq!(retrieved_config.methods.len(), 2);
+    }
 }

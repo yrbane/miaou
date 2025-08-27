@@ -126,6 +126,25 @@ mod tests {
     }
 
     #[test]
+    fn test_peer_id_short_display_small() {
+        // Tester avec un ID plus petit que 8 bytes
+        let id = PeerId::from_bytes(vec![1, 2, 3, 4]);
+        let short = id.short();
+        assert!(!short.contains("..."));
+        assert_eq!(short, "01020304");
+    }
+
+    #[test]
+    fn test_peer_id_display_trait() {
+        let id = PeerId::from_bytes(vec![0xAB, 0xCD, 0xEF]);
+        let display_str = format!("{}", id);
+        assert_eq!(display_str, "abcdef");
+
+        let display_str2 = id.to_string();
+        assert_eq!(display_str2, "abcdef");
+    }
+
+    #[test]
     fn test_peer_info_add_address() {
         let mut info = PeerInfo::new(PeerId::new_mock());
         assert_eq!(info.addresses.len(), 0);
