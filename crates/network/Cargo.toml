@@ -1,0 +1,51 @@
+[package]
+name = "miaou-network"
+version = "0.2.0"
+edition = "2021"
+
+description.workspace = true
+license.workspace     = true
+repository.workspace  = true
+readme.workspace      = true
+keywords.workspace    = true
+categories.workspace  = true
+
+[dependencies]
+miaou-core = { path = "../core" }
+
+# Async runtime
+tokio = { version = "1.41", features = ["full"] }
+async-trait = "0.1"
+
+# Networking
+webrtc = { version = "0.12", optional = true }
+libmdns = { version = "0.9", optional = true }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_bytes = "0.11"
+bincode = "1.3"
+
+# Crypto for handshake
+x25519-dalek = { version = "2.0", features = ["serde", "zeroize"] }
+ed25519-dalek = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Utils
+hex = "0.4"
+
+[dev-dependencies]
+tokio-test = "0.4"
+proptest = "1.6"
+
+[features]
+default = ["webrtc-transport", "mdns-discovery"]
+webrtc-transport = ["dep:webrtc"]
+mdns-discovery = ["dep:libmdns"]
+tls-transport = []
+

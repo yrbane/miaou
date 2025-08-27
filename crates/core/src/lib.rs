@@ -48,6 +48,9 @@ pub enum MiaouError {
     /// Erreur d'E/S (fichiers, etc.).
     #[error("I/O error: {0}")]
     Io(String),
+    /// Erreur réseau.
+    #[error("Network error: {0}")]
+    Network(String),
 }
 
 /// Résultat standardisé du projet Miaou.
