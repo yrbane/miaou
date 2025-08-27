@@ -8,9 +8,12 @@ members = [
 resolver = "2"
  
 [workspace.package]
-edition = "2021"
-license = "Apache-2.0 OR MIT"
- 
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yrbane/miaou"
+readme = "README.md"
+keywords = ["miaou", "cryptography", "security", "cli", "p2p"]
+categories = ["cryptography", "command-line-utilities"]
+description = "Miaou: secure primitives, keyring and CLI foundation"
 [workspace.lints.rust]
 unsafe_code = "forbid"
 unused = { level = "deny", priority = -1 }
@@ -23,6 +26,7 @@ perf = "warn"
 complexity = "warn"
  
 [workspace.dependencies]
+regex = "1.10.6"
 thiserror = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

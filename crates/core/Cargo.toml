@@ -2,6 +2,13 @@
 name = "miaou-core"
 version = "0.1.0"
 edition = "2021"
+
+description.workspace = true
+license.workspace     = true
+repository.workspace  = true
+readme.workspace      = true
+keywords.workspace    = true
+categories.workspace  = true
  
 [dependencies]
 thiserror = { workspace = true }

@@ -1,3 +1,4 @@
+#![allow(clippy::multiple_crate_versions)]
 #![forbid(unsafe_code)]
 
 //! **Documentation (FR)** : CLI de démonstration pour la Phase 1. Fournit des sous-commandes
