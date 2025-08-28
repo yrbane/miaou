@@ -79,6 +79,7 @@ pub struct ConnectionStats {
 
 impl Connection {
     /// Crée une nouvelle connexion
+    #[must_use]
     pub fn new(peer_id: Option<PeerId>) -> Self {
         let (tx, rx) = mpsc::channel(100);
 
@@ -95,6 +96,9 @@ impl Connection {
     ///
     /// # Errors
     /// Retourne une erreur si la connexion est fermée
+    ///
+    /// # Panics
+    /// Panique si le mutex des statistiques est empoisonné
     pub async fn send_frame(&self, frame: Frame) -> Result<(), NetworkError> {
         if self.state() != ConnectionState::Connected {
             return Err(NetworkError::ConnectionFailed(
@@ -109,9 +113,11 @@ impl Connection {
             .await
             .map_err(|e| NetworkError::TransportError(e.to_string()))?;
 
-        let mut connection_stats = self.stats.lock().unwrap();
-        connection_stats.frames_sent += 1;
-        connection_stats.bytes_sent += payload_len;
+        {
+            let mut connection_stats = self.stats.lock().unwrap();
+            connection_stats.frames_sent += 1;
+            connection_stats.bytes_sent += payload_len;
+        }
 
         Ok(())
     }
@@ -120,6 +126,9 @@ impl Connection {
     ///
     /// # Errors
     /// Retourne une erreur si aucun frame n'est disponible
+    ///
+    /// # Panics
+    /// Panique si le mutex des statistiques est empoisonné
     pub async fn receive_frame(&self) -> Result<Frame, NetworkError> {
         if self.state() != ConnectionState::Connected {
             return Err(NetworkError::ConnectionFailed(
@@ -134,14 +143,22 @@ impl Connection {
                 .ok_or_else(|| NetworkError::ConnectionFailed("Canal fermé".to_string()))?
         };
 
-        let mut stats = self.stats.lock().unwrap();
-        stats.frames_received += 1;
-        stats.bytes_received += frame.payload.len() as u64;
+        {
+            let mut stats = self.stats.lock().unwrap();
+            stats.frames_received += 1;
+            stats.bytes_received += frame.payload.len() as u64;
+        }
 
         Ok(frame)
     }
 
     /// Ferme la connexion
+    ///
+    /// # Errors
+    /// Retourne une erreur si la fermeture échoue
+    ///
+    /// # Panics
+    /// Panique si le mutex de l'état est empoisonné
     pub async fn close(&self) -> Result<(), NetworkError> {
         {
             let mut state = self.state.lock().unwrap();
@@ -160,11 +177,18 @@ impl Connection {
     }
 
     /// Retourne l'état actuel de la connexion
+    ///
+    /// # Panics
+    /// Panique si le mutex de l'état est empoisonné
+    #[must_use]
     pub fn state(&self) -> ConnectionState {
         *self.state.lock().unwrap()
     }
 
     /// Met à jour l'état de la connexion
+    ///
+    /// # Panics
+    /// Panique si le mutex de l'état est empoisonné
     pub fn set_state(&self, new_state: ConnectionState) {
         let mut state = self.state.lock().unwrap();
         *state = new_state;

@@ -138,7 +138,7 @@ impl X3dhHandshake {
     fn generate_session_id(&self, peer_id: &PeerId) -> String {
         format!(
             "session_{}_{}",
-            peer_id.to_string(),
+            peer_id,
             chrono::Utc::now().timestamp_millis()
         )
     }

@@ -357,7 +357,7 @@ impl KademliaDht {
     }
 
     /// Traite un message RPC entrant
-    pub async fn handle_rpc(
+    pub fn handle_rpc(
         &self,
         message: DhtMessage,
         _sender_addr: SocketAddr,
@@ -831,7 +831,6 @@ mod tests {
 
         let response = dht
             .handle_rpc(ping, "127.0.0.1:9000".parse::<SocketAddr>().unwrap())
-            .await
             .unwrap();
         assert!(response.is_some());
 
@@ -872,7 +871,6 @@ mod tests {
 
         let response = dht
             .handle_rpc(find_node, "127.0.0.1:9000".parse::<SocketAddr>().unwrap())
-            .await
             .unwrap();
         assert!(response.is_some());
 
@@ -948,7 +946,7 @@ mod tests {
 
         for (peer_id, addr) in &peers {
             let mut info = PeerInfo::new(peer_id.clone());
-            info.add_address(addr.clone());
+            info.add_address(*addr);
             table.add_peer(peer_id.clone(), info);
         }
 
@@ -985,7 +983,7 @@ mod tests {
         assert_eq!(retrieved2, Some(value2));
 
         // Tester une clé inexistante
-        let nonexistent = dht.get(&b"nonexistent".to_vec()).await.unwrap();
+        let nonexistent = dht.get(b"nonexistent".as_ref()).await.unwrap();
         assert_eq!(nonexistent, None);
     }
 
@@ -1029,7 +1027,7 @@ mod tests {
         dht.put(b"lifecycle_key".to_vec(), b"lifecycle_value".to_vec())
             .await
             .unwrap();
-        let retrieved = dht.get(&b"lifecycle_key".to_vec()).await.unwrap();
+        let retrieved = dht.get(b"lifecycle_key").await.unwrap();
         assert_eq!(retrieved, Some(b"lifecycle_value".to_vec()));
 
         // Announce devrait réussir

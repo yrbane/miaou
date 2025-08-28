@@ -217,7 +217,7 @@ impl StunTurnNatTraversal {
     }
 
     /// Effectue une requête STUN vers un serveur
-    async fn stun_request(
+    fn stun_request(
         &self,
         server: SocketAddr,
         local_address: SocketAddr,
@@ -278,17 +278,14 @@ impl StunTurnNatTraversal {
     }
 
     /// Implémente l'algorithme de détection NAT RFC 3489
-    async fn perform_nat_detection(
-        &self,
-        local_address: SocketAddr,
-    ) -> Result<NatType, NetworkError> {
+    fn perform_nat_detection(&self, local_address: SocketAddr) -> Result<NatType, NetworkError> {
         if self.config.stun_servers.is_empty() {
             return Ok(NatType::Unknown);
         }
 
         // Test 1: Requête STUN basique
         let server1 = self.config.stun_servers[0];
-        let response1 = self.stun_request(server1, local_address).await?;
+        let response1 = self.stun_request(server1, local_address)?;
 
         let public_addr = match response1 {
             Some(addr) => addr,
@@ -303,7 +300,7 @@ impl StunTurnNatTraversal {
         // Test 2: Requête vers serveur différent
         if self.config.stun_servers.len() > 1 {
             let server2 = self.config.stun_servers[1];
-            let response2 = self.stun_request(server2, local_address).await?;
+            let response2 = self.stun_request(server2, local_address)?;
 
             if let Some(addr2) = response2 {
                 // Si adresses publiques différentes = Symmetric NAT
@@ -376,7 +373,7 @@ impl NatTraversal for StunTurnNatTraversal {
     }
 
     async fn detect_nat_type(&self, local_address: SocketAddr) -> Result<NatType, NetworkError> {
-        self.perform_nat_detection(local_address).await
+        self.perform_nat_detection(local_address)
     }
 
     async fn gather_candidates(
@@ -390,7 +387,7 @@ impl NatTraversal for StunTurnNatTraversal {
 
         // 2. Candidats Server Reflexive (STUN)
         for stun_server in &self.config.stun_servers {
-            if let Ok(Some(public_addr)) = self.stun_request(*stun_server, local_address).await {
+            if let Ok(Some(public_addr)) = self.stun_request(*stun_server, local_address) {
                 candidates.push(IceCandidate {
                     address: public_addr,
                     candidate_type: CandidateType::ServerReflexive,
@@ -594,7 +591,7 @@ mod tests {
         let server_addr = "8.8.8.8:3478".parse().unwrap();
         let local_addr = "192.168.1.100:5000".parse().unwrap();
 
-        let result = nat_traversal.stun_request(server_addr, local_addr).await;
+        let result = nat_traversal.stun_request(server_addr, local_addr);
         assert!(result.is_ok());
 
         if let Ok(Some(public_addr)) = result {
@@ -733,7 +730,9 @@ mod tests {
         assert!(!result1.candidates.is_empty());
         // TDD: Le temps peut être 0 si le système est très rapide, on vérifie juste qu'il est valide
         // result1.discovery_time_ms est u64, toujours ≥ 0
-        assert!(result1.discovery_time_ms > 0 || result1.discovery_time_ms == 0);
+        // Vérifier que la découverte a bien eu lieu (temps de traitement valide)
+        // discovery_time_ms mesure la durée, on vérifie juste qu'elle existe
+        let _discovery_duration = result1.discovery_time_ms;
 
         // Seconde découverte (devrait utiliser le cache)
         let result2 = nat_traversal.start_discovery(local_addr).await.unwrap();

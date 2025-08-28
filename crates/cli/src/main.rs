@@ -10,12 +10,11 @@ use miaou_core::MiaouError;
 use miaou_crypto::{AeadCipher, Chacha20Poly1305Cipher};
 use miaou_keyring::{KeyId, KeyStore, MemoryKeyStore};
 use miaou_network::{
-    Discovery, DiscoveryConfig, DiscoveryMethod, InMemoryMessageQueue, InMemoryMessageStore,
-    Message, MessageCategory, MessageQuery, MessageQueue, MessageStore, MessageStoreConfig, 
-    PeerId, PeerInfo, TransportConfig, UnifiedDiscovery, WebRtcTransport,
-    ProductionMessageQueue, ProductionMessageStore, FileMessageStore, MessagePriority,
-    DhtDistributedDirectory, DirectoryConfig, DirectoryEntry, DirectoryEntryType,
-    DistributedDirectory, KademliaDht, DhtConfig,
+    DhtConfig, DhtDistributedDirectory, DirectoryConfig, DirectoryEntry, DirectoryEntryType,
+    Discovery, DiscoveryConfig, DiscoveryMethod, DistributedDirectory, FileMessageStore,
+    InMemoryMessageStore, Message, MessageCategory, MessagePriority, MessageQuery, MessageStore,
+    MessageStoreConfig, PeerId, PeerInfo, ProductionMessageQueue, TransportConfig,
+    UnifiedDiscovery, WebRtcTransport,
 };
 use rand::{thread_rng, RngCore};
 use std::process::ExitCode;
@@ -213,8 +212,10 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
         }
         Command::NetStart { daemon, duration } => {
             // TDD: Démarre UnifiedDiscovery (mDNS + DHT) et WebRTC Transport
-            let mut discovery_config = DiscoveryConfig::default();
-            discovery_config.methods = vec![DiscoveryMethod::Mdns]; // Pour l'instant juste mDNS
+            let discovery_config = DiscoveryConfig {
+                methods: vec![DiscoveryMethod::Mdns], // Pour l'instant juste mDNS
+                ..Default::default()
+            };
 
             let transport_config = TransportConfig::default();
 
@@ -296,8 +297,10 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
         }
         Command::NetListPeers => {
             // TDD: Créer une instance temporaire pour lister les pairs actifs
-            let mut discovery_config = DiscoveryConfig::default();
-            discovery_config.methods = vec![DiscoveryMethod::Mdns];
+            let discovery_config = DiscoveryConfig {
+                methods: vec![DiscoveryMethod::Mdns],
+                ..Default::default()
+            };
 
             let local_peer_id = PeerId::from_bytes(b"cli-list".to_vec());
             let local_peer_info = miaou_network::PeerInfo::new(local_peer_id.clone());
@@ -350,22 +353,63 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                 .await
                 .map_err(|e| MiaouError::Network(format!("Erreur démarrage mDNS: {}", e)))?;
 
-            // Attendre pour la découverte
-            println!("⏳ Recherche des pairs (3 secondes)...");
-            tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+            // TDD GREEN v0.2.0: Retry automatique pour améliorer fiabilité
+            println!("⏳ Recherche des pairs (retry automatique)...");
 
-            // Chercher le pair dans les pairs découverts
-            let peers = discovery.discovered_peers().await;
+            let mut target_peer = None;
+            let retry_delays = [1000, 2000, 3000]; // ms
 
-            println!("🔎 Pairs découverts: {} pair(s)", peers.len());
-            for peer in &peers {
-                println!("   - {} ({})", peer.id.short(), peer.addresses.len());
+            for (attempt, delay_ms) in retry_delays.iter().enumerate() {
+                println!("   Tentative {} ({} ms)...", attempt + 1, delay_ms);
+                tokio::time::sleep(std::time::Duration::from_millis(*delay_ms)).await;
+
+                // CRITICAL: Collecter les pairs avant de les lister !
+                discovery
+                    .collect_peers()
+                    .await
+                    .map_err(|e| MiaouError::Network(format!("Erreur collect_peers: {}", e)))?;
+
+                let peers = discovery.discovered_peers().await;
+                println!("🔎 Pairs découverts: {} pair(s)", peers.len());
+                for peer in &peers {
+                    println!(
+                        "   - {} ({} adresse(s))",
+                        peer.id.short(),
+                        peer.addresses.len()
+                    );
+                }
+
+                // Chercher le pair par ID court ou complet
+                target_peer = peers
+                    .iter()
+                    .find(|p| {
+                        // Utiliser to_hex() pour avoir l'ID hex propre
+                        let full_id_hex = p.id.to_hex();
+                        let short_id = p.id.short();
+
+                        // Debug: afficher les comparaisons
+                        if attempt == 0 {
+                            // Seulement première tentative
+                            println!(
+                                "   Debug: recherche '{}' vs full='{}' short='{}'",
+                                peer_id, full_id_hex, short_id
+                            );
+                        }
+
+                        // Recherche par ID exact, court ou contenu
+                        full_id_hex == peer_id
+                            || short_id == peer_id
+                            || full_id_hex.contains(&peer_id)
+                    })
+                    .cloned();
+
+                if target_peer.is_some() {
+                    println!("✅ Pair trouvé à la tentative {}", attempt + 1);
+                    break;
+                } else {
+                    println!("   ⚠️  Pair non trouvé, retry...");
+                }
             }
-
-            let target_peer = peers
-                .iter()
-                .find(|p| format!("{:?}", p.id).contains(&peer_id) || p.id.short() == peer_id)
-                .cloned();
 
             match target_peer {
                 Some(peer_info) => {
@@ -380,8 +424,8 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
                     // TDD GREEN v0.2.0: Connexion WebRTC réelle avec pair découvert
                     use miaou_network::{
-                        DataChannelMessage, NatConfig,
-                        WebRtcConnectionConfig, WebRtcDataChannelManager, WebRtcDataChannels,
+                        DataChannelMessage, NatConfig, WebRtcConnectionConfig,
+                        WebRtcDataChannelManager, WebRtcDataChannels,
                     };
 
                     // Configuration WebRTC
@@ -578,19 +622,20 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             let store = Arc::new(
                 FileMessageStore::new(storage_dir)
                     .await
-                    .map_err(|e| MiaouError::Network(format!("Erreur création store: {:?}", e)))?
+                    .map_err(|e| MiaouError::Network(format!("Erreur création store: {:?}", e)))?,
             );
             let queue = ProductionMessageQueue::new(store.clone());
 
             // Charger les messages persistés au démarrage
-            queue.load_persisted_messages()
+            queue
+                .load_persisted_messages()
                 .await
                 .map_err(|e| MiaouError::Network(format!("Erreur chargement messages: {:?}", e)))?;
 
             // Créer le message avec priorité
             let to_peer = PeerId::from_bytes(to.as_bytes().to_vec());
             let encrypted_content = message.as_bytes().to_vec(); // TODO: vraie encryption
-            
+
             let message_id = queue
                 .send_message(to_peer.clone(), encrypted_content, MessagePriority::Normal)
                 .await
@@ -600,7 +645,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             println!("   ID: {:?}", message_id);
             println!("   Destination: {:?}", to_peer);
             println!("   Statut: En attente de livraison");
-            
+
             // Afficher les statistiques
             let stats = queue.get_stats().await;
             println!("   Messages en queue: {}", stats.messages_queued);
@@ -616,12 +661,13 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             let store = Arc::new(
                 FileMessageStore::new(storage_dir)
                     .await
-                    .map_err(|e| MiaouError::Network(format!("Erreur création store: {:?}", e)))?
+                    .map_err(|e| MiaouError::Network(format!("Erreur création store: {:?}", e)))?,
             );
             let queue = ProductionMessageQueue::new(store.clone());
 
             // Charger les messages persistés au démarrage
-            queue.load_persisted_messages()
+            queue
+                .load_persisted_messages()
                 .await
                 .map_err(|e| MiaouError::Network(format!("Erreur chargement messages: {:?}", e)))?;
 
@@ -634,7 +680,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             {
                 received_count += 1;
                 let content_str = String::from_utf8_lossy(&message.content);
-                
+
                 println!("📨 Message reçu #{}", received_count);
                 println!("   ID: {:?}", message.id);
                 println!("   De: {:?}", message.from);
@@ -746,52 +792,63 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             // TDD GREEN: Implémentation DHT put production
             println!("Publication dans l'annuaire DHT distribué...");
             println!("Type de clé: {}", key_type);
-            
+
             // Décoder les données de clé depuis hex
-            let key_bytes = hex::decode(&key_data)
-                .map_err(|e| MiaouError::InvalidInput)?;
-            
+            let key_bytes = hex::decode(&key_data).map_err(|_e| MiaouError::InvalidInput)?;
+
             // Déterminer le type d'entrée
             let entry_type = match key_type.as_str() {
                 "signing" => DirectoryEntryType::SigningKey,
                 "encryption" => DirectoryEntryType::EncryptionKey,
                 _ => return Err(MiaouError::InvalidInput),
             };
-            
+
             // Créer l'instance DHT
             let local_peer_id = PeerId::from_bytes(b"cli-dht-user".to_vec());
-            let dht_config = DhtConfig::default();
+            let _dht_config = DhtConfig::default();
             let directory_config = DirectoryConfig::default();
-            let mut directory = DhtDistributedDirectory::new(directory_config, local_peer_id.clone());
-            
+            let mut directory =
+                DhtDistributedDirectory::new(directory_config, local_peer_id.clone());
+
             // Démarrer le directory
-            directory.start()
+            directory
+                .start()
                 .await
                 .map_err(|e| MiaouError::Network(format!("Erreur démarrage DHT: {}", e)))?;
-            
+
             // Créer l'entrée d'annuaire
-            let entry = DirectoryEntry::signing_key(local_peer_id.clone(), key_bytes.clone(), 1);
-            
+            let entry = match entry_type {
+                DirectoryEntryType::SigningKey => {
+                    DirectoryEntry::signing_key(local_peer_id.clone(), key_bytes.clone(), 1)
+                }
+                DirectoryEntryType::EncryptionKey => {
+                    DirectoryEntry::encryption_key(local_peer_id.clone(), key_bytes.clone(), 1)
+                }
+                _ => return Err(MiaouError::InvalidInput),
+            };
+
             // Publier dans l'annuaire
-            directory.publish_entry(entry)
+            directory
+                .publish_entry(entry)
                 .await
                 .map_err(|e| MiaouError::Network(format!("Erreur publication: {}", e)))?;
-            
+
             println!("✅ Clé publiée avec succès dans l'annuaire DHT !");
             println!("   Peer ID: {:?}", local_peer_id);
             println!("   Type: {}", key_type);
             println!("   Taille: {} bytes", key_bytes.len());
-            
+
             // Statistiques
             let stats = directory.get_stats().await;
             println!("   Entrées locales: {}", stats.local_entries_count);
             println!("   Entrées publiées: {}", stats.published_entries_count);
-            
+
             // Arrêter le directory
-            directory.stop()
+            directory
+                .stop()
                 .await
                 .map_err(|e| MiaouError::Network(format!("Erreur arrêt DHT: {}", e)))?;
-            
+
             Ok(())
         }
         Command::DhtGet { peer_id, key_type } => {
@@ -799,25 +856,27 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             println!("Recherche dans l'annuaire DHT distribué...");
             println!("Peer ID: {}", peer_id);
             println!("Type de clé: {}", key_type);
-            
+
             // Déterminer le type d'entrée
             let entry_type = match key_type.as_str() {
                 "signing" => DirectoryEntryType::SigningKey,
                 "encryption" => DirectoryEntryType::EncryptionKey,
                 _ => return Err(MiaouError::InvalidInput),
             };
-            
+
             // Créer l'instance DHT
             let local_peer_id = PeerId::from_bytes(b"cli-dht-user".to_vec());
             let target_peer_id = PeerId::from_bytes(peer_id.as_bytes().to_vec());
             let directory_config = DirectoryConfig::default();
-            let mut directory = DhtDistributedDirectory::new(directory_config, local_peer_id.clone());
-            
+            let mut directory =
+                DhtDistributedDirectory::new(directory_config, local_peer_id.clone());
+
             // Démarrer le directory
-            directory.start()
+            directory
+                .start()
                 .await
                 .map_err(|e| MiaouError::Network(format!("Erreur démarrage DHT: {}", e)))?;
-            
+
             // Chercher l'entrée
             match directory.get_entry(&target_peer_id, entry_type).await {
                 Ok(Some(entry)) => {
@@ -829,18 +888,18 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                     println!("   Statut: {:?}", entry.verification_status);
                     println!("   Données (hex): {}", hex::encode(&entry.key_data));
                     println!("   Taille: {} bytes", entry.key_data.len());
-                    
+
                     if let Some(expires_at) = entry.expires_at {
                         println!("   Expire le: {}", expires_at);
                     }
-                    
+
                     if !entry.signatures.is_empty() {
                         println!("   Signatures: {} tiers", entry.signatures.len());
                     }
                 }
                 Ok(None) => {
                     println!("❌ Aucune clé trouvée pour ce pair et type");
-                    
+
                     // Afficher les statistiques pour debug
                     let stats = directory.get_stats().await;
                     println!("   Entrées locales: {}", stats.local_entries_count);
@@ -850,12 +909,13 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                     return Err(MiaouError::Network(format!("Erreur recherche: {}", e)));
                 }
             }
-            
+
             // Arrêter le directory
-            directory.stop()
+            directory
+                .stop()
                 .await
                 .map_err(|e| MiaouError::Network(format!("Erreur arrêt DHT: {}", e)))?;
-            
+
             Ok(())
         }
     }
@@ -1939,8 +1999,8 @@ mod tests {
         let port2 = 4242 + (rng.next_u32() % 1000) as u16;
 
         // Les ports doivent être dans la plage valide
-        assert!(port1 >= 4242 && port1 < 5242);
-        assert!(port2 >= 4242 && port2 < 5242);
+        assert!((4242..5242).contains(&port1));
+        assert!((4242..5242).contains(&port2));
 
         // Très haute probabilité qu'ils soient différents
         // (mais pas garanti, donc on ne teste pas l'inégalité)

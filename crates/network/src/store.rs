@@ -628,18 +628,18 @@ mod tests {
     fn test_message_query_builder() {
         // TDD: Test builder pattern pour MessageQuery
         let alice = PeerId::from_bytes(b"alice".to_vec());
-        let bob = PeerId::from_bytes(b"bob".to_vec());
+        let _bob = PeerId::from_bytes(b"bob".to_vec());
 
         let query = MessageQuery::new()
             .from(alice.clone())
-            .to(bob.clone())
+            .to(_bob.clone())
             .category(MessageCategory::Sent)
             .unread_only()
             .search("hello".to_string())
             .limit(50);
 
         assert_eq!(query.from, Some(alice));
-        assert_eq!(query.to, Some(bob));
+        assert_eq!(query.to, Some(_bob));
         assert_eq!(query.category, Some(MessageCategory::Sent));
         assert!(query.unread_only);
         assert_eq!(query.content_search, Some("hello".to_string()));
@@ -766,7 +766,7 @@ mod tests {
         let store = InMemoryMessageStore::new(config).unwrap();
 
         let alice = PeerId::from_bytes(b"alice".to_vec());
-        let bob = PeerId::from_bytes(b"bob".to_vec());
+        let _bob = PeerId::from_bytes(b"bob".to_vec());
 
         // Ajouter messages variés
         let msg1 = create_test_message("alice", "bob", "Hello from Alice");

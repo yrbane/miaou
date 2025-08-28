@@ -10,7 +10,7 @@ mod net_connect_tdd_tests {
     // ========== TDD RED: Tests de commande net-connect ==========
 
     #[tokio::test]
-    async fn test_net_connect_command_parsing() {
+    async fn test_net_connectcommand_parsing() {
         // RED: Test parsing de la commande net-connect
         // Ceci va échouer jusqu'à ce qu'on implémente le parsing
 
@@ -20,7 +20,7 @@ mod net_connect_tdd_tests {
         // Tenter de parser - ceci devrait échouer en RED
         let result = std::panic::catch_unwind(|| {
             // Cette logique n'existe pas encore - va panic
-            parse_net_connect_command(&args)
+            parse_net_connectcommand(&args)
         });
 
         // Pour l'instant, on s'attend à un échec (phase RED)
@@ -34,14 +34,14 @@ mod net_connect_tdd_tests {
     async fn test_net_connect_with_valid_peer_id() {
         // RED: Test connexion avec peer ID valide
         let peer_id = "a1b2c3d4e5f67890";
-        let command = Command::NetConnect {
+        let _command = Command::NetConnect {
             peer_id: peer_id.to_string(),
         };
 
         // Tester l'exécution de la commande
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             tokio::runtime::Handle::current()
-                .block_on(async { execute_net_connect_command(command).await })
+                .block_on(async { execute_net_connectcommand(_command).await })
         }));
 
         // Phase RED: on s'attend à un échec car pas implémenté
@@ -55,13 +55,13 @@ mod net_connect_tdd_tests {
     async fn test_net_connect_with_invalid_peer_id() {
         // RED: Test gestion d'erreur pour peer ID invalide
         let invalid_peer_id = "invalid-peer";
-        let command = Command::NetConnect {
+        let _command = Command::NetConnect {
             peer_id: invalid_peer_id.to_string(),
         };
 
         // Tester la validation
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            tokio::runtime::Handle::current().block_on(async { validate_peer_id(&invalid_peer_id) })
+            tokio::runtime::Handle::current().block_on(validate_peer_id(invalid_peer_id))
         }));
 
         // Phase RED: validation pas implémentée
@@ -108,15 +108,15 @@ mod net_connect_tdd_tests {
     // ========== TDD RED: Tests d'architecture Command Pattern ==========
 
     #[test]
-    fn test_net_connect_command_struct() {
+    fn test_net_connectcommand_struct() {
         // RED: Test structure de la commande (Command Pattern)
         let peer_id = "command-pattern-test".to_string();
-        let command = Command::NetConnect {
+        let _command = Command::NetConnect {
             peer_id: peer_id.clone(),
         };
 
         // Vérifier que la commande capture les bonnes données
-        match command {
+        match _command {
             Command::NetConnect {
                 peer_id: captured_id,
             } => {
@@ -127,15 +127,15 @@ mod net_connect_tdd_tests {
     }
 
     #[tokio::test]
-    async fn test_command_executor_pattern() {
+    async fn testcommand_executor_pattern() {
         // RED: Test du pattern Command Executor
-        let command = Command::NetConnect {
+        let _command = Command::NetConnect {
             peer_id: "executor-test".to_string(),
         };
 
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             tokio::runtime::Handle::current()
-                .block_on(async { execute_command_with_p2p_manager(command).await })
+                .block_on(async { executecommand_with_p2p_manager(_command).await })
         }));
 
         // Phase RED: executor pattern pas implémenté
@@ -158,7 +158,7 @@ mod net_connect_tdd_tests {
             ("invalid@chars", false),
         ];
 
-        for (peer_id, should_be_valid) in test_cases {
+        for (peer_id, _should_be_valid) in test_cases {
             let result = std::panic::catch_unwind(|| is_valid_peer_id(peer_id));
 
             // Phase RED: toutes les validations vont échouer
@@ -228,12 +228,12 @@ mod net_connect_tdd_tests {
     // ========== Fonctions manquantes (RED phase) ==========
     // Ces fonctions n'existent pas encore - c'est normal pour la phase RED
 
-    fn parse_net_connect_command(_args: &[&str]) -> Result<Command, String> {
+    fn parse_net_connectcommand(_args: &[&str]) -> Result<Command, String> {
         // RED: Pas implémenté - va panic
         todo!("TDD RED: Implement command parsing")
     }
 
-    async fn execute_net_connect_command(_command: Command) -> Result<(), String> {
+    async fn execute_net_connectcommand(_command: Command) -> Result<(), String> {
         // RED: Pas implémenté - va panic
         todo!("TDD RED: Implement net-connect execution")
     }
@@ -253,7 +253,7 @@ mod net_connect_tdd_tests {
         todo!("TDD RED: Implement connection status display")
     }
 
-    async fn execute_command_with_p2p_manager(_command: Command) -> Result<(), String> {
+    async fn executecommand_with_p2p_manager(_command: Command) -> Result<(), String> {
         // RED: Pas implémenté - va panic
         todo!("TDD RED: Implement command executor with P2P manager")
     }

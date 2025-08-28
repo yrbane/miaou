@@ -422,7 +422,7 @@ mod tests {
         )
     }
 
-    fn create_mock_message() -> Message {
+    fn _create_mock_message() -> Message {
         let from = PeerId::from_bytes(b"alice".to_vec());
         let to = PeerId::from_bytes(b"bob".to_vec());
         Message::new_mock(from, to, "Mock message".to_string())
@@ -525,21 +525,21 @@ mod tests {
         // TDD: Test calcul backoff exponentiel
         let msg = create_test_message();
         let mut queued = QueuedMessage::new(msg);
-        let config = RetryConfig::default();
+        let _config = RetryConfig::default();
 
         // Premier échec
-        queued.calculate_next_attempt(&config);
+        queued.calculate_next_attempt(&RetryConfig::default());
         assert_eq!(queued.attempts, 1);
         assert_eq!(queued.status, MessageStatus::Failed);
         assert!(queued.next_attempt_at > 0);
 
         // Deuxième échec (backoff x2)
-        let first_delay = queued.next_attempt_at;
-        queued.calculate_next_attempt(&config);
+        let _first_delay = queued.next_attempt_at;
+        queued.calculate_next_attempt(&RetryConfig::default());
         assert_eq!(queued.attempts, 2);
 
         // Troisième échec -> permanent failure
-        queued.calculate_next_attempt(&config);
+        queued.calculate_next_attempt(&RetryConfig::default());
         assert_eq!(queued.attempts, 3);
         assert_eq!(queued.status, MessageStatus::FailedPermanently);
     }
@@ -549,7 +549,7 @@ mod tests {
         // TDD: Test vérification retry ready
         let msg = create_test_message();
         let mut queued = QueuedMessage::new(msg);
-        let config = RetryConfig::default();
+        let _config = RetryConfig::default();
 
         // Pas ready si status != Failed
         assert!(!queued.is_ready_for_retry());
@@ -664,7 +664,7 @@ mod tests {
 
         // Ajouter messages avec statuts différents
         let msg1 = create_test_message();
-        let msg1_id = msg1.id.clone();
+        let _msg1_id = msg1.id.clone();
         queue.enqueue(msg1).await.unwrap();
 
         let msg2 = create_test_message();

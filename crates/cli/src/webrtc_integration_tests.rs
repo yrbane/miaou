@@ -3,6 +3,7 @@
 //! TDD GREEN v0.2.0: Tests pour valider l'étape 2 du plan
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod webrtc_integration_tests {
     use crate::{run_with_keystore, Cli, Command};
     use miaou_keyring::MemoryKeyStore;
@@ -28,9 +29,9 @@ mod webrtc_integration_tests {
         let manager = WebRtcDataChannelManager::new(config, peer_id);
 
         // Vérifier configuration
-        assert_eq!(manager.config().connection_timeout_seconds, 5);
-        assert_eq!(manager.config().ice_gathering_timeout_seconds, 3);
-        assert!(!manager.config().enable_keepalive);
+        assert_eq!(manager._config().connection_timeout_seconds, 5);
+        assert_eq!(manager._config().ice_gathering_timeout_seconds, 3);
+        assert!(!manager._config().enable_keepalive);
     }
 
     #[tokio::test]
@@ -147,7 +148,8 @@ mod webrtc_integration_tests {
 
         // NAT config doit exister
         assert!(
-            config.nat_config.stun_servers.len() > 0 || config.nat_config.turn_servers.len() >= 0
+            !config.nat_config.stun_servers.is_empty()
+                || !config.nat_config.turn_servers.is_empty()
         );
     }
 }

@@ -45,9 +45,13 @@ impl MessageId {
 /// Message priority levels
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum MessagePriority {
+    /// Low priority message
     Low = 1,
+    /// Normal priority message  
     Normal = 2,
+    /// High priority message
     High = 3,
+    /// Critical priority message
     Critical = 4,
 }
 
@@ -83,7 +87,7 @@ impl MessageQueue {
     ) -> Result<MessageId, NetworkError> {
         let message = QueuedMessage {
             id: MessageId::generate(),
-            from: self.get_local_peer_id().await?,
+            from: self.get_local_peer_id()?,
             to,
             content,
             timestamp: get_timestamp(),
@@ -138,17 +142,17 @@ impl MessageQueue {
     /// Mark message as delivered (remove from store)
     pub async fn mark_delivered(&self, message_id: &MessageId) -> Result<(), NetworkError> {
         self.store.remove_message(message_id).await?;
-        
+
         let mut stats = self.stats.write().await;
         stats.messages_delivered += 1;
-        
+
         Ok(())
     }
 
     /// Requeue message for retry (after failed delivery)
     pub async fn requeue_message(&self, message: QueuedMessage) -> Result<(), NetworkError> {
         const MAX_ATTEMPTS: u32 = 3;
-        
+
         if message.attempts >= MAX_ATTEMPTS {
             // Move to dead letter queue
             self.store.store_failed_message(&message).await?;
@@ -195,12 +199,12 @@ impl MessageQueue {
     /// Load persisted messages on startup
     pub async fn load_persisted_messages(&self) -> Result<(), NetworkError> {
         let messages = self.store.load_all_messages().await?;
-        
+
         let mut outbound = self.outbound.lock().await;
         let mut inbound = self.inbound.lock().await;
 
         for message in messages {
-            if message.from == self.get_local_peer_id().await? {
+            if message.from == self.get_local_peer_id()? {
                 // Outbound message
                 outbound.push_back(message);
             } else {
@@ -213,7 +217,7 @@ impl MessageQueue {
     }
 
     /// Get local peer ID (would be injected in real implementation)
-    async fn get_local_peer_id(&self) -> Result<PeerId, NetworkError> {
+    fn get_local_peer_id(&self) -> Result<PeerId, NetworkError> {
         // TODO: Inject this via dependency injection
         Ok(PeerId::from_bytes(b"local-peer".to_vec()))
     }
@@ -222,9 +226,13 @@ impl MessageQueue {
 /// Queue statistics
 #[derive(Debug, Clone, Default)]
 pub struct QueueStats {
+    /// Number of messages queued for sending
     pub messages_queued: u64,
+    /// Number of messages received
     pub messages_received: u64,
+    /// Number of messages successfully delivered
     pub messages_delivered: u64,
+    /// Number of messages that failed delivery
     pub messages_failed: u64,
 }
 
@@ -233,16 +241,16 @@ pub struct QueueStats {
 pub trait MessageStore: Send + Sync {
     /// Store message persistently
     async fn store_message(&self, message: &QueuedMessage) -> Result<(), NetworkError>;
-    
+
     /// Remove message from store
     async fn remove_message(&self, id: &MessageId) -> Result<(), NetworkError>;
-    
+
     /// Check if message exists
     async fn message_exists(&self, id: &MessageId) -> Result<bool, NetworkError>;
-    
+
     /// Load all persisted messages
     async fn load_all_messages(&self) -> Result<Vec<QueuedMessage>, NetworkError>;
-    
+
     /// Store failed message (dead letter queue)
     async fn store_failed_message(&self, message: &QueuedMessage) -> Result<(), NetworkError>;
 }
@@ -257,8 +265,9 @@ impl FileMessageStore {
     /// Create new file-based store
     pub async fn new(storage_dir: PathBuf) -> Result<Self, NetworkError> {
         // Ensure directory exists
-        fs::create_dir_all(&storage_dir).await
-            .map_err(|e| NetworkError::StorageError(format!("Failed to create storage dir: {}", e)))?;
+        fs::create_dir_all(&storage_dir).await.map_err(|e| {
+            NetworkError::StorageError(format!("Failed to create storage dir: {}", e))
+        })?;
 
         let store = Self {
             storage_dir,
@@ -274,12 +283,13 @@ impl FileMessageStore {
     /// Load messages from disk
     async fn load_from_disk(&self) -> Result<(), NetworkError> {
         let messages_file = self.storage_dir.join("messages.json");
-        
+
         if !messages_file.exists() {
             return Ok(());
         }
 
-        let content = fs::read_to_string(&messages_file).await
+        let content = fs::read_to_string(&messages_file)
+            .await
             .map_err(|e| NetworkError::StorageError(format!("Failed to read messages: {}", e)))?;
 
         let messages: HashMap<MessageId, QueuedMessage> = serde_json::from_str(&content)
@@ -296,10 +306,12 @@ impl FileMessageStore {
         let messages = self.messages.read().await;
         let messages_file = self.storage_dir.join("messages.json");
 
-        let content = serde_json::to_string_pretty(&*messages)
-            .map_err(|e| NetworkError::StorageError(format!("Failed to serialize messages: {}", e)))?;
+        let content = serde_json::to_string_pretty(&*messages).map_err(|e| {
+            NetworkError::StorageError(format!("Failed to serialize messages: {}", e))
+        })?;
 
-        fs::write(&messages_file, content).await
+        fs::write(&messages_file, content)
+            .await
             .map_err(|e| NetworkError::StorageError(format!("Failed to write messages: {}", e)))?;
 
         Ok(())
@@ -313,7 +325,7 @@ impl MessageStore for FileMessageStore {
             let mut messages = self.messages.write().await;
             messages.insert(message.id.clone(), message.clone());
         }
-        
+
         self.save_to_disk().await
     }
 
@@ -322,7 +334,7 @@ impl MessageStore for FileMessageStore {
             let mut messages = self.messages.write().await;
             messages.remove(id);
         }
-        
+
         self.save_to_disk().await
     }
 
@@ -338,10 +350,11 @@ impl MessageStore for FileMessageStore {
 
     async fn store_failed_message(&self, message: &QueuedMessage) -> Result<(), NetworkError> {
         let failed_file = self.storage_dir.join("failed_messages.json");
-        
+
         let mut failed_messages: Vec<QueuedMessage> = if failed_file.exists() {
-            let content = fs::read_to_string(&failed_file).await
-                .map_err(|e| NetworkError::StorageError(format!("Failed to read failed messages: {}", e)))?;
+            let content = fs::read_to_string(&failed_file).await.map_err(|e| {
+                NetworkError::StorageError(format!("Failed to read failed messages: {}", e))
+            })?;
             serde_json::from_str(&content).unwrap_or_default()
         } else {
             Vec::new()
@@ -349,11 +362,13 @@ impl MessageStore for FileMessageStore {
 
         failed_messages.push(message.clone());
 
-        let content = serde_json::to_string_pretty(&failed_messages)
-            .map_err(|e| NetworkError::StorageError(format!("Failed to serialize failed messages: {}", e)))?;
+        let content = serde_json::to_string_pretty(&failed_messages).map_err(|e| {
+            NetworkError::StorageError(format!("Failed to serialize failed messages: {}", e))
+        })?;
 
-        fs::write(&failed_file, content).await
-            .map_err(|e| NetworkError::StorageError(format!("Failed to write failed messages: {}", e)))?;
+        fs::write(&failed_file, content).await.map_err(|e| {
+            NetworkError::StorageError(format!("Failed to write failed messages: {}", e))
+        })?;
 
         Ok(())
     }
@@ -427,7 +442,10 @@ mod tests {
         let content = b"Hello, World!".to_vec();
 
         // Send message
-        let message_id = queue.send_message(peer_id.clone(), content.clone(), MessagePriority::Normal).await.unwrap();
+        let _message_id = queue
+            .send_message(peer_id.clone(), content.clone(), MessagePriority::Normal)
+            .await
+            .unwrap();
 
         // Verify message in outbound queue
         let outbound = queue.get_next_outbound().await.unwrap();
@@ -446,9 +464,22 @@ mod tests {
         let peer_id = PeerId::from_bytes(b"test-peer".to_vec());
 
         // Send messages with different priorities
-        queue.send_message(peer_id.clone(), b"Low".to_vec(), MessagePriority::Low).await.unwrap();
-        queue.send_message(peer_id.clone(), b"Critical".to_vec(), MessagePriority::Critical).await.unwrap();
-        queue.send_message(peer_id.clone(), b"Normal".to_vec(), MessagePriority::Normal).await.unwrap();
+        queue
+            .send_message(peer_id.clone(), b"Low".to_vec(), MessagePriority::Low)
+            .await
+            .unwrap();
+        queue
+            .send_message(
+                peer_id.clone(),
+                b"Critical".to_vec(),
+                MessagePriority::Critical,
+            )
+            .await
+            .unwrap();
+        queue
+            .send_message(peer_id.clone(), b"Normal".to_vec(), MessagePriority::Normal)
+            .await
+            .unwrap();
 
         // Should get Critical first
         let message1 = queue.get_next_outbound().await.unwrap().unwrap();
@@ -475,7 +506,10 @@ mod tests {
         let content = b"Test message".to_vec();
 
         // Send message
-        let message_id = queue.send_message(peer_id, content, MessagePriority::Normal).await.unwrap();
+        let message_id = queue
+            .send_message(peer_id, content, MessagePriority::Normal)
+            .await
+            .unwrap();
 
         // Verify message is stored
         assert!(store.message_exists(&message_id).await.unwrap());
@@ -496,7 +530,10 @@ mod tests {
         let content = b"Retry test".to_vec();
 
         // Send message
-        queue.send_message(peer_id.clone(), content, MessagePriority::Normal).await.unwrap();
+        queue
+            .send_message(peer_id.clone(), content, MessagePriority::Normal)
+            .await
+            .unwrap();
 
         // Get message for delivery
         let mut message = queue.get_next_outbound().await.unwrap().unwrap();

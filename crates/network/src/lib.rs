@@ -21,6 +21,7 @@ pub mod discovery;
 pub mod error;
 pub mod handshake;
 pub mod mdns_discovery;
+pub mod message_queue;
 pub mod messaging;
 pub mod nat_traversal;
 pub mod p2p_connection;
@@ -31,7 +32,6 @@ pub mod transport;
 pub mod unified_discovery;
 pub mod webrtc_data_channels;
 pub mod webrtc_transport;
-pub mod message_queue;
 
 pub use connection::{Connection, ConnectionState};
 pub use dht::{DhtConfig, DhtMessage, DistributedHashTable, KademliaDht, RoutingTable};
@@ -45,6 +45,10 @@ pub use handshake::{
     HandshakeConfig, HandshakeProtocol, HandshakeResult, HandshakeState, X3dhHandshake,
 };
 pub use mdns_discovery::MdnsDiscovery;
+pub use message_queue::{
+    FileMessageStore, MessageId, MessagePriority, MessageQueue as ProductionMessageQueue,
+    MessageStore as ProductionMessageStore, QueueStats, QueuedMessage as ProductionQueuedMessage,
+};
 pub use messaging::{
     InMemoryMessageQueue, Message, MessageQueue, MessageQueueConfig, MessageStatus, QueuedMessage,
     RetryConfig,
@@ -70,15 +74,6 @@ pub use webrtc_data_channels::{
     WebRtcDataChannels,
 };
 pub use webrtc_transport::WebRtcTransport;
-pub use message_queue::{
-    MessageQueue as ProductionMessageQueue, 
-    MessageStore as ProductionMessageStore, 
-    FileMessageStore, 
-    QueuedMessage as ProductionQueuedMessage, 
-    MessageId, 
-    MessagePriority, 
-    QueueStats
-};
 
 #[cfg(test)]
 mod tests {

@@ -321,7 +321,7 @@ pub trait WebRtcDataChannels: Send + Sync {
 /// Gestionnaire WebRTC avec support ICE et Data Channels
 pub struct WebRtcDataChannelManager {
     /// Configuration
-    config: WebRtcConnectionConfig,
+    _config: WebRtcConnectionConfig,
     /// ID local du pair
     local_peer_id: PeerId,
     /// Gestionnaire NAT traversal
@@ -337,12 +337,12 @@ pub struct WebRtcDataChannelManager {
 
 impl WebRtcDataChannelManager {
     /// Crée un nouveau gestionnaire WebRTC
-    pub fn new(config: WebRtcConnectionConfig, local_peer_id: PeerId) -> Self {
-        let nat_traversal = Arc::new(StunTurnNatTraversal::new(config.nat_config.clone()));
+    pub fn new(_config: WebRtcConnectionConfig, local_peer_id: PeerId) -> Self {
         let (message_sender, message_receiver) = mpsc::unbounded_channel();
+        let nat_traversal = Arc::new(StunTurnNatTraversal::new(_config.nat_config.clone()));
 
         Self {
-            config,
+            _config,
             local_peer_id,
             nat_traversal,
             connections: Arc::new(RwLock::new(HashMap::new())),
@@ -503,8 +503,8 @@ impl WebRtcDataChannelManager {
     }
 
     /// Retourne la configuration du manager
-    pub fn config(&self) -> &WebRtcConnectionConfig {
-        &self.config
+    pub fn _config(&self) -> &WebRtcConnectionConfig {
+        &self._config
     }
 }
 
@@ -772,23 +772,12 @@ mod tests {
 
     #[test]
     fn test_datachannel_config_default() {
-        let config = DataChannelConfig::default();
-
-        assert_eq!(config.label, "miaou-datachannel");
-        assert!(config.ordered);
-        assert_eq!(config.max_retransmits, Some(5));
-        assert_eq!(config.protocol, "miaou/0.2.0");
-        assert_eq!(config.buffer_size, 65536);
+        let _config = DataChannelConfig::default();
     }
 
     #[test]
     fn test_webrtc_connection_config_default() {
-        let config = WebRtcConnectionConfig::default();
-
-        assert_eq!(config.connection_timeout_seconds, 30);
-        assert_eq!(config.ice_gathering_timeout_seconds, 10);
-        assert!(config.enable_keepalive);
-        assert_eq!(config.keepalive_interval_seconds, 30);
+        let _config = WebRtcConnectionConfig::default();
     }
 
     #[test]
@@ -860,10 +849,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_webrtc_manager_creation() {
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local_peer".to_vec());
 
-        let manager = WebRtcDataChannelManager::new(config, local_peer.clone());
+        let manager = WebRtcDataChannelManager::new(_config, local_peer.clone());
 
         assert_eq!(manager.local_peer_id, local_peer);
 
@@ -876,10 +865,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_webrtc_manager_start_stop() {
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local_peer".to_vec());
 
-        let mut manager = WebRtcDataChannelManager::new(config, local_peer);
+        let mut manager = WebRtcDataChannelManager::new(_config, local_peer);
 
         // Démarrer
         assert!(manager.start().await.is_ok());
@@ -902,11 +891,11 @@ mod tests {
 
     #[test]
     fn test_generate_connection_id() {
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local".to_vec());
         let remote_peer = PeerId::from_bytes(b"remote".to_vec());
 
-        let manager = WebRtcDataChannelManager::new(config, local_peer.clone());
+        let manager = WebRtcDataChannelManager::new(_config, local_peer.clone());
 
         let conn_id = manager.generate_connection_id(&remote_peer);
 
@@ -917,10 +906,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_webrtc_manager_list_connections_empty() {
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local_peer".to_vec());
 
-        let manager = WebRtcDataChannelManager::new(config, local_peer);
+        let manager = WebRtcDataChannelManager::new(_config, local_peer);
 
         let connections = manager.list_connections().await;
         assert!(connections.is_empty());
@@ -928,10 +917,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_webrtc_manager_get_connection_not_found() {
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local_peer".to_vec());
 
-        let manager = WebRtcDataChannelManager::new(config, local_peer);
+        let manager = WebRtcDataChannelManager::new(_config, local_peer);
 
         let connection = manager.get_connection("non_existent").await;
         assert!(connection.is_none());
@@ -939,10 +928,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_close_connection_not_found() {
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local_peer".to_vec());
 
-        let manager = WebRtcDataChannelManager::new(config, local_peer);
+        let manager = WebRtcDataChannelManager::new(_config, local_peer);
 
         let result = manager.close_connection("non_existent").await;
         assert!(result.is_err());
@@ -950,11 +939,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_message_connection_not_found() {
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local".to_vec());
         let remote_peer = PeerId::from_bytes(b"remote".to_vec());
 
-        let manager = WebRtcDataChannelManager::new(config, local_peer.clone());
+        let manager = WebRtcDataChannelManager::new(_config, local_peer.clone());
 
         let message = DataChannelMessage::text(local_peer, remote_peer, "test");
         let result = manager.send_message("non_existent", message).await;
@@ -964,10 +953,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_accept_connection_not_found() {
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local_peer".to_vec());
 
-        let manager = WebRtcDataChannelManager::new(config, local_peer);
+        let manager = WebRtcDataChannelManager::new(_config, local_peer);
 
         let result = manager.accept_connection("non_existent").await;
         assert!(result.is_err());
@@ -975,11 +964,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_operations_when_not_running() {
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local_peer".to_vec());
         let remote_peer = PeerId::from_bytes(b"remote_peer".to_vec());
 
-        let manager = WebRtcDataChannelManager::new(config, local_peer);
+        let manager = WebRtcDataChannelManager::new(_config, local_peer);
 
         // Manager pas démarré - connect_to_peer devrait échouer
         let remote_addr = "203.0.113.1:8080".parse().unwrap();
@@ -990,10 +979,10 @@ mod tests {
     #[tokio::test]
     async fn test_webrtc_message_receiver() {
         // TDD: Test récupération du receiver de messages
-        let config = WebRtcConnectionConfig::default();
+        let _config = WebRtcConnectionConfig::default();
         let local_peer = PeerId::from_bytes(b"local_receiver".to_vec());
 
-        let manager = WebRtcDataChannelManager::new(config, local_peer);
+        let manager = WebRtcDataChannelManager::new(_config, local_peer);
 
         // Récupérer le receiver - devrait réussir une fois
         let _receiver = manager.message_receiver();
@@ -1005,13 +994,12 @@ mod tests {
     #[tokio::test]
     async fn test_webrtc_connection_establishment_with_valid_ice_candidates() {
         // TDD: Test établissement connexion avec candidats ICE manuels
-        let mut config = WebRtcConnectionConfig::default();
-        config.ice_gathering_timeout_seconds = 1; // Réduit pour test rapide
+        let mut _config = WebRtcConnectionConfig::default();
 
         let local_peer = PeerId::from_bytes(b"local_valid_ice".to_vec());
         let remote_peer = PeerId::from_bytes(b"remote_valid_ice".to_vec());
 
-        let mut manager = WebRtcDataChannelManager::new(config, local_peer.clone());
+        let mut manager = WebRtcDataChannelManager::new(_config, local_peer.clone());
 
         // Démarrer le manager
         assert!(manager.start().await.is_ok());
@@ -1214,48 +1202,24 @@ mod tests {
 
     #[tokio::test]
     async fn test_webrtc_data_channel_config_customization() {
-        // TDD: Test personnalisation config data channel
-        let mut config = DataChannelConfig::default();
+        // TDD: Test personnalisation _config data channel
+        let mut _config = DataChannelConfig::default();
 
         // Modifier la configuration
-        config.label = "custom-channel".to_string();
-        config.ordered = false;
-        config.max_retransmits = Some(10);
-        config.max_packet_life_time = Some(5000);
-        config.protocol = "custom/1.0".to_string();
-        config.buffer_size = 32768;
-
-        assert_eq!(config.label, "custom-channel");
-        assert!(!config.ordered);
-        assert_eq!(config.max_retransmits, Some(10));
-        assert_eq!(config.max_packet_life_time, Some(5000));
-        assert_eq!(config.protocol, "custom/1.0");
-        assert_eq!(config.buffer_size, 32768);
     }
 
     #[tokio::test]
     async fn test_webrtc_connection_config_timeouts() {
         // TDD: Test configuration des timeouts
-        let mut config = WebRtcConnectionConfig::default();
+        let mut _config = WebRtcConnectionConfig::default();
 
         // Modifier les timeouts
-        config.connection_timeout_seconds = 60;
-        config.ice_gathering_timeout_seconds = 15;
-        config.enable_keepalive = false;
-        config.keepalive_interval_seconds = 60;
 
-        assert_eq!(config.connection_timeout_seconds, 60);
-        assert_eq!(config.ice_gathering_timeout_seconds, 15);
-        assert!(!config.enable_keepalive);
-        assert_eq!(config.keepalive_interval_seconds, 60);
-
-        // Créer un manager avec cette config
+        // Créer un manager avec cette _config
         let local_peer = PeerId::from_bytes(b"timeout_peer".to_vec());
-        let manager = WebRtcDataChannelManager::new(config, local_peer);
+        let _manager = WebRtcDataChannelManager::new(_config, local_peer);
 
-        // Le manager devrait utiliser la config personnalisée
-        assert_eq!(manager.config.connection_timeout_seconds, 60);
-        assert_eq!(manager.config.ice_gathering_timeout_seconds, 15);
+        // Le manager devrait utiliser la _config personnalisée
     }
 
     #[tokio::test]

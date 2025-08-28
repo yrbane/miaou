@@ -427,7 +427,7 @@ impl DhtDistributedDirectory {
     }
 
     /// Nettoie le cache local des entrées expirées
-    async fn cleanup_local_cache(&self) -> Result<usize, NetworkError> {
+    fn cleanup_local_cache(&self) -> Result<usize, NetworkError> {
         let mut cache = self.local_cache.write().unwrap();
         let initial_count = cache.len();
 
@@ -673,7 +673,7 @@ impl DistributedDirectory for DhtDistributedDirectory {
     }
 
     async fn cleanup_expired(&self) -> Result<usize, NetworkError> {
-        self.cleanup_local_cache().await
+        self.cleanup_local_cache()
     }
 
     async fn get_stats(&self) -> DirectoryStats {
@@ -948,9 +948,10 @@ mod tests {
         // Démarrer
         assert!(directory.start().await.is_ok());
 
-        let started = directory.started_at.read().unwrap();
-        assert!(started.is_some());
-        drop(started);
+        {
+            let started = directory.started_at.read().unwrap();
+            assert!(started.is_some());
+        }
 
         // Double start devrait échouer
         assert!(directory.start().await.is_err());
@@ -958,9 +959,10 @@ mod tests {
         // Arrêter
         assert!(directory.stop().await.is_ok());
 
-        let started = directory.started_at.read().unwrap();
-        assert!(started.is_none());
-        drop(started);
+        {
+            let started = directory.started_at.read().unwrap();
+            assert!(started.is_none());
+        }
 
         // Double stop devrait échouer
         assert!(directory.stop().await.is_err());
@@ -1062,7 +1064,8 @@ mod tests {
         // Après démarrage, uptime >= 0 (peut être 0 sur des machines très rapides)
         let stats = directory.get_stats().await;
         // stats.uptime_seconds est u64, toujours ≥ 0
-        assert!(stats.uptime_seconds > 0 || stats.uptime_seconds == 0);
+        // Service démarré correctement - vérifier que les stats sont cohérentes
+        assert_eq!(stats.local_entries_count, 0); // Par défaut pas d'entrées locales au démarrage
 
         directory.stop().await.unwrap();
     }

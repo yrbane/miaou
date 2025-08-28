@@ -5,12 +5,7 @@
 
 #[cfg(test)]
 mod mdns_p2p_integration_tests {
-    use crate::Command;
-    use miaou_network::{
-        p2p_connection::{P2pConnectionFactory, P2pConnectionManager, P2pHandshakeProtocol},
-        DiscoveryConfig, DiscoveryMethod, PeerId, PeerInfo, UnifiedDiscovery,
-    };
-    use std::sync::Arc;
+    use miaou_network::UnifiedDiscovery;
 
     // ========== TDD RED v0.2.0: Intégration mDNS + net-connect ==========
 
@@ -322,6 +317,7 @@ mod mdns_p2p_integration_tests {
     }
 
     // Helper function for checking if slice contains subslice
+    #[allow(dead_code)]
     fn contains_subslice(haystack: &[u8], needle: &[u8]) -> bool {
         haystack
             .windows(needle.len())
@@ -450,7 +446,6 @@ mod mdns_p2p_integration_tests {
 
 #[cfg(test)]
 mod cli_v2_integration_tests {
-    use super::*;
 
     #[tokio::test]
     async fn test_net_connect_full_workflow_v2() {
@@ -516,6 +511,7 @@ mod cli_v2_integration_tests {
     }
 
     // Helper function for checking if slice contains subslice
+    #[allow(dead_code)]
     fn contains_subslice(haystack: &[u8], needle: &[u8]) -> bool {
         haystack
             .windows(needle.len())

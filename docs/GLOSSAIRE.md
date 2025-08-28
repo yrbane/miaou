@@ -358,6 +358,121 @@ Couches d'abstraction Miaou autour de bibliothèques auditées (ring, RustCrypto
 
 ---
 
+## Nouveaux termes v0.2.0 "Radar Moustaches" 
+
+### **Adresse IP non-loopback**
+Adresse réseau réelle (192.168.x.x, 10.x.x.x, 172.x.x.x) permettant la communication entre machines différentes, contrairement à l'adresse loopback (127.0.0.1) qui ne fonctionne qu'en local.
+
+### **Backoff exponentiel**
+Algorithme qui augmente progressivement le délai entre les tentatives de reconnexion (1s, 2s, 4s, 8s...). Comme faire des pauses de plus en plus longues après chaque échec.
+
+### **Bootstrap DHT**
+Processus d'initialisation d'un nœud DHT en se connectant à des nœuds de démarrage connus pour découvrir le réseau distribué.
+
+### **Candidate ICE**
+Information de connectivité (adresse IP + port) découverte par le protocole ICE pour établir une connexion P2P. Comme une option de chemin possible pour joindre quelqu'un.
+
+### **collect_peers()**
+Méthode critique qui synchronise la découverte de pairs avant de les lister, résolvant les problèmes de timing inter-processus.
+
+### **Connection state**
+État d'une connexion réseau : Connecting (en cours), Connected (établie), Closed (fermée). Comme le statut d'un appel téléphonique.
+
+### **Data Channel**
+Canal de communication bidirectionnel dans WebRTC permettant l'échange de données entre pairs. Comme un tuyau digital pour faire passer des informations.
+
+### **Dead Letter Queue (DLQ)**
+Queue spéciale stockant les messages qui ont échoué après tous les essais de livraison. Comme une boîte de retour pour courrier non-distribué.
+
+### **DHT K-buckets**
+Listes ordonnées de pairs connues dans une DHT Kademlia, organisées par distance XOR. Comme un carnet d'adresses très intelligent.
+
+### **Discovery trait**
+Interface abstraite définissant les méthodes pour découvrir des pairs sur le réseau (start, discovered_peers, collect_peers).
+
+### **Directory trait**  
+Interface abstraite pour les annuaires distribués définissant put/get pour stocker et récupérer des clés publiques.
+
+### **FileMessageStore**
+Implémentation persistante de stockage des messages utilisant des fichiers JSON atomiques pour garantir la durabilité.
+
+### **FIND_NODE (DHT)**
+Requête DHT Kademlia pour trouver les K pairs les plus proches d'un identifiant donné. Comme demander les voisins les plus proches d'une adresse.
+
+### **FQDN (Fully Qualified Domain Name)**
+Nom de domaine complet incluant tous les niveaux hiérarchiques. Comme une adresse postale complète avec rue, ville, pays.
+
+### **get_local_ip()**
+Fonction utilitaire qui détecte l'adresse IP locale non-loopback de la machine, cruciale pour l'annonce mDNS correcte.
+
+### **Hex matching**
+Algorithme de correspondance des identifiants de pairs supportant les formats courts (8...8) et complets hexadécimaux.
+
+### **ICE negotiation**
+Processus WebRTC d'échange et de test des candidats de connectivité pour établir la meilleure connexion P2P possible.
+
+### **mDNS multicast**
+Diffusion de découverte de services sur le réseau local utilisant l'adresse multicast 224.0.0.251. Comme crier son nom dans une foule.
+
+### **mDNS service resolution**
+Processus automatique (mdns-sd) qui traduit un ServiceFound en adresses IP concrètes via ServiceResolved.
+
+### **MessageId**
+Identifiant unique généré pour chaque message envoyé, permettant le suivi et la confirmation de livraison.
+
+### **MessageQueue trait**
+Interface abstraite définissant send/receive/get_stats pour les systèmes de messagerie avec garanties de livraison.
+
+### **Mock ICE**
+Simulation simplifiée de la négociation ICE pour le MVP v0.2.0, avant l'implémentation complète STUN/TURN en v0.3.0.
+
+### **Network crate**
+Nouveau crate v0.2.0 contenant toute l'infrastructure P2P : discovery, transport, messaging, DHT, peer management.
+
+### **Peer discovery timing**
+Problématique de synchronisation entre processus CLI où les pairs peuvent ne pas être immédiatement visibles après démarrage.
+
+### **PeerInfo struct**
+Structure complète contenant id, clé publique, adresses, protocoles et métadonnées d'un pair réseau.
+
+### **PeerMetadata**
+Informations additionnelles d'un pair : version protocole, nom d'affichage, capacités, score de réputation.
+
+### **Priority queuing**
+Système de priorisation des messages (High/Normal/Low) dans la queue pour traiter les urgents en premier.
+
+### **QueueStats**
+Métriques temps réel d'une queue de messages : messages en attente, traités, échecs, latence moyenne.
+
+### **Retry automatique**
+Mécanisme qui retente automatiquement les opérations échouées avec des délais croissants (1s, 2s, 3s).
+
+### **ServiceFound event**
+Événement mDNS indiquant qu'un service a été découvert, suivi automatiquement par la résolution d'adresse.
+
+### **ServiceResolved event**  
+Événement mDNS fournissant les adresses IP concrètes d'un service précédemment découvert.
+
+### **STORE (DHT)**
+Commande DHT Kademlia pour publier une paire clé-valeur dans le réseau distribué, répliquée sur plusieurs nœuds.
+
+### **Transport trait**
+Interface abstraite définissant create_outbound/accept_inbound pour les connexions réseau P2P.
+
+### **UnifiedDiscovery**
+Gestionnaire combinant plusieurs méthodes de découverte (mDNS, DHT, Bootstrap) dans une interface unique.
+
+### **WebRtcConnection**
+Wrapper Miaou autour des connexions WebRTC natives, gérant l'état et les data channels de manière simplifiée.
+
+### **WebRtcTransport**
+Implémentation du trait Transport utilisant WebRTC pour les connexions P2P réelles avec data channels.
+
+### **XOR distance metric**
+Métrique de distance utilisée dans Kademlia DHT, calculée par XOR bit-à-bit des identifiants. Plus la distance est petite, plus les nœuds sont "proches".
+
+---
+
 ## Nouveaux termes v0.1.0
 
 ### **AAD obligatoire**
@@ -546,4 +661,138 @@ Tunnel sécurisé pour protéger sa connexion internet. Comme un passage secret 
 
 ---
 
-*Ce glossaire enrichi contient maintenant plus de 150 termes pour aider les débutants à mieux comprendre l'écosystème technique de Miaou.*
+## Commandes CLI v0.2.0
+
+### **net-start**
+Commande CLI qui démarre le service réseau P2P complet : discovery mDNS + transport WebRTC + messaging. Comme allumer sa radio pour pouvoir communiquer.
+
+### **net-list-peers**
+Commande CLI qui liste tous les pairs découverts sur le réseau local avec leurs identifiants et adresses IP. Comme regarder qui est connecté au WiFi.
+
+### **net-connect**
+Commande CLI qui établit une connexion WebRTC vers un pair spécifique via son identifiant. Comme composer un numéro de téléphone.
+
+### **send <to> <message>**
+Commande CLI qui envoie un message chiffré à un destinataire via la queue persistante. Le message est automatiquement chiffré avec la clé publique du destinataire.
+
+### **recv**
+Commande CLI qui récupère et déchiffre tous les messages en attente dans la queue locale. Comme relever sa boîte aux lettres.
+
+### **dht-put <type> <key-hex>**
+Commande CLI qui publie une clé cryptographique dans l'annuaire DHT distribué. Types supportés : signing, encryption.
+
+### **dht-get <peer-id> <type>**
+Commande CLI qui recherche une clé cryptographique d'un pair dans l'annuaire DHT distribué. Comme chercher le numéro de quelqu'un dans l'annuaire.
+
+---
+
+## Termes simples ajoutés v0.2.0
+
+### **Adresse IP**
+Numéro unique identifiant une machine sur un réseau, comme 192.168.1.100. Similaire à une adresse postale pour les ordinateurs.
+
+### **ANSI color codes**
+Codes spéciaux ajoutés au texte pour les couleurs dans le terminal. Souvent nettoyés avec `sed 's/\\x1b\\[[0-9;]*m//g'` pour l'analyse.
+
+### **Atomique (opération)**
+Opération qui s'exécute complètement ou pas du tout, sans état intermédiaire. Comme un interrupteur : allumé ou éteint, jamais entre les deux.
+
+### **Background process**
+Processus qui s'exécute en arrière-plan sans interface utilisateur. Comme un service qui travaille discrètement.
+
+### **Bidirectionnel**
+Communication qui fonctionne dans les deux sens simultanément. Comme une conversation téléphonique normale.
+
+### **Bonjour (Apple)**
+Implémentation Apple du protocole mDNS pour la découverte de services réseau. Comme mDNS mais avec la marque Apple.
+
+### **Candidat de connectivité**
+Option de chemin réseau testée pour établir une connexion P2P. Comme essayer différentes routes pour aller quelque part.
+
+### **Chiffrement automatique**
+Processus où les messages sont chiffrés transparentement sans intervention utilisateur. Comme une enveloppe qui se ferme automatiquement.
+
+### **Code ANSI**
+Séquences de caractères contrôlant l'affichage du texte (couleurs, position) dans les terminaux. Souvent invisibles mais présentes.
+
+### **Daemon mode**
+Mode où une application s'exécute en permanence en arrière-plan comme un service système. Comme un gardien de nuit qui surveille toujours.
+
+### **Délai de timeout**
+Durée maximale d'attente avant d'abandonner une opération. Comme raccrocher après 30 secondes si personne ne répond.
+
+### **Durée (option CLI)**
+Paramètre `--duration` spécifiant combien de temps un service doit fonctionner avant de s'arrêter automatiquement.
+
+### **E2E testing**
+Tests qui vérifient le fonctionnement complet d'un système de bout en bout. Comme tester tout le parcours d'un colis de l'expéditeur au destinataire.
+
+### **Fallback**
+Solution de repli utilisée quand la méthode principale échoue. Comme prendre le bus quand sa voiture tombe en panne.
+
+### **GREEN phase (TDD)**
+Phase du TDD où on écrit le code minimal pour faire passer les tests. Après RED (tests qui échouent) et avant REFACTOR (nettoyage).
+
+### **Handshake**
+Échange initial entre deux parties pour établir une communication sécurisée. Comme se serrer la main avant de parler affaires.
+
+### **Inter-processus**
+Communication ou coordination entre différents programmes qui s'exécutent simultanément. Comme la coordination entre plusieurs équipes.
+
+### **JSON atomique**
+Écriture de fichiers JSON de manière indivisible pour éviter la corruption des données. Tout s'écrit ou rien ne s'écrit.
+
+### **Loopback address**
+Adresse IP spéciale (127.0.0.1) qui renvoie vers la même machine, utilisée pour les tests locaux. Comme parler dans un miroir.
+
+### **Matching (correspondance)**
+Processus de comparaison pour trouver des éléments qui se correspondent. Comme apparier des chaussettes de la même couleur.
+
+### **MVP (version)**
+Minimum Viable Product - version basique mais fonctionnelle d'un logiciel. Comme une voiture de base qui roule mais sans options.
+
+### **Multicast**
+Envoi simultané d'un message à plusieurs destinataires sur le réseau. Comme faire une annonce avec un porte-voix dans une cour d'école.
+
+### **Non-loopback**
+Adresse IP "vraie" permettant la communication entre différentes machines, contrairement aux adresses locales (127.0.0.1).
+
+### **Pair ID court**
+Version raccourcie d'un identifiant de pair au format "debut...fin" (ex: "a1b2c3d4...e5f6g7h8"). Plus facile à lire et taper.
+
+### **Perfect Forward Secrecy**
+Garantie qu'une compromission des clés actuelles ne permet pas de déchiffrer les communications passées. Chaque session a ses propres clés éphémères.
+
+### **Port réseau**
+Numéro identifiant un service spécifique sur une machine (ex: port 80 pour HTTP). Comme un numéro d'appartement dans un immeuble.
+
+### **Production-ready**
+Logiciel suffisamment robuste et testé pour être utilisé en environnement de production réel. Prêt pour les vrais utilisateurs.
+
+### **Radar (métaphore)**
+Référence au nom "Radar Moustaches" - capacité de découvrir les autres machines sur le réseau comme un radar détecte les objets.
+
+### **Réseau local (LAN)**
+Réseau limité géographiquement comme celui d'une maison ou bureau. Toutes les machines peuvent se "voir" directement.
+
+### **Script de validation**
+Programme automatique qui vérifie le bon fonctionnement d'un système. Comme une checklist automatique.
+
+### **Service réseau**
+Programme qui fournit des fonctionnalités accessibles via le réseau. Comme un magasin qui sert les clients.
+
+### **SocketAddr**
+Structure technique combinant une adresse IP et un port réseau. Adresse complète pour joindre un service spécifique.
+
+### **TDD systématique**
+Application rigoureuse du Test-Driven Development pour chaque nouvelle fonctionnalité. Pas d'exceptions, toujours des tests d'abord.
+
+### **Timing issue**
+Problème de synchronisation où différentes parties du système ne sont pas coordonnées dans le temps. Comme arriver en retard à un rendez-vous.
+
+### **Versioning (clés DHT)**
+Système de numérotation des clés publiques dans l'annuaire distribué permettant les mises à jour. Comme un numéro de version sur un document.
+
+---
+
+*Ce glossaire enrichi contient maintenant plus de 200 termes pour aider les débutants à mieux comprendre l'écosystème technique de Miaou v0.2.0.*
