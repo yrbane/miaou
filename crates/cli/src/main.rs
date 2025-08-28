@@ -136,13 +136,13 @@ enum Command {
     /// Lance les diagnostics réseau (STUN/TURN/NAT)
     #[command(about = "Run network diagnostics (STUN/TURN/NAT detection)")]
     Diagnostics,
-    
+
     /// Commandes réseau LAN (mDNS discovery)
     #[command(subcommand)]
     Lan(LanCommand),
-    
+
     /// Commandes réseau unifiées (mDNS + DHT + manual)
-    #[command(subcommand)]  
+    #[command(subcommand)]
     Net(NetCommand),
 }
 
@@ -166,7 +166,7 @@ enum MdnsCommand {
         #[arg(long, default_value = "4242")]
         port: u16,
     },
-    /// Liste les pairs découverts via mDNS 
+    /// Liste les pairs découverts via mDNS
     ListPeers {
         /// Timeout en secondes pour la découverte
         #[arg(long, default_value = "3")]
@@ -1263,58 +1263,66 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                         MdnsCommand::Announce { duration, port } => {
                             // TDD GREEN: Implémentation mDNS announce via MdnsDiscovery direct
                             println!("📡 Démarrage annonce mDNS...");
-                            
+
                             // Générer un PeerInfo pour ce nœud
                             let local_peer_id = PeerId::from_bytes(
-                                format!("miaou-peer-{}", rand::thread_rng().next_u32() % 10000).into_bytes()
+                                format!("miaou-peer-{}", rand::thread_rng().next_u32() % 10000)
+                                    .into_bytes(),
                             );
-                            let local_ip = get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
+                            let local_ip =
+                                get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
                             let mut local_peer_info = PeerInfo::new(local_peer_id.clone());
-                            local_peer_info.add_address(format!("{}:{}", local_ip, port).parse().unwrap());
-                            
+                            local_peer_info
+                                .add_address(format!("{}:{}", local_ip, port).parse().unwrap());
+
                             // Créer MdnsDiscovery directement
-                            let mdns_discovery = miaou_network::MdnsDiscovery::new(Default::default());
-                            
+                            let mdns_discovery =
+                                miaou_network::MdnsDiscovery::new(Default::default());
+
                             // Démarrer et annoncer
                             mdns_discovery.start().await?;
                             mdns_discovery.announce(&local_peer_info).await?;
-                            
+
                             println!("✅ Service mDNS annoncé:");
                             println!("   - Peer ID: {}", local_peer_info.id);
                             println!("   - Adresse: {}:{}", local_ip, port);
                             println!("   - Service: _miaou._tcp.local");
-                            
+
                             if duration > 0 {
                                 println!("   - Durée: {} secondes", duration);
-                                tokio::time::sleep(tokio::time::Duration::from_secs(duration)).await;
+                                tokio::time::sleep(tokio::time::Duration::from_secs(duration))
+                                    .await;
                                 println!("🛑 Arrêt de l'annonce mDNS");
                             } else {
                                 println!("   - Durée: infinie (CTRL+C pour arrêter)");
-                                tokio::signal::ctrl_c().await.expect("Failed to listen for Ctrl+C");
+                                tokio::signal::ctrl_c()
+                                    .await
+                                    .expect("Failed to listen for Ctrl+C");
                                 println!("\n🛑 Arrêt de l'annonce mDNS");
                             }
-                            
+
                             mdns_discovery.stop().await?;
                             Ok(())
                         }
                         MdnsCommand::ListPeers { timeout } => {
                             // TDD GREEN: Liste pairs via MdnsDiscovery direct
                             println!("🔍 Recherche pairs mDNS ({}s timeout)...", timeout);
-                            
+
                             let local_peer_id = PeerId::from_bytes(b"cli-list-mdns".to_vec());
                             let _local_peer_info = PeerInfo::new(local_peer_id.clone());
-                            
-                            let mdns_discovery = miaou_network::MdnsDiscovery::new(Default::default());
-                            
+
+                            let mdns_discovery =
+                                miaou_network::MdnsDiscovery::new(Default::default());
+
                             mdns_discovery.start().await?;
-                            
+
                             // Attendre le timeout pour découvrir
                             tokio::time::sleep(tokio::time::Duration::from_secs(timeout)).await;
-                            
+
                             let peers = mdns_discovery.discovered_peers().await;
-                            
+
                             mdns_discovery.stop().await?;
-                            
+
                             if json_output {
                                 let output = serde_json::json!({
                                     "method": "mdns",
@@ -1329,16 +1337,18 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                                     "timestamp": chrono::Utc::now().timestamp()
                                 });
                                 println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                            } else if peers.is_empty() {
+                                println!("Aucun pair mDNS découvert");
                             } else {
-                                if peers.is_empty() {
-                                    println!("Aucun pair mDNS découvert");
-                                } else {
-                                    println!("Pairs mDNS découverts:");
-                                    for peer in &peers {
-                                        println!("- {} ({})", peer.id.short(), peer.addresses.len());
-                                        for addr in &peer.addresses {
-                                            println!("  📍 {}", addr);
-                                        }
+                                println!("Pairs mDNS découverts:");
+                                for peer in &peers {
+                                    println!(
+                                        "- {} ({})",
+                                        peer.id.short(),
+                                        peer.addresses.len()
+                                    );
+                                    for addr in &peer.addresses {
+                                        println!("  📍 {}", addr);
                                     }
                                 }
                             }
@@ -1355,7 +1365,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                         UnifiedCommand::Start { duration, methods } => {
                             // TDD GREEN: Implémentation UnifiedDiscovery start
                             println!("🚀 Démarrage découverte unifiée...");
-                            
+
                             // Parser les méthodes
                             let mut discovery_methods = Vec::new();
                             for method in &methods {
@@ -1368,46 +1378,52 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                                     }
                                 }
                             }
-                            
+
                             if discovery_methods.is_empty() {
                                 discovery_methods.push(DiscoveryMethod::Mdns); // Fallback
                             }
-                            
+
                             let discovery_config = DiscoveryConfig {
                                 methods: discovery_methods,
                                 ..Default::default()
                             };
-                            
+
                             let local_peer_id = PeerId::from_bytes(
-                                format!("unified-{}", rand::thread_rng().next_u32() % 10000).into_bytes()
+                                format!("unified-{}", rand::thread_rng().next_u32() % 10000)
+                                    .into_bytes(),
                             );
-                            let local_ip = get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
+                            let local_ip =
+                                get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
                             let mut local_peer_info = PeerInfo::new(local_peer_id.clone());
-                            local_peer_info.add_address(format!("{}:4242", local_ip).parse().unwrap());
-                            
+                            local_peer_info
+                                .add_address(format!("{}:4242", local_ip).parse().unwrap());
+
                             let discovery = UnifiedDiscovery::new(
                                 discovery_config,
                                 local_peer_id,
                                 local_peer_info.clone(),
                             );
-                            
+
                             discovery.start().await?;
                             discovery.announce(&local_peer_info).await?;
-                            
+
                             println!("✅ Découverte unifiée active:");
                             println!("   - Peer ID: {}", local_peer_info.id.short());
                             println!("   - Méthodes: {:?}", methods);
                             println!("   - Adresse: {}", local_ip);
-                            
+
                             if duration > 0 {
                                 println!("   - Durée: {} secondes", duration);
-                                tokio::time::sleep(tokio::time::Duration::from_secs(duration)).await;
+                                tokio::time::sleep(tokio::time::Duration::from_secs(duration))
+                                    .await;
                             } else {
                                 println!("   - Durée: infinie (CTRL+C pour arrêter)");
-                                tokio::signal::ctrl_c().await.expect("Failed to listen for Ctrl+C");
+                                tokio::signal::ctrl_c()
+                                    .await
+                                    .expect("Failed to listen for Ctrl+C");
                                 println!("\n🛑 Arrêt demandé");
                             }
-                            
+
                             discovery.stop().await?;
                             println!("🛑 Découverte unifiée arrêtée");
                             Ok(())
@@ -1415,31 +1431,33 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                         UnifiedCommand::Announce => {
                             // TDD GREEN: Annonce via découverte unifiée
                             println!("📢 Annonce sur tous les canaux...");
-                            
+
                             let discovery_config = DiscoveryConfig {
                                 methods: vec![DiscoveryMethod::Mdns, DiscoveryMethod::Dht],
                                 ..Default::default()
                             };
-                            
+
                             let local_peer_id = PeerId::from_bytes(b"announce-unified".to_vec());
-                            let local_ip = get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
+                            let local_ip =
+                                get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
                             let mut local_peer_info = PeerInfo::new(local_peer_id.clone());
-                            local_peer_info.add_address(format!("{}:4242", local_ip).parse().unwrap());
-                            
+                            local_peer_info
+                                .add_address(format!("{}:4242", local_ip).parse().unwrap());
+
                             let discovery = UnifiedDiscovery::new(
                                 discovery_config,
                                 local_peer_id,
                                 local_peer_info.clone(),
                             );
-                            
+
                             discovery.start().await?;
                             discovery.announce(&local_peer_info).await?;
-                            
+
                             println!("✅ Annoncé sur:");
-                            println!("   📡 mDNS: _miaou._tcp.local");  
+                            println!("   📡 mDNS: _miaou._tcp.local");
                             println!("   🗄️  DHT: Kademlia (simulé v0.2.0)");
                             println!("   👤 Peer ID: {}", local_peer_info.id.short());
-                            
+
                             tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                             discovery.stop().await?;
                             Ok(())
@@ -1447,27 +1465,27 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                         UnifiedCommand::ListPeers { timeout } => {
                             // TDD GREEN: Liste pairs via découverte unifiée
                             println!("🔍 Recherche pairs unifiée ({}s timeout)...", timeout);
-                            
+
                             let discovery_config = DiscoveryConfig {
                                 methods: vec![DiscoveryMethod::Mdns, DiscoveryMethod::Dht],
                                 ..Default::default()
                             };
-                            
+
                             let local_peer_id = PeerId::from_bytes(b"cli-list-unified".to_vec());
                             let local_peer_info = PeerInfo::new(local_peer_id.clone());
-                            
+
                             let discovery = UnifiedDiscovery::new(
                                 discovery_config,
                                 local_peer_id,
                                 local_peer_info,
                             );
-                            
+
                             discovery.start().await?;
                             tokio::time::sleep(tokio::time::Duration::from_secs(timeout)).await;
                             discovery.collect_peers().await?;
                             let peers = discovery.discovered_peers().await;
                             discovery.stop().await?;
-                            
+
                             if json_output {
                                 let output = serde_json::json!({
                                     "method": "unified",
@@ -1484,16 +1502,18 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                                     "timestamp": chrono::Utc::now().timestamp()
                                 });
                                 println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                            } else if peers.is_empty() {
+                                println!("Aucun pair découvert via méthodes unifiées");
                             } else {
-                                if peers.is_empty() {
-                                    println!("Aucun pair découvert via méthodes unifiées");
-                                } else {
-                                    println!("Pairs découverts (unifiées):");
-                                    for peer in &peers {
-                                        println!("- {} ({})", peer.id.short(), peer.addresses.len());
-                                        for addr in &peer.addresses {
-                                            println!("  📍 {}", addr);
-                                        }
+                                println!("Pairs découverts (unifiées):");
+                                for peer in &peers {
+                                    println!(
+                                        "- {} ({})",
+                                        peer.id.short(),
+                                        peer.addresses.len()
+                                    );
+                                    for addr in &peer.addresses {
+                                        println!("  📍 {}", addr);
                                     }
                                 }
                             }
@@ -1502,29 +1522,29 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                         UnifiedCommand::Find { peer_id, timeout } => {
                             // TDD GREEN: Recherche pair spécifique
                             println!("🎯 Recherche pair {} ({}s timeout)...", peer_id, timeout);
-                            
+
                             let discovery_config = DiscoveryConfig {
                                 methods: vec![DiscoveryMethod::Mdns, DiscoveryMethod::Dht],
                                 ..Default::default()
                             };
-                            
+
                             let local_peer_id = PeerId::from_bytes(b"cli-find-unified".to_vec());
                             let local_peer_info = PeerInfo::new(local_peer_id.clone());
-                            
+
                             let discovery = UnifiedDiscovery::new(
                                 discovery_config,
                                 local_peer_id,
                                 local_peer_info,
                             );
-                            
+
                             discovery.start().await?;
-                            
+
                             // Rechercher le peer spécifique
                             let target_peer_id = PeerId::from_bytes(peer_id.as_bytes().to_vec());
                             let result = discovery.find_peer(&target_peer_id).await;
-                            
+
                             discovery.stop().await?;
-                            
+
                             match result {
                                 Ok(Some(peer_info)) => {
                                     if json_output {
@@ -1538,7 +1558,10 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                                             "search_duration_seconds": timeout,
                                             "timestamp": chrono::Utc::now().timestamp()
                                         });
-                                        println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                                        println!(
+                                            "{}",
+                                            serde_json::to_string_pretty(&output).unwrap()
+                                        );
                                     } else {
                                         println!("✅ Pair trouvé:");
                                         println!("   ID: {}", peer_info.id.short());
@@ -1555,7 +1578,10 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                                             "search_duration_seconds": timeout,
                                             "timestamp": chrono::Utc::now().timestamp()
                                         });
-                                        println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                                        println!(
+                                            "{}",
+                                            serde_json::to_string_pretty(&output).unwrap()
+                                        );
                                     } else {
                                         println!("❌ Pair '{}' non trouvé", peer_id);
                                     }

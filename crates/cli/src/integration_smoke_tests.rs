@@ -12,7 +12,6 @@
 //! cargo test --package miaou-cli integration_smoke_tests -- --ignored
 //! ```
 
-
 use std::process::Command;
 
 /// Helper pour exécuter le CLI via cargo run
