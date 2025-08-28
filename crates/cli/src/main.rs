@@ -39,6 +39,9 @@ struct Cli {
     /// Niveau de log (trace,debug,info,warn,error)
     #[arg(long, default_value = "info")]
     log: String,
+    /// Sortie au format JSON
+    #[arg(long)]
+    json: bool,
     #[command(subcommand)]
     cmd: Command,
 }
@@ -117,6 +120,39 @@ enum Command {
     },
 }
 
+/// Détecte l'adresse IP LAN locale (non-loopback) pour mDNS
+fn get_local_ip() -> Option<String> {
+    use std::net::{IpAddr, UdpSocket};
+
+    // Méthode 1: Connexion UDP fictive pour détecter l'IP sortante
+    if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+        if socket.connect("8.8.8.8:80").is_ok() {
+            if let Ok(local_addr) = socket.local_addr() {
+                let ip = local_addr.ip();
+                if !ip.is_loopback() && !ip.is_unspecified() {
+                    return Some(ip.to_string());
+                }
+            }
+        }
+    }
+
+    // Méthode 2: Parcours des interfaces réseau (fallback)
+    use std::process::Command;
+    if let Ok(output) = Command::new("hostname").arg("-I").output() {
+        if let Ok(output_str) = String::from_utf8(output.stdout) {
+            for ip_str in output_str.split_whitespace() {
+                if let Ok(ip) = ip_str.parse::<IpAddr>() {
+                    if !ip.is_loopback() && !ip.is_unspecified() && ip.is_ipv4() {
+                        return Some(ip.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 fn main() -> ExitCode {
     let cli = Cli::parse();
     init_tracing(&cli.log);
@@ -146,6 +182,7 @@ async fn run_with_keystore(cli: Cli, mut ks: MemoryKeyStore) -> Result<(), Miaou
 }
 
 async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouError> {
+    let json_output = cli.json;
     match cli.cmd {
         Command::KeyGenerate => {
             let id = ks.generate_ed25519()?;
@@ -228,7 +265,10 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             // Utiliser un port aléatoire pour éviter les conflits entre instances
             let listen_port = 4242 + (rng.next_u32() % 1000) as u16;
             let mut local_peer_info = miaou_network::PeerInfo::new(local_peer_id.clone());
-            local_peer_info.add_address(format!("127.0.0.1:{}", listen_port).parse().unwrap());
+
+            // Détecter l'IP LAN réelle (non-loopback) pour mDNS
+            let local_ip = get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
+            local_peer_info.add_address(format!("{}:{}", local_ip, listen_port).parse().unwrap());
 
             let discovery = std::sync::Arc::new(tokio::sync::Mutex::new(UnifiedDiscovery::new(
                 discovery_config,
@@ -321,12 +361,41 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             // Arrêter proprement
             discovery.stop().await?;
 
-            if peers.is_empty() {
-                println!("Aucun pair découvert");
+            if json_output {
+                // Sortie JSON structurée
+                let peer_list: Vec<serde_json::Value> = peers
+                    .iter()
+                    .map(|peer| {
+                        serde_json::json!({
+                            "id": peer.id.to_string(),
+                            "short_id": peer.id.short(),
+                            "addresses": peer.addresses
+                        })
+                    })
+                    .collect();
+
+                let output = serde_json::json!({
+                    "discovered_peers": peer_list,
+                    "count": peers.len(),
+                    "timestamp": chrono::Utc::now().timestamp()
+                });
+
+                match serde_json::to_string_pretty(&output) {
+                    Ok(json_str) => println!("{}", json_str),
+                    Err(e) => eprintln!("Erreur JSON: {}", e),
+                }
             } else {
-                println!("Pairs découverts:");
-                for peer in peers {
-                    println!("- {}", peer.id);
+                // Sortie texte habituelle
+                if peers.is_empty() {
+                    println!("Aucun pair découvert");
+                } else {
+                    println!("Pairs découverts:");
+                    for peer in peers {
+                        println!("- {} ({} adresse(s))", peer.id, peer.addresses.len());
+                        for addr in &peer.addresses {
+                            println!("  📍 {}", addr);
+                        }
+                    }
                 }
             }
 
@@ -1028,6 +1097,7 @@ mod tests {
         // Test that CLI struct can be created
         let _cli = Cli {
             log: "info".to_string(),
+            json: false,
             cmd: Command::KeyGenerate,
         };
     }
@@ -1113,6 +1183,7 @@ mod tests {
     fn test_run_key_generate() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::KeyGenerate,
         };
 
@@ -1125,6 +1196,7 @@ mod tests {
     fn test_run_key_export_invalid() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::KeyExport {
                 id: "nonexistent-key".to_string(),
             },
@@ -1139,6 +1211,7 @@ mod tests {
     fn test_run_sign_invalid() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::Sign {
                 id: "nonexistent-key".to_string(),
                 message: "test".to_string(),
@@ -1154,6 +1227,7 @@ mod tests {
     fn test_run_verify_invalid() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::Verify {
                 id: "nonexistent-key".to_string(),
                 message: "test".to_string(),
@@ -1170,6 +1244,7 @@ mod tests {
     fn test_run_aead_encrypt_invalid_key() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::AeadEncrypt {
                 key_hex: "invalid".to_string(), // Wrong length
                 nonce_hex: "000000000000000000000000".to_string(),
@@ -1187,6 +1262,7 @@ mod tests {
     fn test_run_aead_decrypt_invalid_key() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::AeadDecrypt {
                 key_hex: "invalid".to_string(), // Wrong length
                 nonce_hex: "000000000000000000000000".to_string(),
@@ -1222,6 +1298,7 @@ mod tests {
 
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::KeyExport { id: key_id.0 },
         };
 
@@ -1236,6 +1313,7 @@ mod tests {
         // Test the signing path - will fail because run() creates new keystore
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::Sign {
                 id: "test-key".to_string(),
                 message: "hello world".to_string(),
@@ -1250,6 +1328,7 @@ mod tests {
     fn test_run_verify_with_invalid_signature_format() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::Verify {
                 id: "test-key".to_string(),
                 message: "hello".to_string(),
@@ -1265,6 +1344,7 @@ mod tests {
     fn test_run_aead_encrypt_valid() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::AeadEncrypt {
                 key_hex: "0000000000000000000000000000000000000000000000000000000000000000"
                     .to_string(), // 32 bytes
@@ -1291,6 +1371,7 @@ mod tests {
 
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::AeadDecrypt {
                 key_hex: hex(&key),
                 nonce_hex: hex(&nonce),
@@ -1307,6 +1388,7 @@ mod tests {
     fn test_run_aead_encrypt_invalid_nonce() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::AeadEncrypt {
                 key_hex: "0000000000000000000000000000000000000000000000000000000000000000"
                     .to_string(),
@@ -1324,6 +1406,7 @@ mod tests {
     fn test_run_aead_decrypt_invalid_ciphertext() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::AeadDecrypt {
                 key_hex: "0000000000000000000000000000000000000000000000000000000000000000"
                     .to_string(),
@@ -1343,6 +1426,7 @@ mod tests {
         // Testing via run() function which main() calls
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::KeyGenerate,
         };
         let result = run(cli);
@@ -1354,6 +1438,7 @@ mod tests {
         // TDD: Test main() error path (lines 63-66)
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::KeyExport {
                 id: "nonexistent".to_string(),
             },
@@ -1370,6 +1455,7 @@ mod tests {
 
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::KeyExport {
                 id: key_id.0.clone(),
             },
@@ -1389,6 +1475,7 @@ mod tests {
 
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::Sign {
                 id: key_id.0.clone(),
                 message: "test message".to_string(),
@@ -1414,6 +1501,7 @@ mod tests {
 
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::Verify {
                 id: key_id.0.clone(),
                 message: message.to_string(),
@@ -1579,6 +1667,7 @@ mod tests {
         // TDD: Test commande net-start
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetStart {
                 daemon: false,
                 duration: 0,
@@ -1595,6 +1684,7 @@ mod tests {
         // TDD: Test commande net-list-peers
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetListPeers,
         };
 
@@ -1608,6 +1698,7 @@ mod tests {
         // TDD GREEN: Test commande net-connect maintenant implémentée !
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetConnect {
                 peer_id: "test-peer-123".to_string(),
             },
@@ -1633,6 +1724,7 @@ mod tests {
         // TDD GREEN: Test validation peer ID
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetConnect {
                 peer_id: "a".to_string(), // Trop court
             },
@@ -1653,6 +1745,7 @@ mod tests {
         // TDD: Test commande net-handshake
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetHandshake {
                 peer_id: "test-peer-handshake".to_string(),
             },
@@ -1667,6 +1760,7 @@ mod tests {
         // TDD: Test commande net-status
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetStatus,
         };
 
@@ -1681,6 +1775,7 @@ mod tests {
         // 1. Key generation
         let cli1 = Cli {
             log: "info".to_string(),
+            json: false,
             cmd: Command::KeyGenerate,
         };
         assert!(run(cli1).is_ok());
@@ -1691,6 +1786,7 @@ mod tests {
 
         let encrypt_cli = Cli {
             log: "debug".to_string(),
+            json: false,
             cmd: Command::AeadEncrypt {
                 key_hex: key_hex.to_string(),
                 nonce_hex: nonce_hex.to_string(),
@@ -1705,6 +1801,7 @@ mod tests {
     fn test_verify_command_with_invalid_key_format() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::Verify {
                 id: "nonexistent".to_string(),
                 message: "test".to_string(),
@@ -1782,6 +1879,7 @@ mod tests {
     fn test_run_aead_invalid_aad_hex() {
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::AeadEncrypt {
                 key_hex: "0000000000000000000000000000000000000000000000000000000000000000"
                     .to_string(),
@@ -1804,6 +1902,7 @@ mod tests {
         for level in levels {
             let cli = Cli {
                 log: level.to_string(),
+                json: false,
                 cmd: Command::KeyGenerate,
             };
             assert!(run(cli).is_ok());
@@ -1860,6 +1959,7 @@ mod tests {
         // TDD: Test de la commande Send
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::Send {
                 to: "alice".to_string(),
                 message: "Test message".to_string(),
@@ -1875,6 +1975,7 @@ mod tests {
         // TDD: Test de la commande History
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::History {
                 limit: 5,
                 peer: None,
@@ -1890,6 +1991,7 @@ mod tests {
         // TDD: Test de la commande History avec filtre de pair
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::History {
                 limit: 10,
                 peer: Some("bob".to_string()),
@@ -1904,6 +2006,7 @@ mod tests {
     fn test_cli_debug_formatting() {
         let cli = Cli {
             log: "info".to_string(),
+            json: false,
             cmd: Command::KeyGenerate,
         };
 
@@ -1924,6 +2027,7 @@ mod tests {
 
         let cli1 = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetStart {
                 daemon: false,
                 duration: 0,
@@ -1932,6 +2036,7 @@ mod tests {
 
         let cli2 = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetStart {
                 daemon: false,
                 duration: 0,
@@ -1962,6 +2067,7 @@ mod tests {
         // TDD: Test du mode daemon dans net-start
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetStart {
                 daemon: true,
                 duration: 1,
@@ -1977,6 +2083,7 @@ mod tests {
         // TDD: Test du paramètre duration dans net-start
         let cli = Cli {
             log: "error".to_string(),
+            json: false,
             cmd: Command::NetStart {
                 daemon: false,
                 duration: 1,

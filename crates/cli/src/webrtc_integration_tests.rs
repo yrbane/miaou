@@ -84,6 +84,7 @@ mod webrtc_integration_tests {
 
         let cli = Cli {
             log: "error".to_string(), // Réduire le bruit des logs
+            json: false,
             cmd: Command::NetConnect {
                 peer_id: "webrtc-integration-test".to_string(),
             },

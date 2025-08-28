@@ -23,3 +23,4 @@ miaou-network = { path = "../network" }
 serde_json = { workspace = true }
 hex = "0.4"
 rand = { workspace = true }
+chrono = { version = "0.4", features = ["serde"] }
