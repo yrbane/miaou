@@ -49,9 +49,11 @@ uuid = { version = "1.0", features = ["v4"] }
 [dev-dependencies]
 tokio-test = "0.4"
 proptest = "1.6"
+# Pour les exemples
+rand = { workspace = true }
 
 [features]
-default = ["webrtc-transport", "mdns-discovery"]
+default = ["mdns-discovery"]
 webrtc-transport = ["dep:webrtc"]
 mdns-discovery = ["dep:mdns-sd"]
 tls-transport = []

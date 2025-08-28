@@ -1353,6 +1353,7 @@ dependencies = [
  "miaou-core",
  "miaou-crypto",
  "proptest",
+ "rand 0.8.5",
  "serde",
  "serde_bytes",
  "serde_json",

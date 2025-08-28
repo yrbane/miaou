@@ -2,13 +2,16 @@
 
 ## 🎯 Test rapide de découverte mDNS (2 terminaux)
 
-### Terminal 1 : Démarrer le serveur
+### Terminal 1 : Démarrer l'annonce mDNS
 ```bash
 # Compiler le projet
 cargo build --workspace
 
-# Démarrer le service réseau P2P (60 secondes)
-./target/debug/miaou-cli net-start --duration 60
+# NOUVELLE SYNTAXE v0.2.0: Annoncer via mDNS (60 secondes)
+./target/debug/miaou-cli lan mdns announce --duration 60
+
+# OU syntaxe legacy:
+# ./target/debug/miaou-cli net-start --duration 60
 ```
 
 Vous devriez voir :
@@ -24,28 +27,71 @@ Vous devriez voir :
 
 ### Terminal 2 : Découvrir et se connecter
 ```bash
-# Lister les pairs découverts sur le réseau local
-./target/debug/miaou-cli net-list-peers
+# NOUVELLE SYNTAXE v0.2.0: Découverte mDNS directe
+./target/debug/miaou-cli --json lan mdns list-peers --timeout 3
 
-# Vous devriez voir le pair du Terminal 1
-# Exemple de sortie:
-# 🔍 Découverte des pairs via mDNS...
-# Pairs découverts:
-# - cli-net-start-abc123 (192.168.1.100:4242)
+# OU découverte unifiée (mDNS + DHT simulé):
+./target/debug/miaou-cli --json net unified list-peers --timeout 5
 
+# OU syntaxe legacy:
+# ./target/debug/miaou-cli --json net-list-peers --timeout 3
+```
+
+Vous devriez voir du JSON comme :
+```json
+{
+  "method": "mdns",
+  "peers": [
+    {
+      "id": "miaou-peer-1234",
+      "addresses": ["192.168.1.100:4242"]
+    }
+  ],
+  "count": 1,
+  "timeout_seconds": 3
+}
+```
+
+```bash
 # Se connecter à ce pair (WebRTC simulé en v0.2.0)
-./target/debug/miaou-cli net-connect cli-net-start-abc123
+./target/debug/miaou-cli net-connect miaou-peer-1234
 ```
 
 ## 🚀 Commandes disponibles v0.2.0
 
 ### 🔍 Réseau et découverte
+
+#### Commandes LAN (mDNS direct)
+```bash
+# Annoncer sur mDNS
+./target/debug/miaou-cli lan mdns announce [--duration SECONDS] [--port PORT]
+
+# Lister pairs mDNS
+./target/debug/miaou-cli lan mdns list-peers [--timeout SECONDS]
+```
+
+#### Commandes réseau unifiées
+```bash
+# Démarrer découverte unifiée
+./target/debug/miaou-cli net unified start [--duration SECONDS] [--methods mdns,dht]
+
+# Annoncer sur tous les canaux
+./target/debug/miaou-cli net unified announce
+
+# Lister pairs unifiés
+./target/debug/miaou-cli net unified list-peers [--timeout SECONDS]
+
+# Rechercher un pair spécifique  
+./target/debug/miaou-cli net unified find <PEER_ID> [--timeout SECONDS]
+```
+
+#### Commandes legacy (rétrocompatibilité)
 ```bash
 # Démarrer le service réseau
 ./target/debug/miaou-cli net-start [--duration SECONDS] [--daemon]
 
 # Lister les pairs découverts
-./target/debug/miaou-cli net-list-peers [--json]
+./target/debug/miaou-cli net-list-peers [--timeout SECONDS]
 
 # Se connecter à un pair
 ./target/debug/miaou-cli net-connect <PEER_ID>

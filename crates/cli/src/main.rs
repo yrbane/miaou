@@ -30,6 +30,9 @@ mod v2_integration_tests;
 #[cfg(test)]
 mod webrtc_integration_tests;
 
+#[cfg(test)]
+mod integration_smoke_tests;
+
 // Module de tests TDD supprimé temporairement pour release v0.2.0
 // TODO v0.3.0: Ajouter tests complets pour nouvelles commandes
 
@@ -87,7 +90,11 @@ enum Command {
         duration: u64,
     },
     /// Liste les pairs découverts sur le réseau local
-    NetListPeers,
+    NetListPeers {
+        /// Timeout en secondes pour la découverte
+        #[arg(long, default_value = "3")]
+        timeout: u64,
+    },
     /// Se connecte à un pair spécifique
     NetConnect { peer_id: String },
     /// Initie un handshake E2E avec un pair
@@ -129,6 +136,80 @@ enum Command {
     /// Lance les diagnostics réseau (STUN/TURN/NAT)
     #[command(about = "Run network diagnostics (STUN/TURN/NAT detection)")]
     Diagnostics,
+    
+    /// Commandes réseau LAN (mDNS discovery)
+    #[command(subcommand)]
+    Lan(LanCommand),
+    
+    /// Commandes réseau unifiées (mDNS + DHT + manual)
+    #[command(subcommand)]  
+    Net(NetCommand),
+}
+
+/// Commandes pour découverte LAN via mDNS
+#[derive(Debug, Subcommand)]
+enum LanCommand {
+    /// Sous-commandes mDNS
+    #[command(subcommand)]
+    Mdns(MdnsCommand),
+}
+
+/// Commandes mDNS spécifiques
+#[derive(Debug, Subcommand)]
+enum MdnsCommand {
+    /// Annonce ce pair sur le réseau LAN via mDNS
+    Announce {
+        /// Durée en secondes (0 = infini)
+        #[arg(long, default_value = "30")]
+        duration: u64,
+        /// Port d'écoute
+        #[arg(long, default_value = "4242")]
+        port: u16,
+    },
+    /// Liste les pairs découverts via mDNS 
+    ListPeers {
+        /// Timeout en secondes pour la découverte
+        #[arg(long, default_value = "3")]
+        timeout: u64,
+    },
+}
+
+/// Commandes réseau unifiées
+#[derive(Debug, Subcommand)]
+enum NetCommand {
+    /// Sous-commandes unifiées (mDNS + DHT + manual)
+    #[command(subcommand)]
+    Unified(UnifiedCommand),
+}
+
+/// Commandes de découverte unifiée
+#[derive(Debug, Subcommand)]
+enum UnifiedCommand {
+    /// Démarre le service de découverte unifiée
+    Start {
+        /// Durée en secondes (0 = infini)
+        #[arg(long, default_value = "30")]
+        duration: u64,
+        /// Méthodes de découverte (mdns,dht,manual)
+        #[arg(long, value_delimiter = ',', default_value = "mdns")]
+        methods: Vec<String>,
+    },
+    /// Annonce ce pair sur tous les canaux actifs
+    Announce,
+    /// Liste les pairs découverts via toutes les méthodes
+    ListPeers {
+        /// Timeout en secondes pour la découverte
+        #[arg(long, default_value = "5")]
+        timeout: u64,
+    },
+    /// Recherche un pair spécifique
+    Find {
+        /// ID du pair à rechercher
+        peer_id: String,
+        /// Timeout en secondes
+        #[arg(long, default_value = "10")]
+        timeout: u64,
+    },
 }
 
 /// Détecte l'adresse IP LAN locale (non-loopback) pour mDNS
@@ -346,7 +427,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
             Ok(())
         }
-        Command::NetListPeers => {
+        Command::NetListPeers { timeout } => {
             // TDD: Créer une instance temporaire pour lister les pairs actifs
             let discovery_config = DiscoveryConfig {
                 methods: vec![DiscoveryMethod::Mdns],
@@ -361,8 +442,8 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             // Démarrer la découverte temporairement pour collecter les pairs actifs
             discovery.start().await?;
 
-            // Attendre un peu pour collecter les pairs existants
-            tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+            // Attendre le timeout spécifié pour collecter les pairs existants
+            tokio::time::sleep(tokio::time::Duration::from_secs(timeout)).await;
 
             // Collecter les pairs depuis toutes les sources
             discovery.collect_peers().await?;
@@ -1175,6 +1256,317 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
             Ok(())
         }
+        Command::Lan(lan_cmd) => {
+            match lan_cmd {
+                LanCommand::Mdns(mdns_cmd) => {
+                    match mdns_cmd {
+                        MdnsCommand::Announce { duration, port } => {
+                            // TDD GREEN: Implémentation mDNS announce via MdnsDiscovery direct
+                            println!("📡 Démarrage annonce mDNS...");
+                            
+                            // Générer un PeerInfo pour ce nœud
+                            let local_peer_id = PeerId::from_bytes(
+                                format!("miaou-peer-{}", rand::thread_rng().next_u32() % 10000).into_bytes()
+                            );
+                            let local_ip = get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
+                            let mut local_peer_info = PeerInfo::new(local_peer_id.clone());
+                            local_peer_info.add_address(format!("{}:{}", local_ip, port).parse().unwrap());
+                            
+                            // Créer MdnsDiscovery directement
+                            let mdns_discovery = miaou_network::MdnsDiscovery::new(Default::default());
+                            
+                            // Démarrer et annoncer
+                            mdns_discovery.start().await?;
+                            mdns_discovery.announce(&local_peer_info).await?;
+                            
+                            println!("✅ Service mDNS annoncé:");
+                            println!("   - Peer ID: {}", local_peer_info.id);
+                            println!("   - Adresse: {}:{}", local_ip, port);
+                            println!("   - Service: _miaou._tcp.local");
+                            
+                            if duration > 0 {
+                                println!("   - Durée: {} secondes", duration);
+                                tokio::time::sleep(tokio::time::Duration::from_secs(duration)).await;
+                                println!("🛑 Arrêt de l'annonce mDNS");
+                            } else {
+                                println!("   - Durée: infinie (CTRL+C pour arrêter)");
+                                tokio::signal::ctrl_c().await.expect("Failed to listen for Ctrl+C");
+                                println!("\n🛑 Arrêt de l'annonce mDNS");
+                            }
+                            
+                            mdns_discovery.stop().await?;
+                            Ok(())
+                        }
+                        MdnsCommand::ListPeers { timeout } => {
+                            // TDD GREEN: Liste pairs via MdnsDiscovery direct
+                            println!("🔍 Recherche pairs mDNS ({}s timeout)...", timeout);
+                            
+                            let local_peer_id = PeerId::from_bytes(b"cli-list-mdns".to_vec());
+                            let _local_peer_info = PeerInfo::new(local_peer_id.clone());
+                            
+                            let mdns_discovery = miaou_network::MdnsDiscovery::new(Default::default());
+                            
+                            mdns_discovery.start().await?;
+                            
+                            // Attendre le timeout pour découvrir
+                            tokio::time::sleep(tokio::time::Duration::from_secs(timeout)).await;
+                            
+                            let peers = mdns_discovery.discovered_peers().await;
+                            
+                            mdns_discovery.stop().await?;
+                            
+                            if json_output {
+                                let output = serde_json::json!({
+                                    "method": "mdns",
+                                    "peers": peers.iter().map(|p| {
+                                        serde_json::json!({
+                                            "id": p.id.to_string(),
+                                            "addresses": p.addresses
+                                        })
+                                    }).collect::<Vec<_>>(),
+                                    "count": peers.len(),
+                                    "timeout_seconds": timeout,
+                                    "timestamp": chrono::Utc::now().timestamp()
+                                });
+                                println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                            } else {
+                                if peers.is_empty() {
+                                    println!("Aucun pair mDNS découvert");
+                                } else {
+                                    println!("Pairs mDNS découverts:");
+                                    for peer in &peers {
+                                        println!("- {} ({})", peer.id.short(), peer.addresses.len());
+                                        for addr in &peer.addresses {
+                                            println!("  📍 {}", addr);
+                                        }
+                                    }
+                                }
+                            }
+                            Ok(())
+                        }
+                    }
+                }
+            }
+        }
+        Command::Net(net_cmd) => {
+            match net_cmd {
+                NetCommand::Unified(unified_cmd) => {
+                    match unified_cmd {
+                        UnifiedCommand::Start { duration, methods } => {
+                            // TDD GREEN: Implémentation UnifiedDiscovery start
+                            println!("🚀 Démarrage découverte unifiée...");
+                            
+                            // Parser les méthodes
+                            let mut discovery_methods = Vec::new();
+                            for method in &methods {
+                                match method.as_str() {
+                                    "mdns" => discovery_methods.push(DiscoveryMethod::Mdns),
+                                    "dht" => discovery_methods.push(DiscoveryMethod::Dht),
+                                    "manual" => discovery_methods.push(DiscoveryMethod::Manual),
+                                    _ => {
+                                        eprintln!("⚠️  Méthode inconnue: {}, ignorée", method);
+                                    }
+                                }
+                            }
+                            
+                            if discovery_methods.is_empty() {
+                                discovery_methods.push(DiscoveryMethod::Mdns); // Fallback
+                            }
+                            
+                            let discovery_config = DiscoveryConfig {
+                                methods: discovery_methods,
+                                ..Default::default()
+                            };
+                            
+                            let local_peer_id = PeerId::from_bytes(
+                                format!("unified-{}", rand::thread_rng().next_u32() % 10000).into_bytes()
+                            );
+                            let local_ip = get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
+                            let mut local_peer_info = PeerInfo::new(local_peer_id.clone());
+                            local_peer_info.add_address(format!("{}:4242", local_ip).parse().unwrap());
+                            
+                            let discovery = UnifiedDiscovery::new(
+                                discovery_config,
+                                local_peer_id,
+                                local_peer_info.clone(),
+                            );
+                            
+                            discovery.start().await?;
+                            discovery.announce(&local_peer_info).await?;
+                            
+                            println!("✅ Découverte unifiée active:");
+                            println!("   - Peer ID: {}", local_peer_info.id.short());
+                            println!("   - Méthodes: {:?}", methods);
+                            println!("   - Adresse: {}", local_ip);
+                            
+                            if duration > 0 {
+                                println!("   - Durée: {} secondes", duration);
+                                tokio::time::sleep(tokio::time::Duration::from_secs(duration)).await;
+                            } else {
+                                println!("   - Durée: infinie (CTRL+C pour arrêter)");
+                                tokio::signal::ctrl_c().await.expect("Failed to listen for Ctrl+C");
+                                println!("\n🛑 Arrêt demandé");
+                            }
+                            
+                            discovery.stop().await?;
+                            println!("🛑 Découverte unifiée arrêtée");
+                            Ok(())
+                        }
+                        UnifiedCommand::Announce => {
+                            // TDD GREEN: Annonce via découverte unifiée
+                            println!("📢 Annonce sur tous les canaux...");
+                            
+                            let discovery_config = DiscoveryConfig {
+                                methods: vec![DiscoveryMethod::Mdns, DiscoveryMethod::Dht],
+                                ..Default::default()
+                            };
+                            
+                            let local_peer_id = PeerId::from_bytes(b"announce-unified".to_vec());
+                            let local_ip = get_local_ip().unwrap_or_else(|| "127.0.0.1".to_string());
+                            let mut local_peer_info = PeerInfo::new(local_peer_id.clone());
+                            local_peer_info.add_address(format!("{}:4242", local_ip).parse().unwrap());
+                            
+                            let discovery = UnifiedDiscovery::new(
+                                discovery_config,
+                                local_peer_id,
+                                local_peer_info.clone(),
+                            );
+                            
+                            discovery.start().await?;
+                            discovery.announce(&local_peer_info).await?;
+                            
+                            println!("✅ Annoncé sur:");
+                            println!("   📡 mDNS: _miaou._tcp.local");  
+                            println!("   🗄️  DHT: Kademlia (simulé v0.2.0)");
+                            println!("   👤 Peer ID: {}", local_peer_info.id.short());
+                            
+                            tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                            discovery.stop().await?;
+                            Ok(())
+                        }
+                        UnifiedCommand::ListPeers { timeout } => {
+                            // TDD GREEN: Liste pairs via découverte unifiée
+                            println!("🔍 Recherche pairs unifiée ({}s timeout)...", timeout);
+                            
+                            let discovery_config = DiscoveryConfig {
+                                methods: vec![DiscoveryMethod::Mdns, DiscoveryMethod::Dht],
+                                ..Default::default()
+                            };
+                            
+                            let local_peer_id = PeerId::from_bytes(b"cli-list-unified".to_vec());
+                            let local_peer_info = PeerInfo::new(local_peer_id.clone());
+                            
+                            let discovery = UnifiedDiscovery::new(
+                                discovery_config,
+                                local_peer_id,
+                                local_peer_info,
+                            );
+                            
+                            discovery.start().await?;
+                            tokio::time::sleep(tokio::time::Duration::from_secs(timeout)).await;
+                            discovery.collect_peers().await?;
+                            let peers = discovery.discovered_peers().await;
+                            discovery.stop().await?;
+                            
+                            if json_output {
+                                let output = serde_json::json!({
+                                    "method": "unified",
+                                    "methods": ["mdns", "dht"],
+                                    "peers": peers.iter().map(|p| {
+                                        serde_json::json!({
+                                            "id": p.id.to_string(),
+                                            "short_id": p.id.short(),
+                                            "addresses": p.addresses
+                                        })
+                                    }).collect::<Vec<_>>(),
+                                    "count": peers.len(),
+                                    "timeout_seconds": timeout,
+                                    "timestamp": chrono::Utc::now().timestamp()
+                                });
+                                println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                            } else {
+                                if peers.is_empty() {
+                                    println!("Aucun pair découvert via méthodes unifiées");
+                                } else {
+                                    println!("Pairs découverts (unifiées):");
+                                    for peer in &peers {
+                                        println!("- {} ({})", peer.id.short(), peer.addresses.len());
+                                        for addr in &peer.addresses {
+                                            println!("  📍 {}", addr);
+                                        }
+                                    }
+                                }
+                            }
+                            Ok(())
+                        }
+                        UnifiedCommand::Find { peer_id, timeout } => {
+                            // TDD GREEN: Recherche pair spécifique
+                            println!("🎯 Recherche pair {} ({}s timeout)...", peer_id, timeout);
+                            
+                            let discovery_config = DiscoveryConfig {
+                                methods: vec![DiscoveryMethod::Mdns, DiscoveryMethod::Dht],
+                                ..Default::default()
+                            };
+                            
+                            let local_peer_id = PeerId::from_bytes(b"cli-find-unified".to_vec());
+                            let local_peer_info = PeerInfo::new(local_peer_id.clone());
+                            
+                            let discovery = UnifiedDiscovery::new(
+                                discovery_config,
+                                local_peer_id,
+                                local_peer_info,
+                            );
+                            
+                            discovery.start().await?;
+                            
+                            // Rechercher le peer spécifique
+                            let target_peer_id = PeerId::from_bytes(peer_id.as_bytes().to_vec());
+                            let result = discovery.find_peer(&target_peer_id).await;
+                            
+                            discovery.stop().await?;
+                            
+                            match result {
+                                Ok(Some(peer_info)) => {
+                                    if json_output {
+                                        let output = serde_json::json!({
+                                            "found": true,
+                                            "peer": {
+                                                "id": peer_info.id.to_string(),
+                                                "short_id": peer_info.id.short(),
+                                                "addresses": peer_info.addresses
+                                            },
+                                            "search_duration_seconds": timeout,
+                                            "timestamp": chrono::Utc::now().timestamp()
+                                        });
+                                        println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                                    } else {
+                                        println!("✅ Pair trouvé:");
+                                        println!("   ID: {}", peer_info.id.short());
+                                        for addr in &peer_info.addresses {
+                                            println!("   📍 {}", addr);
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    if json_output {
+                                        let output = serde_json::json!({
+                                            "found": false,
+                                            "searched_peer_id": peer_id,
+                                            "search_duration_seconds": timeout,
+                                            "timestamp": chrono::Utc::now().timestamp()
+                                        });
+                                        println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                                    } else {
+                                        println!("❌ Pair '{}' non trouvé", peer_id);
+                                    }
+                                }
+                            }
+                            Ok(())
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1833,7 +2225,7 @@ mod tests {
             daemon: false,
             duration: 0,
         };
-        let net_list = Command::NetListPeers;
+        let net_list = Command::NetListPeers { timeout: 3 };
         let net_connect = Command::NetConnect {
             peer_id: "test-peer".to_string(),
         };
@@ -1873,7 +2265,7 @@ mod tests {
         let cli = Cli {
             log: "error".to_string(),
             json: false,
-            cmd: Command::NetListPeers,
+            cmd: Command::NetListPeers { timeout: 3 },
         };
 
         let result = run_with_keystore(cli, MemoryKeyStore::new()).await;
