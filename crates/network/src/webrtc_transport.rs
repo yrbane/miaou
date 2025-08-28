@@ -257,7 +257,7 @@ mod tests {
             // Avec WebRTC activé, on devrait avoir une connexion mock
             // ou une erreur d'initialisation WebRTC
             // Pour MVP on tolère les deux cas
-            let _ = result; // Utiliser la variable pour éviter warning
+            let _result = result; // Utiliser la variable pour éviter warning
         }
 
         #[cfg(not(feature = "webrtc-transport"))]
