@@ -249,7 +249,7 @@ mod tests {
         let transport = WebRtcTransport::new(config);
         let peer = PeerInfo::new_mock();
 
-        let _result = transport.connect(&peer).await;
+        let result = transport.connect(&peer).await;
 
         // Comportement dépend de si webrtc-transport est activé
         #[cfg(feature = "webrtc-transport")]
@@ -257,6 +257,7 @@ mod tests {
             // Avec WebRTC activé, on devrait avoir une connexion mock
             // ou une erreur d'initialisation WebRTC
             // Pour MVP on tolère les deux cas
+            let _ = result; // Utiliser la variable pour éviter warning
         }
 
         #[cfg(not(feature = "webrtc-transport"))]
