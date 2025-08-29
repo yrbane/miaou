@@ -5,29 +5,27 @@ Toutes les modifications notables de ce projet seront documentées dans ce fichi
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.2.0] - "Radar Moustaches" - 2025-08-28
+## [v0.2.0] - "Radar Moustaches" - 2025-08-29
 
 ### 🎯 Résumé
-Version majeure introduisant le **réseau P2P complet** avec découverte mDNS, connexions WebRTC, messagerie persistante et annuaire DHT distribué. **369 tests** (vs 91 en v0.1.0) avec TDD systématique GREEN phase.
+Version majeure implémentant un **pipeline P2P E2E complet** : Discovery → WebRTC → Handshake → Double Ratchet → Messaging sécurisé. **400+ tests** avec TDD systématique et intégration production complète.
 
 ### ✨ Fonctionnalités majeures
 
-#### 🌐 **Réseau P2P Production-Ready**
+#### 🔗 **Pipeline E2E P2P Complet (NOUVEAU)**
+- **UnifiedP2pManager** : Orchestrateur intégrant tous les composants production
+- **DHT Kademlia Production** : Découverte pairs avec UDP réel + recherche itérative
+- **WebRTC avec négociation ICE** : DataChannels production avec candidats + STUN
+- **X3DH Handshake Production** : Établissement clés partagées Ed25519 authentifiées
+- **Double Ratchet Production** : Perfect Forward Secrecy avec ChaCha20-Poly1305
+- **Message Queue fiable** : Delivery garanti avec exponential backoff + retry
+- **5 Tests E2E complets** : Unicast, bidirectional, groups, recovery, multi-pairs
+
+#### 🌐 **Infrastructure Réseau Robuste**
 - **mDNS Discovery LAN** : Découverte automatique avec résolution d'adresses IP
-  - ServiceFound → ServiceResolved automatique
-  - Détection IP non-loopback (192.168.x.x, 10.x.x.x, 172.x.x.x)
-  - Annonce multicast sur port aléatoire évitant conflits
-- **WebRTC Data Channels** : Connexions P2P réelles
-  - Négociation ICE avec candidates locaux
-  - Établissement data channels bidirectionnels
-  - Gestion états : Connecting → Connected → Closed
-  - Support NAT traversal MVP (sans STUN/TURN)
-- **Messagerie Production** : Queue persistante avec garanties
-  - FileMessageStore avec JSON atomique
-  - Priority queuing (High/Normal/Low)
-  - Retry automatique avec exponential backoff
-  - Dead Letter Queue pour messages échoués
-- **DHT Directory** : Annuaire distribué de clés
+- **WebRTC Data Channels** : Connexions P2P réelles avec négociation ICE
+- **DHT Distribué** : Annuaire Kademlia avec vraies connexions UDP réseau
+- **NAT Traversal** : Support STUN/TURN + port mapping automatique
   - Publication signing/encryption keys
   - K-buckets avec XOR distance metric
   - Bootstrap nodes support
@@ -62,23 +60,24 @@ Version majeure introduisant le **réseau P2P complet** avec découverte mDNS, c
 
 #### 🏗️ **Architecture SOLID**
 
-##### **Crate `miaou-network`** (nouveau)
-- **Discovery** : Trait abstrait + implémentations
-  - `MdnsDiscovery` : mDNS avec mdns-sd crate
-  - `UnifiedDiscovery` : Gestionnaire multi-méthodes
-  - `DhtDiscovery` : DHT Kademlia (MVP in-memory)
-- **Transport** : Abstraction connexions
-  - `WebRtcTransport` : WebRTC réel avec crate webrtc
-  - `Connection` : État et frames management
-- **Messaging** : Queue production
-  - `MessageQueue` : Interface production
-  - `FileMessageStore` : Persistance JSON
-  - `QueueStats` : Métriques temps réel
-- **Directory** : Annuaire distribué
-  - `DhtDistributedDirectory` : DHT production
-  - `DirectoryEntry` : Clés versionnées
-- **NatTraversal** : Traversée NAT
-  - `StunTurnNatTraversal` : STUN/TURN (MVP simulé)
+##### **Crate `miaou-network`** (mise à jour majeure)
+- **Pipeline E2E Production** : Intégration complète bout-en-bout
+  - `UnifiedP2pManager` : Orchestrateur tous composants
+  - `e2e_integration_production.rs` : Tests complets (5 scénarios)
+  - Pipeline : Discovery → WebRTC → Handshake → Ratchet → Messaging
+- **Components Production** : 8 modules fully TDD
+  - `dht_production_impl.rs` : Kademlia avec UDP réel (62 tests)
+  - `webrtc_production_impl.rs` : ICE negotiation + DataChannels
+  - `handshake_production.rs` : X3DH complet avec Ed25519
+  - `double_ratchet_production.rs` : PFS avec ChaCha20 (10 tests)
+  - `message_queue_production.rs` : Queue fiable + retry
+  - `p2p_messaging_production.rs` : Chiffrement session
+  - `nat_traversal_production.rs` : STUN/TURN + port mapping
+  - `crypto_production_impl.rs` : Primitives authentiques
+- **Architecture SOLID** : Traits + implémentations extensibles
+  - `Discovery`, `Transport`, `DistributedHashTable` traits
+  - Object-safe + async/await compatible
+  - Injection de dépendances pour tests
   - `IceCandidate` : Gestion candidates
 
 ### 🛠️ Améliorations techniques

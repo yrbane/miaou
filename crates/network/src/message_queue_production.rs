@@ -35,7 +35,7 @@ impl Default for ProductionQueueConfig {
             backoff_factor: 2.0,
             max_queue_size: 1000,
             message_ttl_ms: 24 * 60 * 60 * 1000, // 24 heures
-            cleanup_interval_ms: 5 * 60 * 1000, // 5 minutes
+            cleanup_interval_ms: 5 * 60 * 1000,  // 5 minutes
         }
     }
 }
@@ -125,7 +125,7 @@ impl ProductionMessageQueue {
     ) -> Result<String, NetworkError> {
         let message_id = generate_message_id();
         let now = current_timestamp();
-        
+
         let queued_msg = QueuedMessage {
             message_id: message_id.clone(),
             recipient,
@@ -138,7 +138,7 @@ impl ProductionMessageQueue {
         };
 
         let mut queue = self.pending_messages.write().await;
-        
+
         // Vérifier la taille maximale
         if queue.len() >= self.config.max_queue_size {
             return Err(NetworkError::General("Queue pleine".to_string()));
@@ -148,8 +148,9 @@ impl ProductionMessageQueue {
         let insert_pos = queue
             .iter()
             .position(|msg| {
-                msg.priority > queued_msg.priority 
-                || (msg.priority == queued_msg.priority && msg.created_at > queued_msg.created_at)
+                msg.priority > queued_msg.priority
+                    || (msg.priority == queued_msg.priority
+                        && msg.created_at > queued_msg.created_at)
             })
             .unwrap_or(queue.len());
 
@@ -163,7 +164,10 @@ impl ProductionMessageQueue {
         let mut stats = self.stats.write().await;
         stats.pending_count = queue.len();
 
-        info!("📥 Message {} ajouté à la queue (priorité {})", message_id, priority);
+        info!(
+            "📥 Message {} ajouté à la queue (priorité {})",
+            message_id, priority
+        );
         Ok(message_id)
     }
 
@@ -187,7 +191,7 @@ impl ProductionMessageQueue {
         // Traiter chaque message
         for &msg_idx in &messages_to_process {
             let mut queue = self.pending_messages.write().await;
-            
+
             // Vérifier que l'index est encore valide
             if msg_idx >= queue.len() {
                 continue;
@@ -195,7 +199,7 @@ impl ProductionMessageQueue {
 
             let mut message = queue[msg_idx].clone();
             processed += 1;
-            
+
             // Tenter l'envoi
             let success = if let Some(ref callback) = self.send_callback {
                 callback(&message)
@@ -214,17 +218,19 @@ impl ProductionMessageQueue {
                 stats.success_count += 1;
                 stats.total_attempts += message.attempts as u64;
                 stats.pending_count = stats.pending_count.saturating_sub(1);
-                
+
                 let delivery_time = now - message.created_at;
                 if stats.avg_delivery_latency_ms == 0 {
                     stats.avg_delivery_latency_ms = delivery_time;
                 } else {
-                    stats.avg_delivery_latency_ms = 
+                    stats.avg_delivery_latency_ms =
                         (stats.avg_delivery_latency_ms + delivery_time) / 2;
                 }
 
-                info!("✅ Message {} livré avec succès (tentative {})", 
-                      message.message_id, message.attempts);
+                info!(
+                    "✅ Message {} livré avec succès (tentative {})",
+                    message.message_id, message.attempts
+                );
             } else {
                 // Échec : programmer retry ou abandonner
                 if message.attempts >= self.config.max_retry_attempts {
@@ -237,21 +243,27 @@ impl ProductionMessageQueue {
                     stats.total_attempts += message.attempts as u64;
                     stats.pending_count = stats.pending_count.saturating_sub(1);
 
-                    warn!("❌ Message {} abandonné après {} tentatives", 
-                          message.message_id, message.attempts);
+                    warn!(
+                        "❌ Message {} abandonné après {} tentatives",
+                        message.message_id, message.attempts
+                    );
                 } else {
                     // Programmer retry
-                    let delay = self.config.initial_retry_delay_ms as f64 
+                    let delay = self.config.initial_retry_delay_ms as f64
                         * self.config.backoff_factor.powi(message.attempts as i32 - 1);
-                    
+
                     message.next_retry_at = now + delay as u64;
-                    message.error_history.push(format!("Échec tentative {}", message.attempts));
+                    message
+                        .error_history
+                        .push(format!("Échec tentative {}", message.attempts));
 
                     // Mettre à jour en place
                     queue[msg_idx] = message.clone();
 
-                    debug!("🔄 Message {} programmé pour retry dans {}ms", 
-                           message.message_id, delay as u64);
+                    debug!(
+                        "🔄 Message {} programmé pour retry dans {}ms",
+                        message.message_id, delay as u64
+                    );
                 }
             }
         }
@@ -266,7 +278,7 @@ impl ProductionMessageQueue {
 
         let mut queue = self.pending_messages.write().await;
         let mut index = self.message_index.write().await;
-        
+
         // Supprimer les messages expirés
         queue.retain(|msg| {
             let expired = (now - msg.created_at) > self.config.message_ttl_ms;
@@ -297,7 +309,10 @@ impl ProductionMessageQueue {
     /// Récupère un message par ID
     pub async fn get_message(&self, message_id: &str) -> Option<QueuedMessage> {
         let queue = self.pending_messages.read().await;
-        queue.iter().find(|msg| msg.message_id == message_id).cloned()
+        queue
+            .iter()
+            .find(|msg| msg.message_id == message_id)
+            .cloned()
     }
 
     /// Supprime un message par ID
@@ -308,7 +323,7 @@ impl ProductionMessageQueue {
         if let Some(pos) = queue.iter().position(|msg| msg.message_id == message_id) {
             queue.remove(pos);
             index.remove(message_id);
-            
+
             let mut stats = self.stats.write().await;
             stats.pending_count = queue.len();
             return true;
@@ -345,7 +360,7 @@ mod tests {
         // TDD: Test création queue production
         let config = ProductionQueueConfig::default();
         let queue = ProductionMessageQueue::new(config);
-        
+
         let stats = queue.get_stats().await;
         assert_eq!(stats.pending_count, 0);
         assert_eq!(stats.success_count, 0);
@@ -357,18 +372,15 @@ mod tests {
         // TDD: Test ajout message dans queue
         let config = ProductionQueueConfig::default();
         let queue = ProductionMessageQueue::new(config);
-        
+
         let recipient = PeerId::from_bytes(b"test_recipient".to_vec());
         let payload = b"test message".to_vec();
-        
-        let msg_id = queue
-            .enqueue_message(recipient, payload, 1)
-            .await
-            .unwrap();
-        
+
+        let msg_id = queue.enqueue_message(recipient, payload, 1).await.unwrap();
+
         assert!(!msg_id.is_empty());
         assert!(msg_id.starts_with("msg_"));
-        
+
         let stats = queue.get_stats().await;
         assert_eq!(stats.pending_count, 1);
     }
@@ -378,14 +390,23 @@ mod tests {
         // TDD: Test ordre de priorité des messages
         let config = ProductionQueueConfig::default();
         let queue = ProductionMessageQueue::new(config);
-        
+
         let recipient = PeerId::from_bytes(b"recipient".to_vec());
-        
+
         // Ajouter messages avec différentes priorités
-        let _low = queue.enqueue_message(recipient.clone(), b"low".to_vec(), 2).await.unwrap();
-        let _high = queue.enqueue_message(recipient.clone(), b"high".to_vec(), 0).await.unwrap();
-        let _normal = queue.enqueue_message(recipient, b"normal".to_vec(), 1).await.unwrap();
-        
+        let _low = queue
+            .enqueue_message(recipient.clone(), b"low".to_vec(), 2)
+            .await
+            .unwrap();
+        let _high = queue
+            .enqueue_message(recipient.clone(), b"high".to_vec(), 0)
+            .await
+            .unwrap();
+        let _normal = queue
+            .enqueue_message(recipient, b"normal".to_vec(), 1)
+            .await
+            .unwrap();
+
         // Vérifier l'ordre (high, normal, low)
         let queue_data = queue.pending_messages.read().await;
         assert_eq!(queue_data[0].priority, 0); // High priority first
@@ -398,26 +419,26 @@ mod tests {
         // TDD: Test livraison réussie avec callback
         let config = ProductionQueueConfig::default();
         let mut queue = ProductionMessageQueue::new(config);
-        
+
         // Configurer callback qui réussit toujours
         queue.set_send_callback(|_msg| true);
-        
+
         let recipient = PeerId::from_bytes(b"recipient".to_vec());
         let msg_id = queue
             .enqueue_message(recipient, b"test".to_vec(), 1)
             .await
             .unwrap();
-        
+
         // Traiter les messages
         let processed = queue.process_pending_messages().await;
         assert_eq!(processed, 1);
-        
+
         // Vérifier les stats
         let stats = queue.get_stats().await;
         assert_eq!(stats.pending_count, 0);
         assert_eq!(stats.success_count, 1);
         assert_eq!(stats.failed_count, 0);
-        
+
         // Message doit être supprimé de la queue
         assert!(queue.get_message(&msg_id).await.is_none());
     }
@@ -432,25 +453,25 @@ mod tests {
             ..Default::default()
         };
         let mut queue = ProductionMessageQueue::new(config);
-        
+
         // Configurer callback qui échoue toujours
         queue.set_send_callback(|_msg| false);
-        
+
         let recipient = PeerId::from_bytes(b"recipient".to_vec());
         let msg_id = queue
             .enqueue_message(recipient, b"failing_msg".to_vec(), 1)
             .await
             .unwrap();
-        
+
         // Premier traitement (échec immédiat)
         let processed = queue.process_pending_messages().await;
         assert_eq!(processed, 1);
-        
+
         // Message doit être encore en queue avec next_retry_at programmé
         let message = queue.get_message(&msg_id).await.unwrap();
         assert_eq!(message.attempts, 1);
         assert!(message.next_retry_at > current_timestamp());
-        
+
         let stats = queue.get_stats().await;
         assert_eq!(stats.pending_count, 1);
         assert_eq!(stats.success_count, 0);
@@ -465,27 +486,27 @@ mod tests {
             ..Default::default()
         };
         let mut queue = ProductionMessageQueue::new(config);
-        
+
         // Configurer callback qui échoue toujours
         queue.set_send_callback(|_msg| false);
-        
+
         let recipient = PeerId::from_bytes(b"recipient".to_vec());
         let msg_id = queue
             .enqueue_message(recipient, b"failing_msg".to_vec(), 1)
             .await
             .unwrap();
-        
+
         // Premier traitement
         queue.process_pending_messages().await;
         let message = queue.get_message(&msg_id).await.unwrap();
         assert_eq!(message.attempts, 1);
-        
+
         // Deuxième traitement (dernier retry)
         queue.process_pending_messages().await;
-        
+
         // Message doit être supprimé définitivement
         assert!(queue.get_message(&msg_id).await.is_none());
-        
+
         let stats = queue.get_stats().await;
         assert_eq!(stats.pending_count, 0);
         assert_eq!(stats.failed_count, 1);
@@ -499,13 +520,19 @@ mod tests {
             ..Default::default()
         };
         let queue = ProductionMessageQueue::new(config);
-        
+
         let recipient = PeerId::from_bytes(b"recipient".to_vec());
-        
+
         // Remplir la queue jusqu'à la limite
-        assert!(queue.enqueue_message(recipient.clone(), b"msg1".to_vec(), 1).await.is_ok());
-        assert!(queue.enqueue_message(recipient.clone(), b"msg2".to_vec(), 1).await.is_ok());
-        
+        assert!(queue
+            .enqueue_message(recipient.clone(), b"msg1".to_vec(), 1)
+            .await
+            .is_ok());
+        assert!(queue
+            .enqueue_message(recipient.clone(), b"msg2".to_vec(), 1)
+            .await
+            .is_ok());
+
         // Tentative d'ajout supplémentaire doit échouer
         let result = queue.enqueue_message(recipient, b"msg3".to_vec(), 1).await;
         assert!(result.is_err());
@@ -520,20 +547,20 @@ mod tests {
             ..Default::default()
         };
         let queue = ProductionMessageQueue::new(config);
-        
+
         let recipient = PeerId::from_bytes(b"recipient".to_vec());
         let _msg_id = queue
             .enqueue_message(recipient, b"expiring_msg".to_vec(), 1)
             .await
             .unwrap();
-        
+
         // Attendre l'expiration
         tokio::time::sleep(tokio::time::Duration::from_millis(150)).await;
-        
+
         // Nettoyer
         let removed = queue.cleanup_expired_messages().await;
         assert_eq!(removed, 1);
-        
+
         let stats = queue.get_stats().await;
         assert_eq!(stats.pending_count, 0);
         assert_eq!(stats.failed_count, 1);
@@ -544,23 +571,23 @@ mod tests {
         // TDD: Test suppression manuelle de message
         let config = ProductionQueueConfig::default();
         let queue = ProductionMessageQueue::new(config);
-        
+
         let recipient = PeerId::from_bytes(b"recipient".to_vec());
         let msg_id = queue
             .enqueue_message(recipient, b"removable_msg".to_vec(), 1)
             .await
             .unwrap();
-        
+
         // Vérifier que le message existe
         assert!(queue.get_message(&msg_id).await.is_some());
-        
+
         // Supprimer le message
         let removed = queue.remove_message(&msg_id).await;
         assert!(removed);
-        
+
         // Vérifier que le message n'existe plus
         assert!(queue.get_message(&msg_id).await.is_none());
-        
+
         let stats = queue.get_stats().await;
         assert_eq!(stats.pending_count, 0);
     }
@@ -569,43 +596,46 @@ mod tests {
     async fn test_backoff_calculation() {
         // TDD: Test calcul du backoff exponentiel
         let config = ProductionQueueConfig {
-            initial_retry_delay_ms: 50,  // Plus court pour test rapide
+            initial_retry_delay_ms: 50, // Plus court pour test rapide
             backoff_factor: 2.0,
             max_retry_attempts: 4,
             ..Default::default()
         };
         let mut queue = ProductionMessageQueue::new(config.clone());
-        
+
         // Configurer callback qui échoue toujours
         queue.set_send_callback(|_msg| false);
-        
+
         let recipient = PeerId::from_bytes(b"recipient".to_vec());
         let msg_id = queue
             .enqueue_message(recipient, b"backoff_test".to_vec(), 1)
             .await
             .unwrap();
-        
+
         let initial_time = current_timestamp();
-        
+
         // Premier échec
         queue.process_pending_messages().await;
         let message = queue.get_message(&msg_id).await.unwrap();
         let first_delay = message.next_retry_at - initial_time;
-        
+
         // Le délai devrait être proche de initial_retry_delay_ms
         assert!(first_delay >= 50 && first_delay <= 100);
-        
+
         // Simuler passage du temps et deuxième échec
         tokio::time::sleep(tokio::time::Duration::from_millis(60)).await;
         queue.process_pending_messages().await;
-        
+
         let message = queue.get_message(&msg_id).await.unwrap();
         assert_eq!(message.attempts, 2);
-        
+
         // Le prochain délai devrait être environ 2x le premier (backoff exponentiel)
-        let second_delay_expected = (config.initial_retry_delay_ms as f64 * config.backoff_factor) as u64;
+        let second_delay_expected =
+            (config.initial_retry_delay_ms as f64 * config.backoff_factor) as u64;
         let second_delay_actual = message.next_retry_at - current_timestamp();
-        assert!(second_delay_actual >= second_delay_expected - 20 && 
-                second_delay_actual <= second_delay_expected + 20);
+        assert!(
+            second_delay_actual >= second_delay_expected - 20
+                && second_delay_actual <= second_delay_expected + 20
+        );
     }
 }

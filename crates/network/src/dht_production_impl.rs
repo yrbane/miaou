@@ -230,6 +230,11 @@ impl ProductionKademliaDht {
         })
     }
 
+    /// Ajoute un pair à la table de routage (pour tests E2E)
+    pub fn add_peer_for_testing(&self, peer_id: PeerId, peer_info: crate::PeerInfo) {
+        self.routing_table.add_peer(peer_id, peer_info);
+    }
+
     /// Bootstrap avec vraies connexions réseau
     async fn production_bootstrap(
         &self,

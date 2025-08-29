@@ -12,7 +12,6 @@ use tokio::sync::Mutex;
 use webrtc::{
     api::APIBuilder,
     data_channel::RTCDataChannel,
-    ice_transport::ice_candidate::RTCIceCandidate,
     peer_connection::{configuration::RTCConfiguration, RTCPeerConnection},
 };
 

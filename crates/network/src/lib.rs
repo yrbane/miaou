@@ -42,6 +42,9 @@ pub mod webrtc_data_channels;
 pub mod webrtc_production_impl;
 pub mod webrtc_transport;
 
+// Tests d'intégration E2E Production
+pub mod e2e_integration_production;
+
 pub use connection::{Connection, ConnectionState};
 pub use dht::{DhtConfig, DhtMessage, DistributedHashTable, KademliaDht, RoutingTable};
 pub use dht_production_impl::{ProductionDhtConfig, ProductionKademliaDht};
@@ -51,6 +54,7 @@ pub use directory::{
 };
 pub use discovery::{Discovery, DiscoveryConfig, DiscoveryMethod};
 pub use double_ratchet_production::ProductionDoubleRatchet;
+pub use e2e_integration_production::UnifiedP2pManager;
 pub use error::NetworkError;
 pub use handshake::{
     HandshakeConfig, HandshakeProtocol, HandshakeResult, HandshakeState, X3dhHandshake,
@@ -58,15 +62,16 @@ pub use handshake::{
 pub use mdns_discovery::MdnsDiscovery;
 pub use message_queue::{
     FileMessageStore, MessageId, MessagePriority, MessageQueue as BasicMessageQueue,
-    MessageStore as BasicMessageStore, QueueStats as BasicQueueStats, QueuedMessage as BasicQueuedMessage,
+    MessageStore as BasicMessageStore, QueueStats as BasicQueueStats,
+    QueuedMessage as BasicQueuedMessage,
+};
+pub use message_queue_production::{
+    ProductionMessageQueue, ProductionQueueConfig, QueueStats as ProductionQueueStats,
+    QueuedMessage as ProductionQueuedMessage,
 };
 pub use messaging::{
     InMemoryMessageQueue, Message, MessageQueue, MessageQueueConfig, MessageStatus, QueuedMessage,
     RetryConfig,
-};
-pub use message_queue_production::{
-    ProductionMessageQueue, ProductionQueueConfig, QueueStats as ProductionQueueStats, 
-    QueuedMessage as ProductionQueuedMessage,
 };
 pub use nat_traversal::{
     CandidateType, IceCandidate, NatConfig, NatDiscoveryResult, NatTraversal, NatType,

@@ -1,24 +1,27 @@
 # 🐱 Miaou v0.2.0 "Radar Moustaches"
 
-**Plateforme P2P décentralisée avec cryptographie production et réseau complet**
+**Plateforme P2P décentralisée avec pipeline E2E complet et cryptographie production**
 
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-400%20passing-green.svg)](#tests)
+[![Tests](https://img.shields.io/badge/tests-400%2B%20passing-green.svg)](#tests)
 [![Coverage](https://img.shields.io/badge/coverage-96%2B%25-brightgreen.svg)](#coverage)
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-passing-green.svg)](/.github/workflows/ci-cd.yml)
+[![E2E](https://img.shields.io/badge/E2E-pipeline%20complet-purple.svg)](#pipeline-e2e)
 
-Miaou v0.2.0 établit les **fondations P2P solides** avec mDNS discovery production et cryptographie robuste. Infrastructure réseau complète avec WebRTC MVP (derrière feature flag) et architecture SOLID préparant v0.3.0 production.
+Miaou v0.2.0 implémente un **pipeline E2E P2P complet** : Découverte DHT → WebRTC → X3DH Handshake → Double Ratchet → Messaging sécurisé. Infrastructure réseau production avec cryptographie authentique et architecture TDD rigoureuse.
 
 ## ✨ Fonctionnalités
 
-### 🌐 **Réseau P2P avec fondations solides**
-- **mDNS Discovery production** : Découverte LAN réelle via mdns-sd, service _miaou._tcp.local
-- **UnifiedDiscovery** : Gestionnaire multi-méthodes (mDNS/DHT/manuel) avec API stable
-- **WebRTC Transport MVP** : DataChannels derrière feature flag, SDP/ICE en développement
-- **Architecture SOLID** : Traits abstraits Transport/Discovery pour extensibilité
-- **CLI JSON stable** : Commandes net-list-peers, lan-mdns-* avec output structuré
-- **DHT préparé** : API traits prêts, implémentation Kademlia en cours v0.3.0
+### 🌐 **Pipeline P2P E2E Production**
+- **Pipeline complet** : Discovery → WebRTC → Handshake → Ratchet → Messaging sécurisé
+- **UnifiedP2pManager** : Orchestrateur intégrant tous les composants production
+- **DHT Kademlia production** : Découverte pairs avec UDP réel, recherche itérative
+- **WebRTC avec ICE** : Négociation candidats, DataChannels production-ready
+- **X3DH Handshake** : Établissement clés partagées avec authentification Ed25519
+- **Double Ratchet production** : Perfect Forward Secrecy avec ChaCha20-Poly1305
+- **Message Queue fiable** : Delivery garanti avec exponential backoff retry
+- **5 tests E2E** : Scénarios complets (unicast, multicast, recovery, groups)
 
 ### 🔐 **Cryptographie robuste et sécurisée**
 - **ChaCha20-Poly1305** : AEAD production avec API propre, validation stricte
@@ -68,7 +71,57 @@ cargo test --workspace
 cargo build --release -p miaou-cli
 ```
 
-### Utilisation de la CLI
+## 🔗 Pipeline E2E Complet
+
+### Architecture du pipeline P2P
+
+```
+[Alice] ────┐
+           │ 1. DHT Discovery: trouve Bob dans table Kademlia
+           │ 2. WebRTC Connection: négociation ICE + DataChannels  
+           │ 3. X3DH Handshake: établit clés partagées sécurisées
+           │ 4. Double Ratchet: chiffre message avec PFS
+           │ 5. Message Queue: envoi fiable avec retry
+           └─────► [Bob] ✅ Message reçu et déchiffré
+```
+
+### Tests E2E disponibles
+
+```bash
+# Test pipeline complet Alice→Bob
+cargo test -p miaou-network test_e2e_alice_discovers_bob_and_sends_secure_message -- --nocapture
+
+# Test conversation bidirectionnelle
+cargo test -p miaou-network test_e2e_bidirectional_conversation 
+
+# Test groupe multi-pairs
+cargo test -p miaou-network test_e2e_multi_peer_group_messaging
+
+# Test recovery connexion
+cargo test -p miaou-network test_e2e_connection_recovery_and_resilience
+
+# Tous les tests E2E
+cargo test -p miaou-network e2e_integration_production
+```
+
+### API Unifiée
+
+```rust
+use miaou_network::e2e_integration_production::UnifiedP2pManager;
+
+// Créer gestionnaire unifié
+let mut alice = UnifiedP2pManager::new(alice_id).await?;
+
+// Pipeline complet en une ligne !
+alice.connect_and_send_secure(bob_id, b"Hello Bob!").await?;
+// ├─ DHT discovery automatique
+// ├─ WebRTC connection etablie  
+// ├─ X3DH handshake securise
+// ├─ Double Ratchet initialise
+// └─ Message chiffre et envoye
+```
+
+## 💻 Utilisation de la CLI
 
 #### 🌐 **Commandes réseau P2P production (v0.2.0)**
 
