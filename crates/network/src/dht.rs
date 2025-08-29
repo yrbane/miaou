@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Distance XOR entre deux PeerIds (métrique Kademlia)
-fn xor_distance(a: &PeerId, b: &PeerId) -> Vec<u8> {
+pub fn xor_distance(a: &PeerId, b: &PeerId) -> Vec<u8> {
     let a_bytes = a.as_bytes();
     let b_bytes = b.as_bytes();
 
@@ -193,7 +193,7 @@ pub enum DhtMessage {
 /// Routing table basée sur Kademlia
 pub struct RoutingTable {
     /// Notre propre ID
-    local_id: PeerId,
+    pub local_id: PeerId,
     /// Configuration DHT
     config: DhtConfig,
     /// K-buckets organisés par distance (bit de différence le plus significatif)
@@ -336,7 +336,7 @@ pub trait DistributedHashTable: Send + Sync {
 /// Implémentation Kademlia du DHT
 pub struct KademliaDht {
     /// Table de routage
-    routing_table: Arc<RoutingTable>,
+    pub routing_table: Arc<RoutingTable>,
     /// Configuration
     config: DhtConfig,
     /// État du DHT

@@ -222,6 +222,35 @@ impl Connection {
         conn
     }
 
+    /// Envoie un message de données (wrapper autour de send_frame)
+    ///
+    /// # Errors  
+    /// Retourne une erreur si la connexion est fermée
+    pub async fn send_message(&self, data: &[u8]) -> Result<(), NetworkError> {
+        let frame = Frame {
+            frame_type: FrameType::Data,
+            sequence: self.stats().frames_sent,
+            payload: data.to_vec(),
+        };
+        
+        self.send_frame(frame).await
+    }
+
+    /// Reçoit un message de données (wrapper autour de receive_frame)
+    ///
+    /// # Errors
+    /// Retourne une erreur si aucun message n'est disponible
+    pub async fn receive_message(&self) -> Result<Vec<u8>, NetworkError> {
+        let frame = self.receive_frame().await?;
+        
+        match frame.frame_type {
+            FrameType::Data => Ok(frame.payload),
+            _ => Err(NetworkError::ConnectionFailed(
+                "Frame reçu n'est pas de type Data".to_string()
+            ))
+        }
+    }
+
     #[cfg(test)]
     pub(crate) async fn send_to_channel(&self, frame: Frame) -> Result<(), NetworkError> {
         self.tx
