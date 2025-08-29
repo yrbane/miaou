@@ -135,7 +135,8 @@ impl WebRtcTransport {
 
 #[async_trait]
 impl Transport for WebRtcTransport {
-    async fn connect(&self, _peer: &PeerInfo) -> Result<Connection, NetworkError> {
+    #[allow(unused_variables)]
+    async fn connect(&self, peer: &PeerInfo) -> Result<Connection, NetworkError> {
         #[cfg(feature = "webrtc-transport")]
         {
             let mut active = self.active.lock().await;
