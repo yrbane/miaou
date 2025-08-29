@@ -20,12 +20,14 @@ pub mod dht;
 pub mod dht_production_impl;
 pub mod directory;
 pub mod discovery;
+pub mod double_ratchet_production;
 pub mod error;
 pub mod handshake;
 pub mod handshake_production;
 pub mod mdns_discovery;
 pub mod mdns_robustness_tests;
 pub mod message_queue;
+pub mod message_queue_production;
 pub mod messaging;
 pub mod nat_traversal;
 pub mod nat_traversal_production;
@@ -48,18 +50,23 @@ pub use directory::{
     DirectoryStats, DistributedDirectory, VerificationStatus,
 };
 pub use discovery::{Discovery, DiscoveryConfig, DiscoveryMethod};
+pub use double_ratchet_production::ProductionDoubleRatchet;
 pub use error::NetworkError;
 pub use handshake::{
     HandshakeConfig, HandshakeProtocol, HandshakeResult, HandshakeState, X3dhHandshake,
 };
 pub use mdns_discovery::MdnsDiscovery;
 pub use message_queue::{
-    FileMessageStore, MessageId, MessagePriority, MessageQueue as ProductionMessageQueue,
-    MessageStore as ProductionMessageStore, QueueStats, QueuedMessage as ProductionQueuedMessage,
+    FileMessageStore, MessageId, MessagePriority, MessageQueue as BasicMessageQueue,
+    MessageStore as BasicMessageStore, QueueStats as BasicQueueStats, QueuedMessage as BasicQueuedMessage,
 };
 pub use messaging::{
     InMemoryMessageQueue, Message, MessageQueue, MessageQueueConfig, MessageStatus, QueuedMessage,
     RetryConfig,
+};
+pub use message_queue_production::{
+    ProductionMessageQueue, ProductionQueueConfig, QueueStats as ProductionQueueStats, 
+    QueuedMessage as ProductionQueuedMessage,
 };
 pub use nat_traversal::{
     CandidateType, IceCandidate, NatConfig, NatDiscoveryResult, NatTraversal, NatType,

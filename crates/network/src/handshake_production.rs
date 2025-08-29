@@ -5,12 +5,12 @@
 
 use crate::{NetworkError, PeerId};
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{debug, info};
-use rand::rngs::OsRng;
 use x25519_dalek::{EphemeralSecret, PublicKey as X25519PublicKey, StaticSecret};
 
 /// Message de handshake X3DH
@@ -175,7 +175,7 @@ impl ProductionHandshakeManager {
     pub async fn generate_ephemeral_keys(&self, count: usize) -> Result<(), NetworkError> {
         let rng = OsRng;
         let mut keys = self.ephemeral_keys.write().await;
-        
+
         keys.clear();
         for _ in 0..count {
             keys.push(EphemeralSecret::random_from_rng(rng));
@@ -189,10 +189,10 @@ impl ProductionHandshakeManager {
     pub async fn get_key_bundle(&self) -> Result<KeyBundle, NetworkError> {
         let identity_public = self.identity_key.verifying_key();
         let signed_prekey = X25519PublicKey::from(&self.static_key);
-        
+
         // Signer la clé signée avec notre clé d'identité
         let signed_prekey_signature = self.identity_key.sign(signed_prekey.as_bytes());
-        
+
         // Récupérer clés éphémères publiques
         let ephemeral_keys = self.ephemeral_keys.read().await;
         let ephemeral_publics: Vec<X25519PublicKey> = ephemeral_keys
@@ -209,7 +209,10 @@ impl ProductionHandshakeManager {
     }
 
     /// Initie un handshake avec un pair (Alice)
-    pub async fn initiate_handshake(&self, peer_id: &PeerId) -> Result<HandshakeMessage, NetworkError> {
+    pub async fn initiate_handshake(
+        &self,
+        peer_id: &PeerId,
+    ) -> Result<HandshakeMessage, NetworkError> {
         let rng = OsRng;
         let ephemeral_secret = EphemeralSecret::random_from_rng(rng);
         let ephemeral_public = X25519PublicKey::from(&ephemeral_secret);
@@ -224,7 +227,7 @@ impl ProductionHandshakeManager {
             hex::encode(identity_public.as_bytes()),
             timestamp
         );
-        
+
         let signature = self.identity_key.sign(message_to_sign.as_bytes());
 
         let handshake_msg = HandshakeMessage::InitialRequest {
@@ -237,16 +240,16 @@ impl ProductionHandshakeManager {
 
         // Enregistrer handshake en cours
         let handshake_id = format!("{}:{}", self.local_peer_id.to_hex(), peer_id.to_hex());
-        
+
         // Stocker le secret éphémère séparément
         let mut active_secrets = self.active_ephemeral_secrets.write().await;
         active_secrets.insert(handshake_id.clone(), ephemeral_secret);
         drop(active_secrets);
-        
+
         let pending = PendingHandshake {
             peer_id: peer_id.clone(),
-            state: HandshakeState::InitiatorWaitingBundle { 
-                ephemeral_public_key: *ephemeral_public.as_bytes()
+            state: HandshakeState::InitiatorWaitingBundle {
+                ephemeral_public_key: *ephemeral_public.as_bytes(),
             },
             started_at: timestamp,
             attempts: 1,
@@ -265,18 +268,18 @@ impl ProductionHandshakeManager {
         message: &HandshakeMessage,
     ) -> Result<Option<HandshakeMessage>, NetworkError> {
         match message {
-            HandshakeMessage::InitialRequest { 
-                sender_id, 
-                identity_key, 
+            HandshakeMessage::InitialRequest {
+                sender_id,
+                identity_key,
                 ephemeral_key,
                 timestamp,
                 signature,
             } => {
                 // Vérifier la signature
-                let identity_verifying = VerifyingKey::from_bytes(
-                    identity_key.as_slice().try_into()
-                        .map_err(|_| NetworkError::General("Clé identité invalide".to_string()))?
-                )?;
+                let identity_verifying =
+                    VerifyingKey::from_bytes(identity_key.as_slice().try_into().map_err(
+                        |_| NetworkError::General("Clé identité invalide".to_string()),
+                    )?)?;
 
                 let message_to_verify = format!(
                     "{}:{}:{}",
@@ -286,25 +289,30 @@ impl ProductionHandshakeManager {
                 );
 
                 let sig = Signature::from_bytes(
-                    signature.as_slice().try_into()
-                        .map_err(|_| NetworkError::General("Signature invalide".to_string()))?
+                    signature
+                        .as_slice()
+                        .try_into()
+                        .map_err(|_| NetworkError::General("Signature invalide".to_string()))?,
                 );
 
-                identity_verifying.verify(message_to_verify.as_bytes(), &sig)
-                    .map_err(|_| NetworkError::General("Vérification signature échouée".to_string()))?;
+                identity_verifying
+                    .verify(message_to_verify.as_bytes(), &sig)
+                    .map_err(|_| {
+                        NetworkError::General("Vérification signature échouée".to_string())
+                    })?;
 
                 // Calculer secret partagé (X3DH)
                 let alice_ephemeral = X25519PublicKey::from(
                     <[u8; 32]>::try_from(ephemeral_key.as_slice())
-                        .map_err(|_| NetworkError::General("Clé éphémère invalide".to_string()))?
+                        .map_err(|_| NetworkError::General("Clé éphémère invalide".to_string()))?,
                 );
 
-                let alice_identity_x25519 = identity_to_x25519(&identity_verifying)?;
-                
+                let _alice_identity_x25519 = identity_to_x25519(&identity_verifying)?;
+
                 // Implémentation DH simplifiée pour MVP
                 // Un seul DH : bob_static_key * alice_ephemeral
                 let shared_dh = self.static_key.diffie_hellman(&alice_ephemeral);
-                
+
                 // Créer une clé éphémère pour la réponse (pas utilisée dans DH)
                 let ephemeral_for_response = EphemeralSecret::random_from_rng(OsRng);
                 let ephemeral_public = X25519PublicKey::from(&ephemeral_for_response);
@@ -324,7 +332,8 @@ impl ProductionHandshakeManager {
                 };
 
                 // Enregistrer handshake en cours
-                let handshake_id = format!("{}:{}", sender_id.to_hex(), self.local_peer_id.to_hex());
+                let handshake_id =
+                    format!("{}:{}", sender_id.to_hex(), self.local_peer_id.to_hex());
                 let pending = PendingHandshake {
                     peer_id: sender_id.clone(),
                     state: HandshakeState::ReceiverWaitingConfirmation { shared_secret },
@@ -339,7 +348,7 @@ impl ProductionHandshakeManager {
                 Ok(Some(response))
             }
 
-            HandshakeMessage::BundleResponse { 
+            HandshakeMessage::BundleResponse {
                 sender_id,
                 identity_key,
                 signed_prekey,
@@ -348,53 +357,67 @@ impl ProductionHandshakeManager {
                 ..
             } => {
                 // Récupérer handshake en cours
-                let handshake_id = format!("{}:{}", self.local_peer_id.to_hex(), sender_id.to_hex());
+                let handshake_id =
+                    format!("{}:{}", self.local_peer_id.to_hex(), sender_id.to_hex());
                 let mut pending_map = self.pending_handshakes.write().await;
-                
-                let pending = pending_map.remove(&handshake_id)
+
+                let pending = pending_map
+                    .remove(&handshake_id)
                     .ok_or_else(|| NetworkError::General("Handshake non trouvé".to_string()))?;
 
-                if let HandshakeState::InitiatorWaitingBundle { ephemeral_public_key: _ } = pending.state {
+                if let HandshakeState::InitiatorWaitingBundle {
+                    ephemeral_public_key: _,
+                } = pending.state
+                {
                     // Récupérer le secret éphémère stocké
                     let mut active_secrets = self.active_ephemeral_secrets.write().await;
-                    let ephemeral_secret = active_secrets.remove(&handshake_id)
-                        .ok_or_else(|| NetworkError::General("Secret éphémère non trouvé".to_string()))?;
+                    let ephemeral_secret =
+                        active_secrets.remove(&handshake_id).ok_or_else(|| {
+                            NetworkError::General("Secret éphémère non trouvé".to_string())
+                        })?;
                     drop(active_secrets);
                     // Vérifier signature de la clé signée
-                    let bob_identity = VerifyingKey::from_bytes(
-                        identity_key.as_slice().try_into()
-                            .map_err(|_| NetworkError::General("Clé identité Bob invalide".to_string()))?
-                    )?;
+                    let bob_identity =
+                        VerifyingKey::from_bytes(identity_key.as_slice().try_into().map_err(
+                            |_| NetworkError::General("Clé identité Bob invalide".to_string()),
+                        )?)?;
 
                     let bob_signed_prekey = X25519PublicKey::from(
-                        <[u8; 32]>::try_from(signed_prekey.as_slice())
-                            .map_err(|_| NetworkError::General("Clé signée invalide".to_string()))?
+                        <[u8; 32]>::try_from(signed_prekey.as_slice()).map_err(|_| {
+                            NetworkError::General("Clé signée invalide".to_string())
+                        })?,
                     );
 
                     let sig = Signature::from_bytes(
-                        signed_prekey_signature.as_slice().try_into()
-                            .map_err(|_| NetworkError::General("Signature prekey invalide".to_string()))?
+                        signed_prekey_signature.as_slice().try_into().map_err(|_| {
+                            NetworkError::General("Signature prekey invalide".to_string())
+                        })?,
                     );
 
-                    bob_identity.verify(bob_signed_prekey.as_bytes(), &sig)
-                        .map_err(|_| NetworkError::General("Vérification prekey échouée".to_string()))?;
+                    bob_identity
+                        .verify(bob_signed_prekey.as_bytes(), &sig)
+                        .map_err(|_| {
+                            NetworkError::General("Vérification prekey échouée".to_string())
+                        })?;
 
                     // Calculer secret partagé côté Alice
-                    let bob_ephemeral = X25519PublicKey::from(
-                        <[u8; 32]>::try_from(ephemeral_key.as_slice())
-                            .map_err(|_| NetworkError::General("Clé éphémère Bob invalide".to_string()))?
+                    let _bob_ephemeral = X25519PublicKey::from(
+                        <[u8; 32]>::try_from(ephemeral_key.as_slice()).map_err(|_| {
+                            NetworkError::General("Clé éphémère Bob invalide".to_string())
+                        })?,
                     );
 
                     // Même calcul DH simple que côté Bob
                     // alice_ephemeral * bob_signed_prekey (la clé statique de Bob)
                     let shared_dh = ephemeral_secret.diffie_hellman(&bob_signed_prekey);
 
-                    // Le secret partagé est directement le DH  
+                    // Le secret partagé est directement le DH
                     let shared_secret = *shared_dh.as_bytes();
 
                     // Créer session
-                    let session = create_session_from_shared_secret(sender_id.clone(), &shared_secret);
-                    
+                    let session =
+                        create_session_from_shared_secret(sender_id.clone(), &shared_secret);
+
                     // Enregistrer session établie
                     let mut sessions = self.established_sessions.write().await;
                     sessions.insert(sender_id.clone(), session);
@@ -411,23 +434,28 @@ impl ProductionHandshakeManager {
                     info!("✅ Session établie avec {}", sender_id.to_hex());
                     Ok(Some(confirmation))
                 } else {
-                    Err(NetworkError::General("État handshake incorrect".to_string()))
+                    Err(NetworkError::General(
+                        "État handshake incorrect".to_string(),
+                    ))
                 }
             }
 
-            HandshakeMessage::SessionConfirmation { 
+            HandshakeMessage::SessionConfirmation {
                 sender_id,
                 shared_secret_hash,
                 ..
             } => {
                 // Vérifier et finaliser la session côté Bob
-                let handshake_id = format!("{}:{}", sender_id.to_hex(), self.local_peer_id.to_hex());
+                let handshake_id =
+                    format!("{}:{}", sender_id.to_hex(), self.local_peer_id.to_hex());
                 let mut pending_map = self.pending_handshakes.write().await;
-                
-                let pending = pending_map.remove(&handshake_id)
+
+                let pending = pending_map
+                    .remove(&handshake_id)
                     .ok_or_else(|| NetworkError::General("Handshake non trouvé".to_string()))?;
 
-                if let HandshakeState::ReceiverWaitingConfirmation { shared_secret } = pending.state {
+                if let HandshakeState::ReceiverWaitingConfirmation { shared_secret } = pending.state
+                {
                     // Vérifier le hash
                     let our_hash = blake3::hash(&shared_secret);
                     if our_hash.as_bytes() != shared_secret_hash.as_slice() {
@@ -435,8 +463,9 @@ impl ProductionHandshakeManager {
                     }
 
                     // Créer session
-                    let session = create_session_from_shared_secret(sender_id.clone(), &shared_secret);
-                    
+                    let session =
+                        create_session_from_shared_secret(sender_id.clone(), &shared_secret);
+
                     // Enregistrer session établie
                     let mut sessions = self.established_sessions.write().await;
                     sessions.insert(sender_id.clone(), session);
@@ -444,7 +473,9 @@ impl ProductionHandshakeManager {
                     info!("✅ Session confirmée avec {}", sender_id.to_hex());
                     Ok(None) // Pas de réponse nécessaire
                 } else {
-                    Err(NetworkError::General("État handshake incorrect".to_string()))
+                    Err(NetworkError::General(
+                        "État handshake incorrect".to_string(),
+                    ))
                 }
             }
         }
@@ -461,7 +492,7 @@ impl ProductionHandshakeManager {
         let now = current_timestamp();
         let mut pending = self.pending_handshakes.write().await;
         let before = pending.len();
-        
+
         pending.retain(|_, handshake| {
             let age = now - handshake.started_at;
             age < self.config.handshake_timeout_ms
@@ -471,7 +502,7 @@ impl ProductionHandshakeManager {
         if removed > 0 {
             debug!("🗑️ {} handshakes expirés supprimés", removed);
         }
-        
+
         removed
     }
 }
@@ -498,18 +529,21 @@ fn derive_shared_secret(dh_outputs: &[&[u8]]) -> [u8; 32] {
     // KDF simple avec BLAKE3 pour dériver le secret partagé
     let mut hasher = blake3::Hasher::new();
     hasher.update(b"X3DH_SHARED_SECRET");
-    
+
     for output in dh_outputs {
         hasher.update(output);
     }
-    
+
     let mut result = [0u8; 32];
     let hash = hasher.finalize();
     result.copy_from_slice(&hash.as_bytes()[..32]);
     result
 }
 
-fn create_session_from_shared_secret(peer_id: PeerId, shared_secret: &[u8; 32]) -> EstablishedSession {
+fn create_session_from_shared_secret(
+    peer_id: PeerId,
+    shared_secret: &[u8; 32],
+) -> EstablishedSession {
     // Dériver les clés pour Double Ratchet
     let mut hasher = blake3::Hasher::new();
     hasher.update(b"ROOT_KEY");
@@ -551,10 +585,10 @@ mod tests {
         // TDD: Test création gestionnaire handshake
         let peer_id = PeerId::from_bytes(b"handshake-peer".to_vec());
         let config = ProductionHandshakeConfig::default();
-        
+
         let manager = ProductionHandshakeManager::new(peer_id.clone(), config);
         assert!(manager.is_ok());
-        
+
         let manager = manager.unwrap();
         assert_eq!(manager.local_peer_id, peer_id);
     }
@@ -565,10 +599,10 @@ mod tests {
         let peer_id = PeerId::from_bytes(b"ephemeral-test".to_vec());
         let config = ProductionHandshakeConfig::default();
         let manager = ProductionHandshakeManager::new(peer_id, config).unwrap();
-        
+
         let result = manager.generate_ephemeral_keys(5).await;
         assert!(result.is_ok());
-        
+
         let keys = manager.ephemeral_keys.read().await;
         assert_eq!(keys.len(), 5);
     }
@@ -579,17 +613,17 @@ mod tests {
         let peer_id = PeerId::from_bytes(b"bundle-test".to_vec());
         let config = ProductionHandshakeConfig::default();
         let manager = ProductionHandshakeManager::new(peer_id, config).unwrap();
-        
+
         // Générer quelques clés éphémères
         manager.generate_ephemeral_keys(3).await.unwrap();
-        
+
         let bundle = manager.get_key_bundle().await.unwrap();
         assert_eq!(bundle.ephemeral_keys.len(), 3);
-        
+
         // Vérifier signature de la clé signée
         let verification = bundle.identity_key.verify(
             bundle.signed_prekey.as_bytes(),
-            &bundle.signed_prekey_signature
+            &bundle.signed_prekey_signature,
         );
         assert!(verification.is_ok());
     }
@@ -600,18 +634,18 @@ mod tests {
         let alice_id = PeerId::from_bytes(b"alice".to_vec());
         let bob_id = PeerId::from_bytes(b"bob".to_vec());
         let config = ProductionHandshakeConfig::default();
-        
+
         let alice_manager = ProductionHandshakeManager::new(alice_id.clone(), config).unwrap();
-        
+
         let initial_msg = alice_manager.initiate_handshake(&bob_id).await.unwrap();
-        
+
         // Vérifier le message
         if let HandshakeMessage::InitialRequest { sender_id, .. } = initial_msg {
             assert_eq!(sender_id, alice_id);
         } else {
             panic!("Message incorrect");
         }
-        
+
         // Vérifier handshake en cours
         let pending = alice_manager.pending_handshakes.read().await;
         assert_eq!(pending.len(), 1);
@@ -623,74 +657,75 @@ mod tests {
         let alice_id = PeerId::from_bytes(b"alice_flow".to_vec());
         let bob_id = PeerId::from_bytes(b"bob_flow".to_vec());
         let config = ProductionHandshakeConfig::default();
-        
-        let alice_manager = ProductionHandshakeManager::new(alice_id.clone(), config.clone()).unwrap();
+
+        let alice_manager =
+            ProductionHandshakeManager::new(alice_id.clone(), config.clone()).unwrap();
         let bob_manager = ProductionHandshakeManager::new(bob_id.clone(), config).unwrap();
-        
+
         // Générer clés éphémères pour Bob
         bob_manager.generate_ephemeral_keys(2).await.unwrap();
-        
+
         // Étape 1: Alice initie
         let initial_msg = alice_manager.initiate_handshake(&bob_id).await.unwrap();
-        
+
         // Étape 2: Bob traite et répond
         let bundle_response = bob_manager
             .process_handshake_message(&initial_msg)
             .await
             .unwrap();
-        
+
         assert!(bundle_response.is_some());
         let bundle_msg = bundle_response.unwrap();
-        
+
         // Étape 3: Alice traite bundle et confirme
         let confirmation = alice_manager
             .process_handshake_message(&bundle_msg)
             .await
             .unwrap();
-        
+
         assert!(confirmation.is_some());
         let confirm_msg = confirmation.unwrap();
-        
+
         // Étape 4: Bob traite confirmation
         let final_response = bob_manager
             .process_handshake_message(&confirm_msg)
             .await
             .unwrap();
-        
+
         assert!(final_response.is_none()); // Pas de réponse finale
-        
+
         // Vérifier sessions établies
         let alice_session = alice_manager.get_established_session(&bob_id).await;
         let bob_session = bob_manager.get_established_session(&alice_id).await;
-        
+
         assert!(alice_session.is_some());
         assert!(bob_session.is_some());
-        
+
         let alice_session = alice_session.unwrap();
         let bob_session = bob_session.unwrap();
-        
+
         // Les secrets partagés doivent être identiques
         assert_eq!(alice_session.shared_secret, bob_session.shared_secret);
     }
 
-    #[tokio::test] 
+    #[tokio::test]
     async fn test_invalid_signature_rejection() {
         // TDD: Test rejet signature invalide
         let alice_id = PeerId::from_bytes(b"alice_bad".to_vec());
         let bob_id = PeerId::from_bytes(b"bob_bad".to_vec());
         let config = ProductionHandshakeConfig::default();
-        
+
         let bob_manager = ProductionHandshakeManager::new(bob_id, config).unwrap();
-        
+
         // Message avec signature invalide
         let bad_msg = HandshakeMessage::InitialRequest {
             sender_id: alice_id,
-            identity_key: vec![0u8; 32], // Clé bidon
+            identity_key: vec![0u8; 32],  // Clé bidon
             ephemeral_key: vec![0u8; 32], // Clé bidon
             timestamp: current_timestamp(),
             signature: vec![0u8; 64], // Signature invalide
         };
-        
+
         let result = bob_manager.process_handshake_message(&bad_msg).await;
         assert!(result.is_err());
     }
@@ -699,11 +734,13 @@ mod tests {
     async fn test_cleanup_expired_handshakes() {
         // TDD: Test nettoyage handshakes expirés
         let peer_id = PeerId::from_bytes(b"cleanup-test".to_vec());
-        let mut config = ProductionHandshakeConfig::default();
-        config.handshake_timeout_ms = 100; // Très court pour test
-        
+        let config = ProductionHandshakeConfig {
+            handshake_timeout_ms: 100,
+            ..Default::default()
+        };
+
         let manager = ProductionHandshakeManager::new(peer_id.clone(), config).unwrap();
-        
+
         // Ajouter handshake expiré manuellement
         let expired_handshake = PendingHandshake {
             peer_id: PeerId::from_bytes(b"expired".to_vec()),
@@ -711,18 +748,18 @@ mod tests {
             started_at: 0, // Très vieux
             attempts: 1,
         };
-        
+
         {
             let mut pending = manager.pending_handshakes.write().await;
             pending.insert("expired".to_string(), expired_handshake);
         }
-        
+
         // Nettoyer
         tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
         let removed = manager.cleanup_expired_handshakes().await;
-        
+
         assert_eq!(removed, 1);
-        
+
         let pending = manager.pending_handshakes.read().await;
         assert!(pending.is_empty());
     }
@@ -731,22 +768,22 @@ mod tests {
     async fn test_handshake_message_serialization() {
         // TDD: Test sérialisation/désérialisation messages
         let peer_id = PeerId::from_bytes(b"serial-test".to_vec());
-        
+
         let msg = HandshakeMessage::InitialRequest {
             sender_id: peer_id,
             identity_key: vec![1u8; 32],
-            ephemeral_key: vec![2u8; 32], 
+            ephemeral_key: vec![2u8; 32],
             timestamp: 123456789,
             signature: vec![3u8; 64],
         };
-        
+
         // Sérialiser
         let serialized = bincode::serialize(&msg).unwrap();
         assert!(!serialized.is_empty());
-        
+
         // Désérialiser
         let deserialized: HandshakeMessage = bincode::deserialize(&serialized).unwrap();
-        
+
         match deserialized {
             HandshakeMessage::InitialRequest { timestamp, .. } => {
                 assert_eq!(timestamp, 123456789);

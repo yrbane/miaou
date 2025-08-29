@@ -828,4 +828,105 @@ Système de numérotation des clés publiques dans l'annuaire distribué permett
 
 ---
 
-*Ce glossaire enrichi contient maintenant plus de 200 termes pour aider les débutants à mieux comprendre l'écosystème technique de Miaou v0.2.0.*
+## Nouveaux termes Handshake Production TDD
+
+### **X3DH simplifié (MVP)**
+Implémentation allégée du protocole X3DH utilisant un seul échange Diffie-Hellman au lieu des 3-4 standards, suffisant pour établir un secret partagé sécurisé entre Alice et Bob.
+
+### **ProductionHandshakeManager**
+Gestionnaire principal des handshakes cryptographiques production gérant les échanges de clés, sessions établies et nettoyage des handshakes expirés.
+
+### **HandshakeMessage enum**
+Messages du protocole X3DH : InitialRequest (Alice → Bob), BundleResponse (Bob → Alice), SessionConfirmation (Alice → Bob) avec signatures Ed25519.
+
+### **KeyBundle**
+Structure contenant les clés publiques d'un pair : clé d'identité Ed25519, clé signée X25519, signature, et clés éphémères disponibles.
+
+### **EstablishedSession**
+Session cryptographique établie après handshake contenant le secret partagé et les clés dérivées pour Double Ratchet (root_key, sending_chain_key, receiving_chain_key).
+
+### **EphemeralSecret non-sérialisable**
+Problématique où les clés éphémères X25519 ne peuvent pas être stockées directement dans les structures sérialisables, nécessitant un stockage séparé avec HashMap.
+
+### **active_ephemeral_secrets**
+Stockage temporaire des secrets éphémères non-sérialisables dans une HashMap séparée, évitant les problèmes de traits Debug/Clone manquants.
+
+### **Signature Ed25519**
+Authentification d'identité dans les messages de handshake utilisant ed25519-dalek avec vérification de la signature avant acceptation du handshake.
+
+### **StaticSecret (x25519-dalek v2.0)**
+Type de clé statique X25519 nécessitant la feature "static_secrets" dans x25519-dalek v2.0 pour être utilisé dans les handshakes.
+
+### **Diffie-Hellman X25519**
+Échange de clés utilisant les courbes elliptiques X25519 pour calculer un secret partagé : alice_ephemeral * bob_signed_prekey.
+
+### **Conversion d'erreurs Ed25519**
+Implémentation de `From<ed25519_dalek::ed25519::Error>` pour `NetworkError` permettant l'utilisation de l'opérateur `?` avec les opérations Ed25519.
+
+### **PendingHandshake state**
+État d'un handshake en cours : InitiatorWaitingBundle (Alice attend réponse), ReceiverWaitingConfirmation (Bob attend confirmation).
+
+### **cleanup_expired_handshakes()**
+Méthode de nettoyage périodique qui supprime les handshakes expirés pour éviter les fuites mémoire et les états incohérents.
+
+### **identity_to_x25519()**
+Fonction utilitaire convertissant une clé d'identité Ed25519 en clé publique X25519 pour les calculs DH (conversion simplifiée pour MVP).
+
+### **create_session_from_shared_secret()**
+Fonction dérivant les clés de session (root_key, sending_chain_key, receiving_chain_key) à partir du secret partagé using BLAKE3.
+
+### **current_timestamp()**
+Fonction utilitaire générant un timestamp Unix en millisecondes pour horodater les messages de handshake et détecter les expirations.
+
+### **Hash secret verification**
+Vérification dans SessionConfirmation que Bob et Alice ont calculé le même secret partagé en comparant leurs hashes BLAKE3.
+
+### **Red/Green/Refactor TDD crypto**
+Méthodologie TDD appliquée à la cryptographie : RED (tests échouent), GREEN (implémentation minimale), REFACTOR (optimisation sécurisée).
+
+### **8/8 tests handshake**
+Suite complète de tests TDD validant : création manager, génération clés éphémères, bundle de clés, initiation handshake, flux complet, signatures invalides, nettoyage, sérialisation.
+
+### **Handshake timeout**
+Configuration du délai maximal pour qu'un handshake complet se termine (défaut: 10 secondes) avant d'être considéré comme expiré.
+
+### **Forward Secrecy preparation**
+Les sessions établies contiennent les clés nécessaires (root_key, chain_keys) pour implémenter le protocole Double Ratchet avec rotation automatique.
+
+---
+
+## Termes cryptographiques avancés
+
+### **Associated Authenticated Data (AAD) context**
+Données additionnelles authentifiées mais non chiffrées dans AEAD, utilisées pour lier le chiffrement au contexte (identités des pairs, timestamps).
+
+### **Key derivation BLAKE3**
+Utilisation de la fonction de hachage BLAKE3 comme KDF pour dériver multiple clés à partir d'un secret principal (root_key → sending_key, receiving_key).
+
+### **Ephemeral key rotation**
+Principe où chaque handshake utilise de nouvelles clés éphémères générées aléatoirement, jamais réutilisées, garantissant la freshness cryptographique.
+
+### **Authenticated key agreement**
+Protocol où les parties s'accordent sur un secret partagé tout en s'authentifiant mutuellement via signatures numériques (X3DH with Ed25519).
+
+### **Cryptographic binding**
+Liaison cryptographique entre l'identité d'un pair et ses clés éphémères via signature, empêchant les attaques par substitution de clé.
+
+### **Perfect Forward Secrecy (PFS) in practice**
+Implémentation concrète où chaque session utilise des clés éphémères détruites après usage, rendant impossible le déchiffrement rétroactif.
+
+### **Constant-time comparison**
+Comparaison de données sensibles (comme les hashes) en temps constant pour éviter les attaques par timing, implémentée par défaut dans BLAKE3.
+
+### **Zeroization of ephemeral secrets**
+Effacement sécurisé automatique des clés éphémères en mémoire grâce au trait ZeroizeOnDrop d'x25519-dalek.
+
+### **Mutual authentication**
+Processus où Alice et Bob prouvent mutuellement leur identité via signatures Ed25519 avant d'établir le secret partagé.
+
+### **Session establishment**
+Phase finale du handshake où les parties dérivent les clés de session et peuvent commencer à communiquer avec Double Ratchet.
+
+---
+
+*Ce glossaire enrichi contient maintenant plus de 240 termes techniques, incluant tous les nouveaux concepts du handshake cryptographique production et les détails d'implémentation TDD de Miaou.*
