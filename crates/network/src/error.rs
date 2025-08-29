@@ -57,6 +57,12 @@ impl From<NetworkError> for MiaouError {
     }
 }
 
+impl From<ed25519_dalek::ed25519::Error> for NetworkError {
+    fn from(err: ed25519_dalek::ed25519::Error) -> Self {
+        NetworkError::CryptoError(format!("Erreur Ed25519: {}", err))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

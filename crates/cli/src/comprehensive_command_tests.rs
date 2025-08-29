@@ -36,7 +36,7 @@ mod tests {
             json: false,
             cmd: Command::NetStart {
                 daemon: false, // Non-daemon for faster test
-                duration: 1, // 1 second only
+                duration: 1,   // 1 second only
             },
         };
 
@@ -66,7 +66,7 @@ mod tests {
 
         let cli = Cli {
             log: "error".to_string(),
-            json: true, // JSON output
+            json: true,                                // JSON output
             cmd: Command::NetListPeers { timeout: 0 }, // Zero timeout
         };
 

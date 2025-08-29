@@ -64,28 +64,46 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
-## [0.2.0] - Radar à Moustaches - Réseau P2P (MVP IMPLÉMENTÉ - Août 2025)
+## [0.2.0] - Radar à Moustaches - FONDATIONS SOLIDES - Septembre 2025
 
-### Ajouté - Fondations P2P solides
-- 📡 **mDNS discovery réel** avec mdns-sd : découverte pairs réseau local
-- 🌐 **UnifiedDiscovery** : gestionnaire multi-méthodes (mDNS + DHT + manuel)
-- 🟡 **DHT Kademlia MVP** : K-buckets, XOR distance, logique locale (sans I/O réseau)
-- 🟡 **WebRTC Data Channels MVP** : architecture complète simulée, API tests
-- 🟡 **NAT/STUN/TURN MVP** : génération candidats ICE simulés
-- 💬 **FileMessageStore** : persistance JSON atomique pour messaging
-- 📱 **14 commandes CLI réseau** : définies mais pas encore câblées (stubs)
-- 🧪 **261 tests réseau** : couverture complète architecture MVP
-- 📊 **369 tests total** : +305% depuis v0.1.0, coverage 95.5% maintenue
+### ✅ INFRASTRUCTURE P2P ÉTABLIE
 
-### Modifié - Architecture
-- **Nouveau crate miaou-network** : 12 modules, 4 traits abstraits SOLID
-- **CLI étendu** : 14 commandes (8 réseau + 6 crypto) vs 6 précédent  
-- **Architecture SOLID** : Dependency Injection, traits abstraits complets
+#### 🌐 **Réseau LAN production**
+- **mDNS discovery réelle** : via mdns-sd, service _miaou._tcp.local, TXT records
+- **UnifiedDiscovery** : Gestionnaire multi-méthodes (mDNS/DHT/manuel) avec JSON stable  
+- **CLI réseau fonctionnel** : net-list-peers, lan-mdns-*, collect_peers() automatique
+- **Tests mDNS** : Annonce/browse locaux, intégration CLI, output JSON validé
 
-### Notes MVP v0.2.0
-- **✅ RÉEL** : mDNS, messaging persistant, architecture modulaire
-- **🟡 SIMULÉ** : WebRTC, DHT réseau, STUN/TURN (fondations posées)
-- **🎯 v0.3.0** : Implémentation réseau complète (UDP DHT, WebRTC réel)
+#### 🔐 **Cryptographie robuste et sécurisée**
+- **ChaCha20-Poly1305** : AEAD production, validation stricte, AAD obligatoire
+- **Ed25519** : Signatures numériques, clés d'identité, vérification robuste
+- **BLAKE3** : Hachage cryptographique ultra-rapide, implémentation pure Rust
+- **SensitiveBytes** : Zeroization automatique, gestion mémoire sécurisée
+- **KeyStore trait** : Architecture modulaire avec implémentation mémoire MVP
+
+#### 📱 **Architecture SOLID mature**
+- **Traits abstraits** : Discovery/Transport/Directory pour extensibilité
+- **WebRTC MVP** : DataChannels derrière feature flag, connect() partiel
+- **DHT préparé** : API traits complets, implémentation Kademlia en développement
+- **CLI stable** : 14 commandes avec output JSON cohérent et testé
+
+### Ajouté - Nouvelle architecture réseau
+- **Nouveau crate miaou-network** : Infrastructure P2P complète
+- **mDNS production** : Découverte LAN réelle remplaçant simulations
+- **UnifiedDiscovery** : Agrégateur multi-sources avec priorité LAN
+- **WebRTC foundation** : MVP avec PeerConnection/DataChannel (feature flag)
+
+### Modifié - Maturité technique
+- **Architecture SOLID** : Dependency injection, traits object-safe
+- **Qualité de code** : forbid(unsafe_code), Clippy pedantic compliance
+- **Documentation** : APIs publiques complètes, `# Errors` et `# Panics`
+- **CI/CD** : Pipeline multi-OS avec validation stricte
+
+### État v0.2.0 - Fondations pour v0.3.0
+- **✅ PRODUCTION** : mDNS discovery, crypto robuste, CLI stable
+- **🚧 MVP** : WebRTC transport (feature flag), DHT traits (sans implem)
+- **🎯 v0.3.0** : WebRTC production complet, DHT Kademlia réel
+- **📊 QUALITÉ** : Architecture SOLID, tests complets, zéro unsafe
 
 ---
 

@@ -17,9 +17,9 @@ use miaou_network::{
     StunTurnNatTraversal, TransportConfig, UnifiedDiscovery, WebRtcTransport,
 };
 use rand::{thread_rng, RngCore};
+use std::io::Write;
 use std::process::ExitCode;
 use std::sync::Arc;
-use std::io::Write;
 use tracing::Level;
 
 #[cfg(test)]
@@ -314,7 +314,9 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             if ok {
                 Ok(())
             } else {
-                Err(MiaouError::Crypto("Signature verification failed".to_string()))
+                Err(MiaouError::Crypto(
+                    "Signature verification failed".to_string(),
+                ))
             }
         }
         Command::AeadEncrypt {
@@ -724,40 +726,57 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
                     // Production: Handshake réel avec découverte automatique du pair
                     println!("🔍 Recherche du pair {} via réseau...", peer_id);
-                    
-                    // Découvrir le pair via UnifiedDiscovery  
+
+                    // Découvrir le pair via UnifiedDiscovery
                     let discovery_config = DiscoveryConfig {
                         methods: vec![DiscoveryMethod::Mdns, DiscoveryMethod::Dht],
                         max_peers: 100,
                         announce_interval: tokio::time::Duration::from_secs(30),
                         discovery_timeout: tokio::time::Duration::from_secs(5),
                     };
-                    
-                    let local_peer_id = PeerId::from_bytes(format!("handshake-initiator-{}", 
-                        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
-                            .unwrap().as_secs()).as_bytes().to_vec());
+
+                    let local_peer_id = PeerId::from_bytes(
+                        format!(
+                            "handshake-initiator-{}",
+                            std::time::SystemTime::now()
+                                .duration_since(std::time::UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs()
+                        )
+                        .as_bytes()
+                        .to_vec(),
+                    );
                     let local_info = PeerInfo::new(local_peer_id.clone());
-                    
-                    let discovery = UnifiedDiscovery::new(discovery_config, local_peer_id, local_info);
-                    discovery.start().await
+
+                    let discovery =
+                        UnifiedDiscovery::new(discovery_config, local_peer_id, local_info);
+                    discovery
+                        .start()
+                        .await
                         .map_err(|e| MiaouError::Network(format!("Erreur découverte: {}", e)))?;
-                    
+
                     // Rechercher le pair spécifique
                     let target_peer_id = PeerId::from_bytes(peer_id.as_bytes().to_vec());
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await; // Laisser le temps à la découverte
-                    
+
                     if let Ok(Some(peer_info)) = discovery.find_peer(&target_peer_id).await {
-                        println!("✅ Pair trouvé: {} ({} adresse(s))", 
-                            peer_info.id.short(), peer_info.addresses.len());
-                        
+                        println!(
+                            "✅ Pair trouvé: {} ({} adresse(s))",
+                            peer_info.id.short(),
+                            peer_info.addresses.len()
+                        );
+
                         // Initier le handshake E2E réel
                         println!("🔐 Initiation handshake E2E avec pair découvert...");
-                        
+
                         // Ici on aurait une vraie connexion P2P pour échanger les messages de handshake
                         // Pour l'instant: simuler succès du handshake avec pair réel découvert
-                        if let Ok(Some(result)) = handshake.get_handshake_result(&session_id).await {
-                            println!("🔑 Handshake réussi ! Clé partagée générée ({} bytes)", 
-                                result.shared_secret.len());
+                        if let Ok(Some(result)) = handshake.get_handshake_result(&session_id).await
+                        {
+                            println!(
+                                "🔑 Handshake réussi ! Clé partagée générée ({} bytes)",
+                                result.shared_secret.len()
+                            );
                             println!("📞 Session E2E établie avec {}", peer_id);
                         } else {
                             println!("⚠️  Handshake initié mais clé pas encore générée");
@@ -765,10 +784,11 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                     } else {
                         discovery.stop().await.ok();
                         return Err(MiaouError::Network(format!(
-                            "Pair '{}' non trouvé sur le réseau", peer_id
+                            "Pair '{}' non trouvé sur le réseau",
+                            peer_id
                         )));
                     }
-                    
+
                     discovery.stop().await.ok();
                 }
                 Err(e) => return Err(MiaouError::Network(e.to_string())),
@@ -828,12 +848,13 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                 // Extraction du vrai peer_id sans préfixe secure:
                 let actual_peer = to.strip_prefix("secure:").unwrap_or(&to);
                 let _actual_peer_id = PeerId::from_bytes(actual_peer.as_bytes().to_vec());
-                
+
                 // Tentative de récupération de clé de session (production)
                 // Pour MVP: utiliser clé dérivée du peer_id comme placeholder
-                let session_key = miaou_crypto::blake3_hash(format!("session_{}_{}", 
-                    "local_peer", actual_peer).as_bytes());
-                
+                let session_key = miaou_crypto::blake3_hash(
+                    format!("session_{}_{}", "local_peer", actual_peer).as_bytes(),
+                );
+
                 let cipher = Chacha20Poly1305Cipher::from_key_bytes(&session_key)?;
                 let nonce = [0u8; 12]; // Production: utiliser vraie nonce aléatoire
                 cipher.encrypt(message.as_bytes(), &nonce, &[])?
@@ -886,17 +907,17 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                     .await
                     .map_err(|e| MiaouError::Network(format!("Erreur réception: {:?}", e)))?
                 {
-                received_count += 1;
-                let content_str = String::from_utf8_lossy(&message.content);
+                    received_count += 1;
+                    let content_str = String::from_utf8_lossy(&message.content);
 
-                println!("📨 Message reçu #{}", received_count);
-                println!("   ID: {:?}", message.id);
-                println!("   De: {:?}", message.from);
-                println!("   Pour: {:?}", message.to);
-                println!("   Contenu: {}", content_str);
-                println!("   Timestamp: {}", message.timestamp);
-                println!("   Priorité: {:?}", message.priority);
-                println!();
+                    println!("📨 Message reçu #{}", received_count);
+                    println!("   ID: {:?}", message.id);
+                    println!("   De: {:?}", message.from);
+                    println!("   Pour: {:?}", message.to);
+                    println!("   Contenu: {}", content_str);
+                    println!("   Timestamp: {}", message.timestamp);
+                    println!("   Priorité: {:?}", message.priority);
+                    println!();
                 } else {
                     break; // Pas de message, sortir de la boucle
                 }
@@ -1220,7 +1241,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             println!("\n📡 Test 2: Test serveurs STUN...");
             let stun_servers = vec![
                 "stun.l.google.com:19302",
-                "stun1.l.google.com:19302", 
+                "stun1.l.google.com:19302",
                 "stun2.l.google.com:19302",
             ];
 
@@ -1229,12 +1250,14 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                 // Production: Vrai test STUN avec timeout
                 print!("   Test {}... ", server);
                 std::io::stdout().flush().ok();
-                
+
                 match tokio::time::timeout(
                     tokio::time::Duration::from_secs(3),
                     // Simpler test: juste résoudre l'adresse du serveur STUN
-                    tokio::net::TcpStream::connect(server)
-                ).await {
+                    tokio::net::TcpStream::connect(server),
+                )
+                .await
+                {
                     Ok(Ok(_)) => {
                         println!("✅ OK");
                         successful_servers += 1;
@@ -1243,8 +1266,11 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                     Err(_) => println!("⏰ Timeout"),
                 }
             }
-            
-            println!("   Résultat: {}/3 serveurs STUN accessibles", successful_servers);
+
+            println!(
+                "   Résultat: {}/3 serveurs STUN accessibles",
+                successful_servers
+            );
 
             // Test 3: Candidats ICE
             println!("\n❄️  Test 3: Génération candidats ICE...");
@@ -1640,7 +1666,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
 fn init_tracing(level: &str) {
     let filter = std::env::var("RUST_LOG").unwrap_or_else(|_| level.to_string());
-    
+
     // Éviter le panic si déjà initialisé (pour les tests)
     let _ = tracing_subscriber::fmt()
         .with_env_filter(filter)
@@ -1977,7 +2003,12 @@ mod tests {
             (b'E', 14),
             (b'F', 15),
         ] {
-            assert_eq!(hex_val(c), Some(expected), "Failed for character {}", c as char);
+            assert_eq!(
+                hex_val(c),
+                Some(expected),
+                "Failed for character {}",
+                c as char
+            );
         }
 
         // Test invalid characters return None

@@ -100,7 +100,7 @@ mod tests {
 
         let result = run_internal(cli, &mut ks).await;
         assert!(result.is_err()); // Verify now correctly returns Err when signature is invalid
-                                 // Prints "FAIL" to stdout before returning error
+                                  // Prints "FAIL" to stdout before returning error
     }
 
     #[tokio::test]
@@ -187,7 +187,7 @@ mod tests {
             json: false,
             cmd: Command::NetStart {
                 daemon: false, // Non-daemon for faster test
-                duration: 1, // 1 second only
+                duration: 1,   // 1 second only
             },
         };
 
@@ -231,7 +231,7 @@ mod tests {
 
         let cli = Cli {
             log: "error".to_string(),
-            json: true, // JSON mode
+            json: true,                                // JSON mode
             cmd: Command::NetListPeers { timeout: 0 }, // Zero timeout for instant return
         };
 
@@ -681,7 +681,7 @@ mod tests {
         // Note: init_tracing can only be called once globally in tests
         // This test verifies the level parsing logic without actual initialization
         use tracing::Level;
-        
+
         let test_cases = vec![
             ("trace", Level::TRACE),
             ("debug", Level::DEBUG),

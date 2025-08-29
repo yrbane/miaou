@@ -22,20 +22,53 @@ enum MdnsMessage {
     Announce(PeerInfo),
 }
 
+/// Informations de pair avec TTL pour expiration automatique
+#[derive(Debug, Clone)]
+pub struct PeerWithTtl {
+    /// Informations du pair découvert
+    pub peer_info: PeerInfo,
+    /// Moment de découverte pour calcul TTL
+    pub discovered_at: std::time::Instant,
+    /// TTL en secondes avant expiration
+    pub ttl_seconds: u32,
+}
+
+impl PeerWithTtl {
+    /// Crée un nouveau pair avec TTL
+    pub fn new(peer_info: PeerInfo, ttl_seconds: u32) -> Self {
+        Self {
+            peer_info,
+            discovered_at: std::time::Instant::now(),
+            ttl_seconds,
+        }
+    }
+
+    /// Vérifie si le pair a expiré selon son TTL
+    pub fn is_expired(&self) -> bool {
+        self.discovered_at.elapsed().as_secs() > self.ttl_seconds as u64
+    }
+}
+
 /// mDNS Discovery pour découverte sur réseau local
 pub struct MdnsDiscovery {
     config: DiscoveryConfig,
-    peers: Arc<Mutex<HashMap<PeerId, PeerInfo>>>,
+    peers: Arc<Mutex<HashMap<PeerId, PeerWithTtl>>>,
     active: Arc<Mutex<bool>>,
     /// Handle de la tâche de découverte
     discovery_task: Arc<Mutex<Option<JoinHandle<()>>>>,
+    /// Handle de la tâche de refresh/TTL
+    refresh_task: Arc<Mutex<Option<JoinHandle<()>>>>,
     /// Canal pour arrêter la découverte
     shutdown_tx: Arc<Mutex<Option<mpsc::UnboundedSender<()>>>>,
+    /// Canal pour arrêter le refresh
+    refresh_shutdown_tx: Arc<Mutex<Option<mpsc::UnboundedSender<()>>>>,
     /// Canal pour envoyer des messages à la tâche mDNS
     #[cfg(feature = "mdns-discovery")]
     mdns_tx: Arc<Mutex<Option<mpsc::UnboundedSender<MdnsMessage>>>>,
     /// Port d'écoute pour notre service mDNS
     listen_port: u16,
+    /// TTL par défaut pour nos services (en secondes)
+    service_ttl: u32,
 }
 
 impl MdnsDiscovery {
@@ -44,15 +77,23 @@ impl MdnsDiscovery {
         Self::new_with_port(config, 4242) // Port par défaut pour Miaou
     }
 
-    /// Crée une instance mDNS avec un port spécifique
+    /// Crée une instance mDNS avec un port et TTL spécifiques
     pub fn new_with_port(config: DiscoveryConfig, port: u16) -> Self {
+        Self::new_with_port_and_ttl(config, port, 300) // TTL par défaut: 5 minutes
+    }
+
+    /// Crée une instance mDNS complètement configurée
+    pub fn new_with_port_and_ttl(config: DiscoveryConfig, port: u16, ttl_seconds: u32) -> Self {
         Self {
             config,
             peers: Arc::new(Mutex::new(HashMap::new())),
             active: Arc::new(Mutex::new(false)),
             discovery_task: Arc::new(Mutex::new(None)),
+            refresh_task: Arc::new(Mutex::new(None)),
             shutdown_tx: Arc::new(Mutex::new(None)),
+            refresh_shutdown_tx: Arc::new(Mutex::new(None)),
             listen_port: port,
+            service_ttl: ttl_seconds,
             #[cfg(feature = "mdns-discovery")]
             mdns_tx: Arc::new(Mutex::new(None)),
         }
@@ -63,12 +104,38 @@ impl MdnsDiscovery {
         *self.active.lock().unwrap()
     }
 
-    /// Ajoute un pair découvert
+    /// Ajoute un pair découvert avec TTL
     pub fn add_discovered_peer(&self, peer: PeerInfo) {
+        self.add_discovered_peer_with_ttl(peer, self.service_ttl);
+    }
+
+    /// Ajoute un pair découvert avec TTL spécifique
+    pub fn add_discovered_peer_with_ttl(&self, peer: PeerInfo, ttl_seconds: u32) {
         let mut peers = self.peers.lock().unwrap();
         if peers.len() < self.config.max_peers {
-            peers.insert(peer.id.clone(), peer);
+            let peer_with_ttl = PeerWithTtl::new(peer.clone(), ttl_seconds);
+            peers.insert(peer.id, peer_with_ttl);
         }
+    }
+
+    /// Nettoie les pairs expirés
+    pub fn cleanup_expired_peers(&self) -> usize {
+        let mut peers = self.peers.lock().unwrap();
+        let initial_count = peers.len();
+
+        peers.retain(|peer_id, peer_with_ttl| {
+            let expired = peer_with_ttl.is_expired();
+            if expired {
+                debug!("🗑️ Suppression pair expiré: {}", peer_id);
+            }
+            !expired
+        });
+
+        let removed_count = initial_count - peers.len();
+        if removed_count > 0 {
+            info!("🧹 {} pairs expirés supprimés", removed_count);
+        }
+        removed_count
     }
 
     /// Retourne le nom de service mDNS utilisé
@@ -76,40 +143,89 @@ impl MdnsDiscovery {
         "_miaou._tcp.local."
     }
 
-    /// Obtient l'adresse IP locale (pas 127.0.0.1)
+    /// Obtient l'adresse IP locale robuste (évite 127.0.0.1)
     #[cfg(feature = "mdns-discovery")]
-    fn get_local_ip() -> Option<String> {
+    pub fn get_local_ip() -> Option<String> {
         use std::net::Ipv4Addr;
 
-        // Méthode 1: Essayer de se connecter à une adresse externe pour découvrir notre IP locale
-        if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
-            if let Ok(()) = socket.connect("8.8.8.8:80") {
-                if let Ok(local_addr) = socket.local_addr() {
-                    let ip = local_addr.ip();
-                    // Vérifier que ce n'est pas loopback
-                    if !ip.is_loopback() {
-                        return Some(ip.to_string());
+        // Méthode 1: Découverte via connexion UDP (plus robuste)
+        let test_addresses = [
+            "8.8.8.8:80",        // Google DNS
+            "1.1.1.1:80",        // Cloudflare DNS
+            "208.67.222.222:80", // OpenDNS
+        ];
+
+        for test_addr in test_addresses {
+            if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+                if let Ok(()) = socket.connect(test_addr) {
+                    if let Ok(local_addr) = socket.local_addr() {
+                        let ip = local_addr.ip();
+                        // Accepter IPv4 non-loopback ou IPv6 non-loopback
+                        if !ip.is_loopback() {
+                            match ip {
+                                std::net::IpAddr::V4(ipv4) => {
+                                    if ipv4.is_private() || ipv4.is_link_local() {
+                                        debug!("IP locale robuste découverte: {}", ip);
+                                        return Some(ip.to_string());
+                                    }
+                                }
+                                std::net::IpAddr::V6(ipv6) => {
+                                    if !ipv6.is_loopback() {
+                                        debug!("IPv6 locale découverte: {}", ip);
+                                        return Some(ip.to_string());
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // Méthode 2: Fallback - essayer d'énumérer les interfaces réseau
-        // Pour cette version MVP, on utilise une IP de classe privée commune
-        // TODO v0.3.0: Utiliser une crate comme 'local-ip-address' pour énumérer les interfaces
+        // Méthode 2: Test d'IPs privées communes avec validation
 
-        // Essayer quelques adresses de classe privée communes
-        for test_ip in ["192.168.1.100", "192.168.0.100", "10.0.0.100"] {
+        // Essayer des IPs probables dans chaque range
+        let candidate_ips = [
+            "192.168.1.100",
+            "192.168.0.100",
+            "192.168.1.1",
+            "10.0.0.100",
+            "10.0.1.100",
+            "10.1.1.100",
+            "172.16.0.100",
+            "172.20.0.100",
+        ];
+
+        for test_ip in candidate_ips {
             if let Ok(test_addr) = test_ip.parse::<Ipv4Addr>() {
                 if !test_addr.is_loopback() && test_addr.is_private() {
-                    debug!("Utilisation IP fallback pour mDNS: {}", test_ip);
-                    return Some(test_ip.to_string());
+                    // Tester si cette IP est réellement utilisable
+                    if let Ok(_socket) = UdpSocket::bind(format!("{}:0", test_ip)) {
+                        debug!("IP privée utilisable trouvée: {}", test_ip);
+                        return Some(test_ip.to_string());
+                    }
                 }
             }
         }
 
-        // Dernier recours: utiliser loopback avec avertissement
-        warn!("⚠️  Aucune IP locale non-loopback trouvée, utilisation 127.0.0.1 (LAN non fonctionnel)");
+        // Méthode 3: Essayer link-local IPv4 (169.254.x.x)
+        let link_local_candidates = ["169.254.1.100", "169.254.100.100", "169.254.200.100"];
+
+        for test_ip in link_local_candidates {
+            if let Ok(test_addr) = test_ip.parse::<Ipv4Addr>() {
+                if test_addr.is_link_local() {
+                    if let Ok(_socket) = UdpSocket::bind(format!("{}:0", test_ip)) {
+                        debug!("Link-local IP utilisable: {}", test_ip);
+                        return Some(test_ip.to_string());
+                    }
+                }
+            }
+        }
+
+        // Dernier recours: loopback avec avertissement renforcé
+        warn!("🚨 AUCUNE IP locale non-loopback trouvée!");
+        warn!("   mDNS sera limité au localhost uniquement");
+        warn!("   Vérifiez votre configuration réseau");
         Some("127.0.0.1".to_string())
     }
 
@@ -272,7 +388,8 @@ impl Discovery for MdnsDiscovery {
                                         if peers_guard.len() < max_peers {
                                             info!("🆕 Peer découvert via mDNS: {} avec {} adresse(s)",
                                                  peer_info.id, peer_info.addresses.len());
-                                            peers_guard.insert(peer_info.id.clone(), peer_info);
+                                            let peer_with_ttl = PeerWithTtl::new(peer_info.clone(), 300); // TTL 5 minutes
+                                            peers_guard.insert(peer_info.id, peer_with_ttl);
                                         }
                                     } else {
                                         debug!("Impossible de parser les infos du service mDNS");
@@ -298,6 +415,53 @@ impl Discovery for MdnsDiscovery {
             });
 
             *self.discovery_task.lock().unwrap() = Some(discovery_task);
+
+            // Lancer la tâche de refresh/TTL
+            let (refresh_shutdown_tx, mut refresh_shutdown_rx) = mpsc::unbounded_channel();
+            *self.refresh_shutdown_tx.lock().unwrap() = Some(refresh_shutdown_tx);
+
+            let peers_for_refresh = Arc::clone(&self.peers);
+            let announce_interval = self.config.announce_interval;
+
+            let refresh_task = tokio::spawn(async move {
+                let mut interval = tokio::time::interval(announce_interval);
+
+                loop {
+                    tokio::select! {
+                        _ = refresh_shutdown_rx.recv() => {
+                            debug!("Arrêt tâche refresh mDNS demandé");
+                            break;
+                        }
+                        _ = interval.tick() => {
+                            // Nettoyer les pairs expirés
+                            let mut peers_guard = peers_for_refresh.lock().unwrap();
+                            let initial_count = peers_guard.len();
+
+                            peers_guard.retain(|peer_id, peer_with_ttl| {
+                                let expired = peer_with_ttl.is_expired();
+                                if expired {
+                                    debug!("🗑️ Suppression pair expiré: {}", peer_id);
+                                }
+                                !expired
+                            });
+
+                            let removed_count = initial_count - peers_guard.len();
+                            if removed_count > 0 {
+                                info!("🧹 {} pairs expirés supprimés lors du refresh", removed_count);
+                            }
+
+                            drop(peers_guard);
+
+                            // TODO: Re-annoncer notre service pour refresh du TTL
+                            // Cela nécessiterait de stocker notre PeerInfo local
+                        }
+                    }
+                }
+
+                info!("Tâche refresh mDNS terminée");
+            });
+
+            *self.refresh_task.lock().unwrap() = Some(refresh_task);
         }
 
         #[cfg(not(feature = "mdns-discovery"))]
@@ -320,15 +484,27 @@ impl Discovery for MdnsDiscovery {
 
         info!("Arrêt mDNS discovery");
 
-        // Envoyer signal d'arrêt
+        // Envoyer signal d'arrêt pour la découverte
         let shutdown_tx = { self.shutdown_tx.lock().unwrap().take() };
         if let Some(tx) = shutdown_tx {
             let _ = tx.send(());
         }
 
-        // Attendre la fin de la tâche
+        // Envoyer signal d'arrêt pour le refresh
+        let refresh_shutdown_tx = { self.refresh_shutdown_tx.lock().unwrap().take() };
+        if let Some(tx) = refresh_shutdown_tx {
+            let _ = tx.send(());
+        }
+
+        // Attendre la fin de la tâche de découverte
         let task = { self.discovery_task.lock().unwrap().take() };
         if let Some(task) = task {
+            let _ = task.await;
+        }
+
+        // Attendre la fin de la tâche de refresh
+        let refresh_task = { self.refresh_task.lock().unwrap().take() };
+        if let Some(task) = refresh_task {
             let _ = task.await;
         }
 
@@ -382,12 +558,25 @@ impl Discovery for MdnsDiscovery {
 
     async fn find_peer(&self, peer_id: &PeerId) -> Result<Option<PeerInfo>, NetworkError> {
         let peers = self.peers.lock().unwrap();
-        Ok(peers.get(peer_id).cloned())
+        if let Some(peer_with_ttl) = peers.get(peer_id) {
+            if !peer_with_ttl.is_expired() {
+                Ok(Some(peer_with_ttl.peer_info.clone()))
+            } else {
+                // Pair expiré, retourner None
+                Ok(None)
+            }
+        } else {
+            Ok(None)
+        }
     }
 
     async fn discovered_peers(&self) -> Vec<PeerInfo> {
         let peers = self.peers.lock().unwrap();
-        peers.values().cloned().collect()
+        peers
+            .values()
+            .filter(|peer_with_ttl| !peer_with_ttl.is_expired())
+            .map(|peer_with_ttl| peer_with_ttl.peer_info.clone())
+            .collect()
     }
 
     fn config(&self) -> &DiscoveryConfig {

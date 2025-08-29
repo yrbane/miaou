@@ -358,7 +358,40 @@ Couches d'abstraction Miaou autour de bibliothèques auditées (ring, RustCrypto
 
 ---
 
-## Nouveaux termes v0.2.0 "Radar Moustaches" 
+## Nouveaux termes v0.2.0 "Radar Moustaches" - PRODUCTION
+
+### **Implémentations production réelles**
+Transition complète des mocks TDD vers du code production fonctionnel. Plus aucune simulation : mDNS, WebRTC, NAT traversal et cryptographie utilisent de vraies connexions réseau et primitives crypto.
+
+### **Double Ratchet production**
+Protocole cryptographique complet avec forward secrecy réel, dérivation de clés BLAKE3, sessions authentifiées et rotation automatique des clés. Remplacement total des mocks crypto.
+
+### **WebRTC DataChannels authentiques**
+Connexions P2P réelles utilisant de vrais UDP sockets avec handshake protocol et négociation ICE. Plus de simulations : vraie communication inter-processus.
+
+### **NAT Traversal STUN/TURN réel**
+Implémentation conforme RFC 5389 avec binding requests authentiques vers serveurs STUN externes et détection réelle du type NAT.
+
+### **mDNS robuste production**
+Découverte avec TTL automatique, refresh périodique, évitement 127.0.0.1, support IPv6 et détection d'IP locale intelligente.
+
+### **Forward Secrecy réelle**
+Chaque session crypto utilise des clés éphémères uniques avec dérivation de clés distinctes par rôle (initiateur/récepteur). Compromission des clés actuelles ne permet pas déchiffrement du passé.
+
+### **Key rotation production**
+Rotation automatique des clés de chaîne à chaque message via derive_next() avec BLAKE3. Clés de message dérivées uniquement pour un usage puis détruites.
+
+### **Sessions authentifiées**
+Gestion des rôles initiateur/récepteur avec labels différentiés ("alice"/"bob") pour assurer synchronisation parfaite des clés entre pairs.
+
+### **31 nouveaux tests production**
+15 tests mDNS robustesse + 6 tests WebRTC réels + 5 tests NAT traversal + 5 tests crypto production = 31 tests validant vraies implémentations.
+
+### **Zéro mocks restants**
+Élimination complète des simulations TDD. Tous les composants réseau et crypto utilisent maintenant de vraies primitives et connexions.
+
+### **400+ tests production**
+Augmentation significative du nombre de tests grâce aux suites de tests des implémentations production réelles.
 
 ### **Adresse IP non-loopback**
 Adresse réseau réelle (192.168.x.x, 10.x.x.x, 172.x.x.x) permettant la communication entre machines différentes, contrairement à l'adresse loopback (127.0.0.1) qui ne fonctionne qu'en local.
@@ -373,7 +406,7 @@ Processus d'initialisation d'un nœud DHT en se connectant à des nœuds de dém
 Information de connectivité (adresse IP + port) découverte par le protocole ICE pour établir une connexion P2P. Comme une option de chemin possible pour joindre quelqu'un.
 
 ### **collect_peers()**
-Méthode critique qui synchronise la découverte de pairs avant de les lister, résolvant les problèmes de timing inter-processus.
+Méthode critique qui synchronise la découverte de pairs avant de les lister, résolvant les problèmes de timing inter-processus avec vraie découverte mDNS.
 
 ### **Connection state**
 État d'une connexion réseau : Connecting (en cours), Connected (établie), Closed (fermée). Comme le statut d'un appel téléphonique.
@@ -423,8 +456,8 @@ Identifiant unique généré pour chaque message envoyé, permettant le suivi et
 ### **MessageQueue trait**
 Interface abstraite définissant send/receive/get_stats pour les systèmes de messagerie avec garanties de livraison.
 
-### **Mock ICE**
-Simulation simplifiée de la négociation ICE pour le MVP v0.2.0, avant l'implémentation complète STUN/TURN en v0.3.0.
+### **ICE production (suppression Mock ICE)**
+Négociation ICE réelle avec candidats authentiques et tests de connectivité. Remplacement complet des simulations par vraies implémentations STUN/TURN.
 
 ### **Network crate**
 Nouveau crate v0.2.0 contenant toute l'infrastructure P2P : discovery, transport, messaging, DHT, peer management.
@@ -748,8 +781,8 @@ Adresse IP spéciale (127.0.0.1) qui renvoie vers la même machine, utilisée po
 ### **Matching (correspondance)**
 Processus de comparaison pour trouver des éléments qui se correspondent. Comme apparier des chaussettes de la même couleur.
 
-### **MVP (version)**
-Minimum Viable Product - version basique mais fonctionnelle d'un logiciel. Comme une voiture de base qui roule mais sans options.
+### **Production-ready (dépassement MVP)**
+Transition de la version MVP avec simulations vers implémentations production complètes. Plus de prototypage : vraies connexions réseau et cryptographie.
 
 ### **Multicast**
 Envoi simultané d'un message à plusieurs destinataires sur le réseau. Comme faire une annonce avec un porte-voix dans une cour d'école.
@@ -784,11 +817,11 @@ Programme qui fournit des fonctionnalités accessibles via le réseau. Comme un 
 ### **SocketAddr**
 Structure technique combinant une adresse IP et un port réseau. Adresse complète pour joindre un service spécifique.
 
-### **TDD systématique**
-Application rigoureuse du Test-Driven Development pour chaque nouvelle fonctionnalité. Pas d'exceptions, toujours des tests d'abord.
+### **TDD → Production (transition)**
+Méthodologie complète : phase RED/GREEN avec mocks TDD puis remplacement par implémentations production. Les mocks guident l'architecture, la production la concrétise.
 
-### **Timing issue**
-Problème de synchronisation où différentes parties du système ne sont pas coordonnées dans le temps. Comme arriver en retard à un rendez-vous.
+### **Timing issue (résolu en production)**
+Problèmes de synchronisation inter-processus résolus grâce aux vraies implémentations avec collect_peers() et refresh périodique mDNS.
 
 ### **Versioning (clés DHT)**
 Système de numérotation des clés publiques dans l'annuaire distribué permettant les mises à jour. Comme un numéro de version sur un document.

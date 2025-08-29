@@ -232,7 +232,7 @@ impl Connection {
             sequence: self.stats().frames_sent,
             payload: data.to_vec(),
         };
-        
+
         self.send_frame(frame).await
     }
 
@@ -242,12 +242,12 @@ impl Connection {
     /// Retourne une erreur si aucun message n'est disponible
     pub async fn receive_message(&self) -> Result<Vec<u8>, NetworkError> {
         let frame = self.receive_frame().await?;
-        
+
         match frame.frame_type {
             FrameType::Data => Ok(frame.payload),
             _ => Err(NetworkError::ConnectionFailed(
-                "Frame reçu n'est pas de type Data".to_string()
-            ))
+                "Frame reçu n'est pas de type Data".to_string(),
+            )),
         }
     }
 

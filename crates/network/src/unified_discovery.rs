@@ -101,19 +101,21 @@ impl UnifiedDiscovery {
         };
 
         // Créer instance DHT Production
-        let mut production_dht = ProductionKademliaDht::new(
-            self.local_peer_id.clone(),
-            dht_config,
-            production_config,
-        );
+        let mut production_dht =
+            ProductionKademliaDht::new(self.local_peer_id.clone(), dht_config, production_config);
 
         // Démarrer le DHT
         production_dht.start().await?;
 
         // Bootstrap si on a des nodes
         if !self.bootstrap_nodes.is_empty() {
-            info!("📡 Bootstrap DHT Production avec {} nœuds", self.bootstrap_nodes.len());
-            production_dht.bootstrap(self.bootstrap_nodes.clone()).await?;
+            info!(
+                "📡 Bootstrap DHT Production avec {} nœuds",
+                self.bootstrap_nodes.len()
+            );
+            production_dht
+                .bootstrap(self.bootstrap_nodes.clone())
+                .await?;
         }
 
         // Créer un pointeur Arc vers l'instance

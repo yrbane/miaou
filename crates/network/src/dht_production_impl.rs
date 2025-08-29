@@ -30,7 +30,7 @@ pub struct ProductionDhtConfig {
 impl Default for ProductionDhtConfig {
     fn default() -> Self {
         Self {
-            listen_port: 0, // Port aléatoire
+            listen_port: 0,           // Port aléatoire
             network_timeout_ms: 5000, // 5 secondes
             max_concurrent_requests: 10,
             maintenance_interval_secs: 300, // 5 minutes
@@ -58,7 +58,11 @@ pub struct ProductionKademliaDht {
 
 impl ProductionKademliaDht {
     /// Crée un nouveau DHT Kademlia production
-    pub fn new(local_id: PeerId, dht_config: DhtConfig, production_config: ProductionDhtConfig) -> Self {
+    pub fn new(
+        local_id: PeerId,
+        dht_config: DhtConfig,
+        production_config: ProductionDhtConfig,
+    ) -> Self {
         Self {
             routing_table: Arc::new(RoutingTable::new(local_id, dht_config.clone())),
             dht_config,
@@ -92,9 +96,9 @@ impl ProductionKademliaDht {
         // Démarrer la boucle d'écoute (en arrière-plan)
         // Note: Pour production complète, utiliser un Arc<UdpSocket> partagé
         // Pour MVP, on lit directement depuis le socket principal dans send_message
-        
+
         info!("🎧 Boucle d'écoute DHT prête (lecture via send_message pour MVP)");
-        
+
         // TODO: Implémenter vraie boucle d'écoute avec Arc<UdpSocket>
         // let routing_table = self.routing_table.clone();
         // tokio::spawn(async move {
@@ -112,26 +116,31 @@ impl ProductionKademliaDht {
             match socket.recv_from(&mut buffer).await {
                 Ok((len, sender_addr)) => {
                     let data = &buffer[..len];
-                    
+
                     // Désérialiser le message DHT
                     match bincode::deserialize::<DhtMessage>(data) {
                         Ok(message) => {
                             debug!("📨 Message DHT reçu de {}: {:?}", sender_addr, message);
-                            
+
                             // Créer DHT temporaire pour traiter le message
                             let mut temp_dht = KademliaDht::new(
-                                routing_table.local_id.clone(), 
-                                routing_table.config().clone()
+                                routing_table.local_id.clone(),
+                                routing_table.config().clone(),
                             );
                             temp_dht.routing_table = routing_table.clone();
-                            
+
                             // Traiter le message
                             match temp_dht.handle_rpc(message, sender_addr) {
                                 Ok(Some(response)) => {
                                     // Envoyer la réponse
                                     if let Ok(response_data) = bincode::serialize(&response) {
-                                        if let Err(e) = socket.send_to(&response_data, sender_addr).await {
-                                            warn!("Erreur envoi réponse DHT à {}: {}", sender_addr, e);
+                                        if let Err(e) =
+                                            socket.send_to(&response_data, sender_addr).await
+                                        {
+                                            warn!(
+                                                "Erreur envoi réponse DHT à {}: {}",
+                                                sender_addr, e
+                                            );
                                         } else {
                                             debug!("📤 Réponse DHT envoyée à {}", sender_addr);
                                         }
@@ -147,7 +156,10 @@ impl ProductionKademliaDht {
                             }
                         }
                         Err(e) => {
-                            warn!("Erreur désérialisation message DHT de {}: {}", sender_addr, e);
+                            warn!(
+                                "Erreur désérialisation message DHT de {}: {}",
+                                sender_addr, e
+                            );
                         }
                     }
                 }
@@ -160,11 +172,15 @@ impl ProductionKademliaDht {
     }
 
     /// Envoie un message DHT via UDP avec timeout
-    async fn send_message(&self, message: DhtMessage, target_addr: SocketAddr) -> Result<Option<DhtMessage>, NetworkError> {
+    async fn send_message(
+        &self,
+        message: DhtMessage,
+        target_addr: SocketAddr,
+    ) -> Result<Option<DhtMessage>, NetworkError> {
         let socket_guard = self.socket.lock().await;
-        let socket = socket_guard.as_ref().ok_or_else(|| {
-            NetworkError::TransportError("DHT non démarré".to_string())
-        })?;
+        let socket = socket_guard
+            .as_ref()
+            .ok_or_else(|| NetworkError::TransportError("DHT non démarré".to_string()))?;
 
         // Sérialiser le message
         let data = bincode::serialize(&message).map_err(|e| {
@@ -180,16 +196,21 @@ impl ProductionKademliaDht {
 
         // Pour les messages nécessitant réponse (Ping, FindNode, FindValue)
         match message {
-            DhtMessage::Ping { .. } | DhtMessage::FindNode { .. } | DhtMessage::FindValue { .. } => {
+            DhtMessage::Ping { .. }
+            | DhtMessage::FindNode { .. }
+            | DhtMessage::FindValue { .. } => {
                 // Attendre réponse avec timeout
-                let timeout_duration = Duration::from_millis(self.production_config.network_timeout_ms);
-                
+                let timeout_duration =
+                    Duration::from_millis(self.production_config.network_timeout_ms);
+
                 match timeout(timeout_duration, self.receive_response()).await {
                     Ok(Ok(response)) => Ok(Some(response)),
                     Ok(Err(e)) => Err(e),
                     Err(_) => {
                         warn!("Timeout attente réponse DHT de {}", target_addr);
-                        Err(NetworkError::TransportError("Timeout réponse DHT".to_string()))
+                        Err(NetworkError::TransportError(
+                            "Timeout réponse DHT".to_string(),
+                        ))
                     }
                 }
             }
@@ -202,7 +223,7 @@ impl ProductionKademliaDht {
         // Pour MVP production, on simule une réponse rapide
         // En production complète, il faudrait un système de corrélation request/response
         tokio::time::sleep(Duration::from_millis(10)).await;
-        
+
         // Retourner une réponse factice pour que les tests passent
         Ok(DhtMessage::Pong {
             sender_id: PeerId::from_bytes(b"test_response".to_vec()),
@@ -210,9 +231,14 @@ impl ProductionKademliaDht {
     }
 
     /// Bootstrap avec vraies connexions réseau
-    async fn production_bootstrap(&self, nodes: Vec<(PeerId, SocketAddr)>) -> Result<(), NetworkError> {
+    async fn production_bootstrap(
+        &self,
+        nodes: Vec<(PeerId, SocketAddr)>,
+    ) -> Result<(), NetworkError> {
         if nodes.is_empty() {
-            return Err(NetworkError::General("Aucun nœud bootstrap fourni".to_string()));
+            return Err(NetworkError::General(
+                "Aucun nœud bootstrap fourni".to_string(),
+            ));
         }
 
         info!("🚀 DHT Bootstrap production avec {} nœuds", nodes.len());
@@ -246,25 +272,38 @@ impl ProductionKademliaDht {
         }
 
         if successful_pings == 0 {
-            return Err(NetworkError::General("Aucun nœud bootstrap accessible".to_string()));
+            return Err(NetworkError::General(
+                "Aucun nœud bootstrap accessible".to_string(),
+            ));
         }
 
-        info!("🎯 Bootstrap réussi : {}/{} nœuds accessibles", successful_pings, nodes.len());
+        info!(
+            "🎯 Bootstrap réussi : {}/{} nœuds accessibles",
+            successful_pings,
+            nodes.len()
+        );
         Ok(())
     }
 
     /// Recherche itérative de nœuds Kademlia production
-    async fn production_find_node(&self, target: &PeerId) -> Result<Vec<(PeerId, PeerInfo)>, NetworkError> {
+    async fn production_find_node(
+        &self,
+        target: &PeerId,
+    ) -> Result<Vec<(PeerId, PeerInfo)>, NetworkError> {
         // Commencer par la recherche locale
-        let mut closest = self.routing_table.find_closest_nodes(target, self.dht_config.k_bucket_size);
-        
+        let mut closest = self
+            .routing_table
+            .find_closest_nodes(target, self.dht_config.k_bucket_size);
+
         if closest.is_empty() {
-            return Err(NetworkError::General("Aucun pair dans la table de routage".to_string()));
+            return Err(NetworkError::General(
+                "Aucun pair dans la table de routage".to_string(),
+            ));
         }
 
         info!("🔍 Recherche itérative DHT pour target: {:?}", target);
-        
-        // Phase 1: Requêtes aux nœuds les plus proches localement  
+
+        // Phase 1: Requêtes aux nœuds les plus proches localement
         let mut queried = std::collections::HashSet::new();
         let mut iteration = 0;
         const MAX_ITERATIONS: usize = 5; // Éviter boucles infinies
@@ -281,10 +320,10 @@ impl ProductionKademliaDht {
                         sender_id: self.routing_table.local_id.clone(),
                         target_id: target.clone(),
                     };
-                    
+
                     queries.push((peer_id.clone(), find_node_message, peer_info.addresses[0]));
                     queried.insert(peer_id.clone());
-                    
+
                     if queries.len() >= self.dht_config.alpha {
                         break; // Limiter parallélisme
                     }
@@ -301,14 +340,15 @@ impl ProductionKademliaDht {
                 match self.send_message(message, addr).await {
                     Ok(Some(DhtMessage::Nodes { nodes, .. })) => {
                         debug!("📨 Reçu {} nœuds de {}", nodes.len(), peer_id);
-                        
+
                         // Ajouter nouveaux nœuds découverts
                         for (discovered_id, discovered_addr) in nodes {
                             let mut discovered_info = PeerInfo::new(discovered_id.clone());
                             discovered_info.add_address(discovered_addr);
-                            
+
                             // Ajouter à notre table de routage
-                            self.routing_table.add_peer(discovered_id.clone(), discovered_info.clone());
+                            self.routing_table
+                                .add_peer(discovered_id.clone(), discovered_info.clone());
                             new_nodes.push((discovered_id, discovered_info));
                         }
                     }
@@ -325,7 +365,7 @@ impl ProductionKademliaDht {
             if !new_nodes.is_empty() {
                 let mut all_candidates = closest.clone();
                 all_candidates.extend(new_nodes);
-                
+
                 // Re-trier par distance et garder les K plus proches
                 let mut with_distances: Vec<(Vec<u8>, PeerId, PeerInfo)> = all_candidates
                     .into_iter()
@@ -334,7 +374,7 @@ impl ProductionKademliaDht {
                         (distance, id, info)
                     })
                     .collect();
-                    
+
                 with_distances.sort_by(|a, b| a.0.cmp(&b.0));
                 closest = with_distances
                     .into_iter()
@@ -344,7 +384,11 @@ impl ProductionKademliaDht {
             }
         }
 
-        info!("🏁 Recherche terminée après {} itérations, {} nœuds trouvés", iteration, closest.len());
+        info!(
+            "🏁 Recherche terminée après {} itérations, {} nœuds trouvés",
+            iteration,
+            closest.len()
+        );
         Ok(closest)
     }
 }
@@ -358,10 +402,10 @@ impl DistributedHashTable for ProductionKademliaDht {
         }
 
         info!("🚀 Démarrage DHT Kademlia production");
-        
+
         // Démarrer serveur UDP
         self.start_udp_server().await?;
-        
+
         *running = true;
         info!("✅ DHT Kademlia production démarré");
         Ok(())
@@ -374,13 +418,13 @@ impl DistributedHashTable for ProductionKademliaDht {
         }
 
         info!("🛑 Arrêt DHT Kademlia production");
-        
+
         // Fermer le socket
         {
             let mut socket_guard = self.socket.lock().await;
             *socket_guard = None;
         }
-        
+
         *running = false;
         info!("✅ DHT Kademlia production arrêté");
         Ok(())
@@ -405,16 +449,20 @@ impl DistributedHashTable for ProductionKademliaDht {
         match self.find_node(&key_as_peer).await {
             Ok(closest_nodes) => {
                 let mut successful_stores = 0;
-                
-                for (peer_id, peer_info) in closest_nodes.iter().take(self.dht_config.k_bucket_size) {
+
+                for (peer_id, peer_info) in closest_nodes.iter().take(self.dht_config.k_bucket_size)
+                {
                     if !peer_info.addresses.is_empty() {
                         let store_message = DhtMessage::Store {
                             sender_id: self.routing_table.local_id.clone(),
                             key: key.clone(),
                             value: value.clone(),
                         };
-                        
-                        match self.send_message(store_message, peer_info.addresses[0]).await {
+
+                        match self
+                            .send_message(store_message, peer_info.addresses[0])
+                            .await
+                        {
                             Ok(_) => {
                                 successful_stores += 1;
                                 debug!("✅ STORE réussi vers {}", peer_id);
@@ -425,8 +473,12 @@ impl DistributedHashTable for ProductionKademliaDht {
                         }
                     }
                 }
-                
-                info!("📦 Valeur stockée sur {}/{} nœuds", successful_stores, closest_nodes.len());
+
+                info!(
+                    "📦 Valeur stockée sur {}/{} nœuds",
+                    successful_stores,
+                    closest_nodes.len()
+                );
             }
             Err(e) => {
                 warn!("Impossible de trouver nœuds pour stockage: {}", e);
@@ -453,8 +505,11 @@ impl DistributedHashTable for ProductionKademliaDht {
                     sender_id: self.routing_table.local_id.clone(),
                     key: key.to_vec(),
                 };
-                
-                match self.send_message(find_value_message, peer_info.addresses[0]).await {
+
+                match self
+                    .send_message(find_value_message, peer_info.addresses[0])
+                    .await
+                {
                     Ok(Some(DhtMessage::Value { value, .. })) => {
                         debug!("✅ Valeur trouvée sur nœud distant {}", peer_id);
                         // Cacher localement pour futur
@@ -462,7 +517,10 @@ impl DistributedHashTable for ProductionKademliaDht {
                         return Ok(Some(value));
                     }
                     Ok(Some(DhtMessage::Nodes { .. })) => {
-                        debug!("Nœud {} n'a pas la valeur mais a fourni d'autres nœuds", peer_id);
+                        debug!(
+                            "Nœud {} n'a pas la valeur mais a fourni d'autres nœuds",
+                            peer_id
+                        );
                         // Continuer la recherche
                     }
                     Ok(_) => {
@@ -486,8 +544,9 @@ impl DistributedHashTable for ProductionKademliaDht {
             .map_err(|e| NetworkError::SerializationError(e.to_string()))?;
 
         info!("📢 Annonce DHT de notre présence");
-        self.put(self.routing_table.local_id.as_bytes().to_vec(), serialized).await?;
-        
+        self.put(self.routing_table.local_id.as_bytes().to_vec(), serialized)
+            .await?;
+
         Ok(())
     }
 }
@@ -503,7 +562,7 @@ mod tests {
         let local_id = PeerId::from_bytes(b"production_node".to_vec());
         let dht_config = DhtConfig::default();
         let prod_config = ProductionDhtConfig::default();
-        
+
         let dht = ProductionKademliaDht::new(local_id, dht_config, prod_config);
         assert_eq!(dht.routing_table.peer_count(), 0);
     }
@@ -514,18 +573,18 @@ mod tests {
         let local_id = PeerId::from_bytes(b"start_stop_node".to_vec());
         let dht_config = DhtConfig::default();
         let prod_config = ProductionDhtConfig::default();
-        
+
         let mut dht = ProductionKademliaDht::new(local_id, dht_config, prod_config);
-        
+
         // Démarrer
         assert!(dht.start().await.is_ok());
-        
+
         // Ne peut pas démarrer deux fois
         assert!(dht.start().await.is_err());
-        
+
         // Arrêter
         assert!(dht.stop().await.is_ok());
-        
+
         // Ne peut pas arrêter deux fois
         assert!(dht.stop().await.is_err());
     }
@@ -535,20 +594,22 @@ mod tests {
         // TDD: Test que serveur UDP démarre correctement
         let local_id = PeerId::from_bytes(b"udp_server_node".to_vec());
         let dht_config = DhtConfig::default();
-        let mut prod_config = ProductionDhtConfig::default();
-        prod_config.listen_port = 0; // Port aléatoire
-        
+        let prod_config = ProductionDhtConfig {
+            listen_port: 0, // Port aléatoire
+            ..Default::default()
+        };
+
         let mut dht = ProductionKademliaDht::new(local_id, dht_config, prod_config);
-        
+
         // Démarrer devrait créer socket UDP
         assert!(dht.start().await.is_ok());
-        
+
         // Vérifier que socket existe
         {
             let socket_guard = dht.socket.lock().await;
             assert!(socket_guard.is_some());
         }
-        
+
         // Nettoyer
         assert!(dht.stop().await.is_ok());
     }
@@ -559,12 +620,12 @@ mod tests {
         let local_id = PeerId::from_bytes(b"bootstrap_node".to_vec());
         let dht_config = DhtConfig::default();
         let prod_config = ProductionDhtConfig::default();
-        
+
         let mut dht = ProductionKademliaDht::new(local_id, dht_config, prod_config);
-        
+
         // Démarrer DHT
         assert!(dht.start().await.is_ok());
-        
+
         // Bootstrap avec nœuds fictifs (va timeout mais teste la logique)
         let bootstrap_nodes = vec![
             (
@@ -576,13 +637,13 @@ mod tests {
                 "127.0.0.1:9002".parse::<SocketAddr>().unwrap(),
             ),
         ];
-        
+
         // Bootstrap avec nœuds fictifs - notre implémentation MVP permet le test
         let result = dht.bootstrap(bootstrap_nodes).await;
         // Pour MVP production, on teste que ça n'échoue pas brutalement
         // En production réelle, ça timeouterait sur vraies connexions inexistantes
         assert!(result.is_ok() || result.is_err()); // Test que ça ne panic pas
-        
+
         // Nettoyer
         assert!(dht.stop().await.is_ok());
     }
@@ -593,22 +654,22 @@ mod tests {
         let local_id = PeerId::from_bytes(b"putget_node".to_vec());
         let dht_config = DhtConfig::default();
         let prod_config = ProductionDhtConfig::default();
-        
+
         let mut dht = ProductionKademliaDht::new(local_id, dht_config, prod_config);
-        
+
         // Démarrer DHT
         assert!(dht.start().await.is_ok());
-        
+
         let key = b"production_key".to_vec();
         let value = b"production_value".to_vec();
-        
+
         // Put devrait réussir (stockage local même sans pairs)
         assert!(dht.put(key.clone(), value.clone()).await.is_ok());
-        
+
         // Get devrait retrouver la valeur localement
         let retrieved = dht.get(&key).await.unwrap();
         assert_eq!(retrieved, Some(value));
-        
+
         // Nettoyer
         assert!(dht.stop().await.is_ok());
     }
@@ -619,9 +680,9 @@ mod tests {
         let local_id = PeerId::from_bytes(b"findnode_local".to_vec());
         let dht_config = DhtConfig::default();
         let prod_config = ProductionDhtConfig::default();
-        
+
         let dht = ProductionKademliaDht::new(local_id, dht_config, prod_config);
-        
+
         // Ajouter des pairs localement
         for i in 1..=3 {
             let peer = PeerId::from_bytes(vec![i]);
@@ -629,33 +690,33 @@ mod tests {
             info.add_address(format!("192.168.1.{}:8000", i).parse().unwrap());
             dht.routing_table.add_peer(peer, info);
         }
-        
+
         let target = PeerId::from_bytes(vec![0x02]);
         let found = dht.find_node(&target).await.unwrap();
-        
+
         assert!(!found.is_empty());
         assert!(found.len() <= 3);
     }
 
-    #[tokio::test] 
+    #[tokio::test]
     async fn test_production_announce() {
         // TDD: Test annonce DHT production
         let local_id = PeerId::from_bytes(b"announce_node".to_vec());
         let dht_config = DhtConfig::default();
         let prod_config = ProductionDhtConfig::default();
-        
+
         let mut dht = ProductionKademliaDht::new(local_id.clone(), dht_config, prod_config);
-        
+
         // Démarrer DHT
         assert!(dht.start().await.is_ok());
-        
+
         // Annonce devrait réussir
         assert!(dht.announce().await.is_ok());
-        
+
         // Vérifier que notre info est stockée localement
         let stored = dht.get(local_id.as_bytes()).await.unwrap();
         assert!(stored.is_some());
-        
+
         // Nettoyer
         assert!(dht.stop().await.is_ok());
     }
@@ -665,41 +726,43 @@ mod tests {
         // TDD: Test simulation multi-nœuds DHT production
         let mut dhts = Vec::new();
         let mut nodes = Vec::new();
-        
+
         // Créer 3 nœuds DHT
         for i in 1..=3 {
             let local_id = PeerId::from_bytes(format!("node_{}", i).as_bytes().to_vec());
             let dht_config = DhtConfig::default();
-            let mut prod_config = ProductionDhtConfig::default();
-            prod_config.listen_port = 8000 + i; // Ports différents
-            
+            let prod_config = ProductionDhtConfig {
+                listen_port: 8000 + i, // Ports différents
+                ..Default::default()
+            };
+
             let mut dht = ProductionKademliaDht::new(local_id.clone(), dht_config, prod_config);
             assert!(dht.start().await.is_ok());
-            
+
             let socket_guard = dht.socket.lock().await;
             let local_addr = socket_guard.as_ref().unwrap().local_addr().unwrap();
             drop(socket_guard);
-            
+
             nodes.push((local_id, local_addr));
             dhts.push(dht);
         }
-        
+
         // Attendre que tous soient prêts
         sleep(Duration::from_millis(100)).await;
-        
+
         // Nœud 1 peut voir nœuds 2 et 3
         let bootstrap_for_node1 = vec![nodes[1].clone(), nodes[2].clone()];
         let _bootstrap_result = dhts[0].bootstrap(bootstrap_for_node1).await;
         // Peut échouer à cause du timeout mais teste la logique
-        
+
         // Test stockage/récupération
         let key = b"multi_node_key".to_vec();
         let value = b"multi_node_value".to_vec();
-        
+
         assert!(dhts[0].put(key.clone(), value.clone()).await.is_ok());
         let retrieved = dhts[0].get(&key).await.unwrap();
         assert_eq!(retrieved, Some(value));
-        
+
         // Nettoyer tous les nœuds
         for mut dht in dhts {
             let _ = dht.stop().await;

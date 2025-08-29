@@ -15,12 +15,14 @@
 //! - **D**ependency Inversion : Dépend d'abstractions, pas d'implémentations
 
 pub mod connection;
+pub mod crypto_production_impl;
 pub mod dht;
 pub mod dht_production_impl;
 pub mod directory;
 pub mod discovery;
 pub mod error;
 pub mod handshake;
+pub mod handshake_production;
 pub mod mdns_discovery;
 pub mod mdns_robustness_tests;
 pub mod message_queue;
@@ -28,6 +30,7 @@ pub mod messaging;
 pub mod nat_traversal;
 pub mod nat_traversal_production;
 pub mod p2p_connection;
+pub mod p2p_messaging_production;
 pub mod peer;
 pub mod ratchet;
 pub mod store;
@@ -36,7 +39,6 @@ pub mod unified_discovery;
 pub mod webrtc_data_channels;
 pub mod webrtc_production_impl;
 pub mod webrtc_transport;
-pub mod crypto_production_impl;
 
 pub use connection::{Connection, ConnectionState};
 pub use dht::{DhtConfig, DhtMessage, DistributedHashTable, KademliaDht, RoutingTable};

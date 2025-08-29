@@ -154,7 +154,7 @@ mod tests {
             json: false,
             cmd: Command::Net(NetCommand::Unified(UnifiedCommand::Find {
                 peer_id: "".to_string(), // Empty peer ID
-                timeout: 0, // Zero timeout for instant return
+                timeout: 0,              // Zero timeout for instant return
             })),
         };
 
