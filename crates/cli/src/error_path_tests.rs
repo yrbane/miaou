@@ -115,12 +115,9 @@ mod tests {
         assert!(from_hex("g").is_err()); // Odd length
         assert!(from_hex("xyz").is_err()); // Odd length + invalid chars
 
-        // Even length but invalid characters are converted to 0
-        // This tests the existing behavior that may need fixing
+        // Even length but invalid characters now cause errors (secure behavior)
         let result = from_hex("gg");
-        if result.is_ok() {
-            assert_eq!(result.unwrap(), vec![0x00]); // Both 'g' chars become 0
-        }
+        assert!(result.is_err()); // Both 'g' chars are invalid
     }
 
     #[tokio::test]
@@ -270,7 +267,7 @@ mod tests {
             log: "error".to_string(),
             json: false,
             cmd: Command::NetListPeers {
-                timeout: 0, // Zero timeout
+                timeout: 0, // Zero timeout for instant return
             },
         };
 
@@ -298,16 +295,16 @@ mod tests {
     #[test]
     fn test_hex_val_edge_cases() {
         // Test boundary conditions for hex_val function
-        assert_eq!(hex_val(b'0' - 1), 0); // Character before '0'
-        assert_eq!(hex_val(b'9' + 1), 0); // Character after '9'
-        assert_eq!(hex_val(b'A' - 1), 0); // Character before 'A'
-        assert_eq!(hex_val(b'F' + 1), 0); // Character after 'F'
-        assert_eq!(hex_val(b'a' - 1), 0); // Character before 'a'
-        assert_eq!(hex_val(b'f' + 1), 0); // Character after 'f'
+        assert_eq!(hex_val(b'0' - 1), None); // Character before '0'
+        assert_eq!(hex_val(b'9' + 1), None); // Character after '9'
+        assert_eq!(hex_val(b'A' - 1), None); // Character before 'A'
+        assert_eq!(hex_val(b'F' + 1), None); // Character after 'F'
+        assert_eq!(hex_val(b'a' - 1), None); // Character before 'a'
+        assert_eq!(hex_val(b'f' + 1), None); // Character after 'f'
 
         // Test non-printable characters
-        assert_eq!(hex_val(0), 0);
-        assert_eq!(hex_val(255), 0);
+        assert_eq!(hex_val(0), None);
+        assert_eq!(hex_val(255), None);
     }
 
     #[test]

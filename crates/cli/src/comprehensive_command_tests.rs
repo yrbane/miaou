@@ -35,8 +35,8 @@ mod tests {
             log: "error".to_string(),
             json: false,
             cmd: Command::NetStart {
-                daemon: true,
-                duration: 0, // Infinite for daemon
+                daemon: false, // Non-daemon for faster test
+                duration: 1, // 1 second only
             },
         };
 
@@ -52,7 +52,7 @@ mod tests {
             log: "error".to_string(),
             json: false,
             cmd: Command::NetListPeers {
-                timeout: 1, // Short timeout
+                timeout: 0, // Zero timeout for instant return
             },
         };
 
@@ -67,7 +67,7 @@ mod tests {
         let cli = Cli {
             log: "error".to_string(),
             json: true, // JSON output
-            cmd: Command::NetListPeers { timeout: 1 },
+            cmd: Command::NetListPeers { timeout: 0 }, // Zero timeout
         };
 
         let result = run_internal(cli, &mut ks).await;

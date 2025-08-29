@@ -26,7 +26,7 @@ mod tests {
     fn test_unified_command_variants() {
         // Test creation of all UnifiedCommand variants
         let start = UnifiedCommand::Start {
-            duration: 30,
+            duration: 1, // 1 second for testing
             methods: vec!["mdns".to_string(), "dht".to_string()],
         };
 
@@ -50,12 +50,12 @@ mod tests {
     fn test_structured_command_hierarchy() {
         // Test the full command hierarchy
         let lan_cmd = Command::Lan(LanCommand::Mdns(MdnsCommand::Announce {
-            duration: 15,
+            duration: 1, // 1 second for testing
             port: 8080,
         }));
 
         let net_cmd = Command::Net(NetCommand::Unified(UnifiedCommand::Start {
-            duration: 60,
+            duration: 1, // 1 second for testing
             methods: vec!["mdns".to_string()],
         }));
 
@@ -154,7 +154,7 @@ mod tests {
             json: false,
             cmd: Command::Net(NetCommand::Unified(UnifiedCommand::Find {
                 peer_id: "".to_string(), // Empty peer ID
-                timeout: 1,
+                timeout: 0, // Zero timeout for instant return
             })),
         };
 

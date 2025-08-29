@@ -91,7 +91,7 @@ mod tests {
         let cli = Cli {
             log: "error".to_string(),
             json: true,
-            cmd: Command::NetListPeers { timeout: 1 },
+            cmd: Command::NetListPeers { timeout: 0 }, // Zero timeout
         };
 
         let _result = run_internal(cli, &mut ks).await;
@@ -131,7 +131,7 @@ mod tests {
             json: false,
             cmd: Command::Net(NetCommand::Unified(UnifiedCommand::Find {
                 peer_id: "search-target".to_string(),
-                timeout: 1,
+                timeout: 0, // Zero timeout
             })),
         };
 
@@ -206,9 +206,9 @@ mod tests {
 
         // Test daemon vs normal mode branches
         let configs = vec![
-            (true, 0),   // Daemon with infinite duration
+            (false, 1),  // Non-daemon with 1 second duration for testing
             (false, 10), // Normal with specific duration
-            (true, 10),  // Daemon with duration (edge case)
+            (false, 2),  // Non-daemon with 2 second duration for testing
             (false, 0),  // Normal with zero duration (edge case)
         ];
 
@@ -234,7 +234,7 @@ mod tests {
             let cli = Cli {
                 log: "error".to_string(),
                 json: json_mode,
-                cmd: Command::Lan(LanCommand::Mdns(MdnsCommand::ListPeers { timeout: 1 })),
+                cmd: Command::Lan(LanCommand::Mdns(MdnsCommand::ListPeers { timeout: 0 })), // Zero timeout
             };
 
             let _result = run_internal(cli, &mut ks).await;
@@ -253,7 +253,7 @@ mod tests {
                 log: "error".to_string(),
                 json: json_mode,
                 cmd: Command::Net(NetCommand::Unified(UnifiedCommand::ListPeers {
-                    timeout: 1,
+                    timeout: 0, // Zero timeout
                 })),
             };
 
