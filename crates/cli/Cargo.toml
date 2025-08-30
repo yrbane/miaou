@@ -19,7 +19,7 @@ tokio = { workspace = true, features = ["rt", "macros"] }
 miaou-core = { path = "../core" }
 miaou-crypto = { path = "../crypto" }
 miaou-keyring = { path = "../keyring" }
-miaou-network = { path = "../network" }
+miaou-network = { path = "../network", features = ["webrtc-transport"] }
 serde_json = { workspace = true }
 hex = "0.4"
 rand = { workspace = true }

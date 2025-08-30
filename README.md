@@ -1,27 +1,27 @@
 # 🐱 Miaou v0.2.0 "Radar Moustaches"
 
-**Plateforme P2P décentralisée avec pipeline E2E complet et cryptographie production**
+**Fondations P2P avec mDNS production, WebRTC réel, et architecture extensible**
 
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-400%2B%20passing-green.svg)](#tests)
-[![Coverage](https://img.shields.io/badge/coverage-96%2B%25-brightgreen.svg)](#coverage)
-[![CI/CD](https://img.shields.io/badge/CI%2FCD-passing-green.svg)](/.github/workflows/ci-cd.yml)
-[![E2E](https://img.shields.io/badge/E2E-pipeline%20complet-purple.svg)](#pipeline-e2e)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-passing-green.svg)](/.github/workflows/ci.yml)
+[![E2E](https://img.shields.io/badge/E2E-4%20scripts%20validés-purple.svg)](#tests-e2e)
+[![Production](https://img.shields.io/badge/mDNS%2BRTC-production-brightgreen.svg)](#architecture)
 
-Miaou v0.2.0 implémente un **pipeline E2E P2P complet** : Découverte DHT → WebRTC → X3DH Handshake → Double Ratchet → Messaging sécurisé. Infrastructure réseau production avec cryptographie authentique et architecture TDD rigoureuse.
+Miaou v0.2.0 établit des **fondations P2P solides** : mDNS discovery production + WebRTC DataChannels réels + architecture traits extensible. Infrastructure LAN opérationnelle avec cryptographie sécurisée et transition transparente vers v0.3.0.
+
+📋 **Documentation technique :** [Status reconciliation](docs/V0.2.0_STATUS_RECONCILIATION.md) | [Transition v0.3.0](docs/V0.3.0_TRANSITION_PLAN.md)
 
 ## ✨ Fonctionnalités
 
-### 🌐 **Pipeline P2P E2E Production**
-- **Pipeline complet** : Discovery → WebRTC → Handshake → Ratchet → Messaging sécurisé
-- **UnifiedP2pManager** : Orchestrateur intégrant tous les composants production
-- **DHT Kademlia production** : Découverte pairs avec UDP réel, recherche itérative
-- **WebRTC avec ICE** : Négociation candidats, DataChannels production-ready
-- **X3DH Handshake** : Établissement clés partagées avec authentification Ed25519
-- **Double Ratchet production** : Perfect Forward Secrecy avec ChaCha20-Poly1305
-- **Message Queue fiable** : Delivery garanti avec exponential backoff retry
-- **5 tests E2E** : Scénarios complets (unicast, multicast, recovery, groups)
+### 🌐 **Infrastructure P2P - Fondations production**
+- **mDNS Service Discovery** : Production avec `_miaou._tcp.local` (mdns-sd)
+- **WebRTC DataChannels** : Production avec webrtc-rs (offer/answer + ICE) 
+- **UnifiedP2pManager** : Orchestrateur réseau avec architecture traits
+- **CLI intégré** : 14 commandes réseau/crypto avec output JSON
+- **Tests E2E automatisés** : 4 scripts de validation (mDNS, messaging, net-connect)
+- **DHT architecture** : Traits présents, implémentation Kademlia en cours (v0.3.0)
+- **NAT Traversal** : Diagnostics basiques, STUN/TURN complet prévu v0.3.0
 
 ### 🔐 **Cryptographie robuste et sécurisée**
 - **ChaCha20-Poly1305** : AEAD production avec API propre, validation stricte
@@ -32,19 +32,19 @@ Miaou v0.2.0 implémente un **pipeline E2E P2P complet** : Découverte DHT → W
 - **Architecture object-safe** : Traits crypto extensibles pour futures implémentations
 
 ### 🏗️ **Architecture workspace moderne**
-- **miaou-core** : Types communs, gestion d'erreurs, données sensibles avec zeroization
-- **miaou-crypto** : Primitives cryptographiques avec implémentations de référence
-- **miaou-keyring** : Gestion de clés en mémoire avec sérialisation sécurisée
-- **miaou-network** : Infrastructure réseau P2P complète (nouveau crate v0.2.0)
-- **miaou-cli** : Interface ligne de commande avec 14 commandes réseau et crypto
+- **miaou-core** : Types communs, gestion d'erreurs, données sensibles avec zeroization ✅
+- **miaou-crypto** : Primitives cryptographiques avec implémentations de référence ✅
+- **miaou-keyring** : Gestion de clés en mémoire avec sérialisation sécurisée ✅
+- **miaou-network** : Infrastructure réseau P2P avec mDNS+WebRTC production ✅
+- **miaou-cli** : Interface ligne de commande avec 14 commandes intégrées ✅
 
 ### 🧪 **Qualité de code exceptionnelle**
-- **Tests complets** : Architecture réseau + crypto + CLI avec couverture solide
-- **Clippy pedantic/nursery** : Compliance stricte, forbid(unsafe_code)
+- **Tests production** : E2E automatisés avec 4 scripts de validation complets
+- **Clippy strict** : Compliance pedantic/nursery, forbid(unsafe_code)
 - **Documentation complète** : APIs publiques documentées, `# Errors` et `# Panics`
-- **Architecture TDD** : Traits découverts par tests, interfaces stables
-- **CI/CD automatisé** : Pipeline multi-OS avec validation stricte
-- **Scripts E2E prêts** : Infrastructure tests inter-processus
+- **Architecture transparente** : Status réconcilié entre vision et implémentation
+- **CI/CD GitHub Actions** : Pipeline multi-OS avec validation rigoureuse
+- **Issues tracking** : Liens explicites vers GitHub pour chaque composant
 
 ### 📦 **Déploiement multi-plateformes**
 - **Desktop** : Linux (x86_64, ARM64), Windows, macOS (Intel & Apple Silicon)
@@ -112,40 +112,36 @@ use miaou_network::e2e_integration_production::UnifiedP2pManager;
 // Créer gestionnaire unifié
 let mut alice = UnifiedP2pManager::new(alice_id).await?;
 
-// Pipeline complet en une ligne !
+// Pipeline P2P fondations (v0.2.0)
 alice.connect_and_send_secure(bob_id, b"Hello Bob!").await?;
-// ├─ DHT discovery automatique
-// ├─ WebRTC connection etablie  
-// ├─ X3DH handshake securise
-// ├─ Double Ratchet initialise
-// └─ Message chiffre et envoye
+// ├─ mDNS discovery production
+// ├─ WebRTC connection établie (webrtc-rs)
+// ├─ Messaging sécurisé
+// └─ DHT traits présents (implem v0.3.0)
 ```
 
 ## 💻 Utilisation de la CLI
 
-#### 🌐 **Commandes réseau P2P production (v0.2.0)**
+#### 🌐 **Commandes réseau P2P (v0.2.0 production)**
 
 ```bash
-# Démarrer découverte mDNS robuste avec TTL
-./target/release/miaou-cli net-start --duration 60
+# Découverte mDNS production avec service _miaou._tcp.local
+./target/debug/miaou-cli net unified list-peers
 
-# Lister pairs découverts (avec expiration automatique)
-./target/release/miaou-cli net-list-peers
+# Diagnostics réseau et connectivité
+./target/debug/miaou-cli net diagnostics
 
-# Connexion WebRTC réelle avec UDP sockets
-./target/release/miaou-cli net-connect <peer-id>
+# Commandes mDNS LAN (production)
+./target/debug/miaou-cli lan mdns announce
+./target/debug/miaou-cli lan mdns list
 
-# Message chiffré Double Ratchet avec forward secrecy
-./target/release/miaou-cli send <to> "Hello P2P production!"
+# Messages sécurisés (architecture fondations)
+./target/debug/miaou-cli send <to> "Hello P2P foundations!"
+./target/debug/miaou-cli recv
 
-# Recevoir messages (déchiffrement automatique)
-./target/release/miaou-cli recv
-
-# DHT put avec vraies connexions réseau
-./target/release/miaou-cli dht-put signing <key-hex>
-
-# DHT get distribué multi-peer
-./target/release/miaou-cli dht-get <peer-id> signing
+# DHT traits (implémentation complète v0.3.0)
+./target/debug/miaou-cli dht-put signing <key-hex>
+./target/debug/miaou-cli dht-get <peer-id> signing
 ```
 
 #### 🔐 **Commandes cryptographiques**
@@ -220,13 +216,12 @@ miaou/
 │   │   ├── Cargo.toml
 │   │   └── src/               # Implémentations production complètes
 │   │       ├── lib.rs         # API publique réseau
-│   │       ├── mdns_discovery.rs         # mDNS robuste (TTL, refresh)
-│   │       ├── webrtc_production_impl.rs # WebRTC DataChannels réels
-│   │       ├── nat_traversal_production.rs # STUN/TURN RFC 5389
-│   │       ├── crypto_production_impl.rs # Double Ratchet complet
-│   │       ├── messaging.rs   # Queue messages persistante
-│   │       ├── dht.rs         # Directory DHT Kademlia
-│   │       └── peer.rs        # Gestion identités pairs
+│   │       ├── mdns_discovery.rs         # mDNS production (_miaou._tcp.local) ✅
+│   │       ├── webrtc_production_real.rs # WebRTC DataChannels (webrtc-rs) ✅
+│   │       ├── unified_discovery.rs     # Agrégation multi-transport ✅
+│   │       ├── messaging.rs   # FileMessageStore JSON atomique ✅
+│   │       ├── dht.rs         # DHT traits (implem v0.3.0) ⚠️
+│   │       └── peer.rs        # PeerInfo/PeerMetadata ✅
 │   └── cli/                   # Interface ligne de commande
 │       ├── Cargo.toml
 │       └── src/main.rs        # CLI avec 14 commandes P2P + crypto
@@ -369,19 +364,21 @@ Le projet utilise un pipeline GitHub Actions unifié avec :
 - **Release automatique** : Artifacts packagés pour tous les targets
 
 ### Quality gates
-- **Tests** : 400+ tests sur toutes plateformes avec implémentations production
-- **Couverture** : Minimum 90% appliqué automatiquement (atteint 96%+)
-- **Sécurité** : Forward secrecy, key rotation, audit vulnérabilités
-- **Performance** : Benchmarks cryptographie production + réseau réel
+- **Tests E2E** : 4 scripts de validation automatique (mDNS, messaging, WebRTC)
+- **Clippy strict** : Compliance pedantic/nursery, zéro unsafe
+- **Documentation** : APIs publiques complètes avec status réconcilié
+- **Architecture** : Transparence technique entre vision et implémentation
 
 ## 🚀 Évolution future
 
-### 🎯 v0.3.0 "Chat Quantique" (prochaine version)
-- **STUN/TURN réel** : NAT traversal production avec serveurs externes
-- **Handshake E2E** : Double Ratchet intégré pour Perfect Forward Secrecy
-- **Web of Trust** : Signatures croisées et réputation distribuée
-- **Persistance réseau** : Cache découverte inter-processus
-- **GUI Desktop** : Interface Tauri/Electron native
+### 🎯 v0.3.0 "Chat Quantique" (roadmap)
+- **DHT Kademlia** : Finaliser implémentation distribuée complète
+- **NAT Traversal** : STUN/TURN production intégrés WebRTC
+- **CLI finitions** : Nettoyer incohérences handshake
+- **GUI Desktop** : Interface utilisateur moderne (Tauri/Electron)
+- **Mobile Apps** : Applications iOS/Android natives
+
+📋 **Plan détaillé :** [Transition v0.3.0](docs/V0.3.0_TRANSITION_PLAN.md)
 - **Mobile natif** : Applications iOS/Android avec build automatisé
 
 ### 🌟 Roadmap long terme

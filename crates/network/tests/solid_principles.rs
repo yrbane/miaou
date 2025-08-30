@@ -79,7 +79,7 @@ async fn test_open_closed_principle() {
 /// Les implémentations de Transport sont interchangeables
 #[tokio::test]
 async fn test_liskov_substitution() {
-    async fn _use_transport<T: Transport>(transport: Arc<T>) -> bool {
+    fn _use_transport<T: Transport>(transport: &Arc<T>) -> bool {
         transport.is_active()
     }
 

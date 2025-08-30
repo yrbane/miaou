@@ -45,6 +45,7 @@ pub mod webrtc_data_channels;
 pub mod webrtc_production_impl;
 pub mod webrtc_production_real;
 pub mod webrtc_transport;
+pub mod robust_messaging;
 
 // Tests d'intégration E2E Production
 pub mod e2e_integration_production;
@@ -103,6 +104,10 @@ pub use webrtc_production_real::{
     TurnServer as RealTurnServer, WebRtcConnectionEvent,
 };
 pub use webrtc_transport::WebRtcTransport;
+pub use robust_messaging::{
+    RobustMessagingManager, RobustMessagingConfig, AcknowledgableMessage,
+    MessageAck, AckStatus, LoadTestResults, MessagingStats
+};
 
 #[cfg(test)]
 mod tests {

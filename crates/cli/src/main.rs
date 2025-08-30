@@ -634,9 +634,8 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                 if target_peer.is_some() {
                     println!("✅ Pair trouvé à la tentative {}", attempt + 1);
                     break;
-                } else {
-                    println!("   ⚠️  Pair non trouvé, retry...");
                 }
+                println!("   ⚠️  Pair non trouvé, retry...");
             }
 
             match target_peer {
@@ -1093,27 +1092,26 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                 println!("Utilisez 'send <peer> <message>' pour envoyer des messages.");
                 println!("Utilisez 'recv' pour récupérer les messages reçus.");
                 return Ok(());
-            } else {
-                for (i, stored_msg) in messages.iter().enumerate() {
-                    let category_str = match stored_msg.category {
-                        MessageCategory::Sent => "ENVOYÉ",
-                        MessageCategory::Received => "REÇU",
-                        MessageCategory::Draft => "BROUILLON",
-                        MessageCategory::System => "SYSTÈME",
-                    };
-                    let status = if stored_msg.is_read { "" } else { " [NON LU]" };
+            }
+            for (i, stored_msg) in messages.iter().enumerate() {
+                let category_str = match stored_msg.category {
+                    MessageCategory::Sent => "ENVOYÉ",
+                    MessageCategory::Received => "REÇU",
+                    MessageCategory::Draft => "BROUILLON",
+                    MessageCategory::System => "SYSTÈME",
+                };
+                let status = if stored_msg.is_read { "" } else { " [NON LU]" };
 
-                    println!(
-                        "{}. [{}] {} -> {}: \"{}\" ({}){}",
-                        i + 1,
-                        category_str,
-                        stored_msg.message.from.short(),
-                        stored_msg.message.to.short(),
-                        stored_msg.message.content,
-                        stored_msg.message.timestamp,
-                        status
-                    );
-                }
+                println!(
+                    "{}. [{}] {} -> {}: \"{}\" ({}){}",
+                    i + 1,
+                    category_str,
+                    stored_msg.message.from.short(),
+                    stored_msg.message.to.short(),
+                    stored_msg.message.content,
+                    stored_msg.message.timestamp,
+                    status
+                );
             }
 
             // Statistiques
