@@ -89,7 +89,7 @@ edit_body_from_stdin() {
 # ---------- Ensure milestones & labels ----------
 info "Validation milestones…"
 ensure_milestone "$V020_TITLE" >/dev/null
-ensure_milestone "$V030_TITLE" >/devnull 2>&1 || ensure_milestone "$V030_TITLE" >/dev/null
+ensure_milestone "$V030_TITLE" >/dev/null 2>&1 || ensure_milestone "$V030_TITLE" >/dev/null
 
 info "Validation labels…"
 ensure_label "status:done" "Terminé (selon audit v0.2.0)" "0e8a16"

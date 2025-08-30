@@ -8,6 +8,7 @@ use miaou_network::{
     peer::PeerId,
     NetworkError,
 };
+use blake3;
 use std::time::{Duration, Instant};
 use tokio::time::timeout;
 use tracing::{debug, info, warn};
@@ -106,7 +107,8 @@ struct E2eTestNode {
 impl E2eTestNode {
     /// Crée un nouveau nœud de test
     async fn new(name: &str) -> Result<Self, NetworkError> {
-        let peer_id = PeerId::from_bytes(format!("e2e-{}", name).as_bytes().to_vec());
+        // Utiliser blake3 pour générer un PeerId stable et déterministe
+        let peer_id = PeerId::from_bytes(blake3::hash(format!("e2e-{}", name).as_bytes()).as_bytes().to_vec());
         let p2p_manager = UnifiedP2pManager::new(peer_id.clone()).await?;
         
         info!("🚀 Nœud E2E créé: {}", name);
@@ -433,7 +435,8 @@ async fn test_e2e_error_handling() {
     info!("🧪 Test E2E gestion d'erreurs - Issue #11");
 
     let mut alice = E2eTestNode::new("alice").await.unwrap();
-    let fake_peer_id = PeerId::from_bytes(b"inexistant".to_vec());
+    // Utiliser blake3 pour générer un PeerId stable
+    let fake_peer_id = PeerId::from_bytes(blake3::hash(b"inexistant").as_bytes().to_vec());
 
     alice.start_discovery(&config).await.unwrap();
 

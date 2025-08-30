@@ -41,6 +41,16 @@ Tests bout-en-bout du pipeline P2P complet : **découverte → connect → send/
 - Gestion gracieuse des timeouts
 - **Durée** : ~1s
 
+## ⚠️ État d'Implémentation
+
+**Note importante** : Certaines parties de ces tests sont actuellement **simulées** en attendant l'implémentation complète des composants sous-jacents :
+
+- ✅ **Réel** : Structure des tests, orchestration, collecte de traces
+- ⚠️ **Simulé** : Connexion WebRTC (utilise des mocks), découverte mDNS (partiellement simulée)
+- 🚧 **À venir** : Intégration avec les vrais composants WebRTC et mDNS une fois implémentés
+
+Les tests sont conçus pour être facilement adaptables lorsque les implémentations réelles seront disponibles.
+
 ## 🔧 Architecture des Tests
 
 ### `E2eTestNode`

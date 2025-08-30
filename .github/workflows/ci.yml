@@ -3,8 +3,18 @@ name: CI
 on:
   push:
     branches: [ main, "v0.*" ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
   pull_request:
     branches: [ main, "v0.*" ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
@@ -95,6 +105,7 @@ jobs:
             ${{ runner.os }}-cargo-
       
       - name: Run tests
+        run: cargo test --workspace --all-features --verbose
         timeout-minutes: 20
       
       - name: Run doctests
