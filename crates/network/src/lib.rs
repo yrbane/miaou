@@ -43,6 +43,7 @@ pub mod transport;
 pub mod unified_discovery;
 pub mod webrtc_data_channels;
 pub mod webrtc_production_impl;
+pub mod webrtc_production_real;
 pub mod webrtc_transport;
 
 // Tests d'intégration E2E Production
@@ -95,6 +96,11 @@ pub use webrtc_data_channels::{
     ConnectionState as WebRtcConnectionState, DataChannelConfig, DataChannelMessage,
     DataChannelMessageType, WebRtcConnection, WebRtcConnectionConfig, WebRtcDataChannelManager,
     WebRtcDataChannels,
+};
+pub use webrtc_production_real::{
+    ConnectionStats, RealDataChannelMessage, RealIceCandidate, RealWebRtcConfig,
+    RealWebRtcConnection, RealWebRtcManager, RealWebRtcManagerTrait, RealWebRtcState,
+    TurnServer as RealTurnServer, WebRtcConnectionEvent,
 };
 pub use webrtc_transport::WebRtcTransport;
 
