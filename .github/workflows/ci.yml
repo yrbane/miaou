@@ -16,6 +16,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
@@ -24,6 +27,7 @@ jobs:
   fmt:
     name: Format Check
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,6 +43,7 @@ jobs:
   clippy:
     name: Clippy Lints
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,17 +73,14 @@ jobs:
   test:
     name: Tests
     runs-on: ${{ matrix.os }}
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable]
-        include:
-          - os: ubuntu-latest
-            rust: nightly
-            experimental: true
+        rust: [stable, beta, nightly]
     
-    continue-on-error: ${{ matrix.experimental == true }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
     
     steps:
       - name: Checkout code
@@ -115,6 +117,7 @@ jobs:
   build:
     name: Build Check
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -145,7 +148,7 @@ jobs:
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: ${{ runner.os == 'Linux' && hashFiles('**/Cargo.toml') != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -172,15 +175,17 @@ jobs:
             ${{ runner.os }}-cargo-coverage-
             ${{ runner.os }}-cargo-
       
-      - name: Generate coverage report
+      - name: Run coverage (Linux only)
+        if: ${{ runner.os == 'Linux' && hashFiles('**/Cargo.toml') != '' }}
         run: |
           cargo tarpaulin --workspace --all-features --timeout 300 \
-            --out Xml --output-dir target/tarpaulin \
+            --out Xml --output-dir target/tarpaulin -o cobertura.xml \
             --exclude-files "target/*" "*/tests/*" "*/benches/*"
         timeout-minutes: 20
       
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      - name: Upload to Codecov
+        if: ${{ runner.os == 'Linux' && hashFiles('**/Cargo.toml') != '' }}
+        uses: codecov/codecov-action@v4
         with:
-          file: target/tarpaulin/cobertura.xml
+          files: target/tarpaulin/cobertura.xml
           fail_ci_if_error: false
