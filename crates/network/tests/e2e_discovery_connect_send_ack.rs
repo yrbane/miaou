@@ -338,9 +338,7 @@ impl E2eTestNode {
 #[tokio::test]
 async fn test_e2e_two_nodes_discovery_connect_send_ack() {
     // Initialisation du logging pour collecter les traces
-    let _ = fmt()
-        .with_env_filter("info,miaou_network=debug")
-        .try_init();
+    let _ = fmt().with_env_filter("info,miaou_network=debug").try_init();
 
     let config = E2eTestConfig::default();
     let test_start = Instant::now();
@@ -423,9 +421,7 @@ async fn test_e2e_two_nodes_discovery_connect_send_ack() {
 #[tokio::test]
 async fn test_e2e_bidirectional_messaging() {
     // Test bidirectionnel: Alice → Bob, puis Bob → Alice
-    let _ = fmt()
-        .with_env_filter("info,miaou_network=debug")
-        .try_init();
+    let _ = fmt().with_env_filter("info,miaou_network=debug").try_init();
 
     let config = E2eTestConfig::default();
     let test_start = Instant::now();
@@ -467,9 +463,7 @@ async fn test_e2e_bidirectional_messaging() {
 #[tokio::test]
 async fn test_e2e_multi_peer_discovery() {
     // Test avec 3 nœuds pour vérifier la scalabilité
-    let _ = fmt()
-        .with_env_filter("info,miaou_network=debug")
-        .try_init();
+    let _ = fmt().with_env_filter("info,miaou_network=debug").try_init();
 
     let config = E2eTestConfig::default();
     let test_start = Instant::now();
@@ -521,9 +515,7 @@ async fn test_e2e_multi_peer_discovery() {
 /// Test de robustesse avec gestion d'erreurs
 #[tokio::test]
 async fn test_e2e_error_handling() {
-    let _ = fmt()
-        .with_env_filter("info,miaou_network=debug")
-        .try_init();
+    let _ = fmt().with_env_filter("info,miaou_network=debug").try_init();
 
     let config = E2eTestConfig::default();
 
