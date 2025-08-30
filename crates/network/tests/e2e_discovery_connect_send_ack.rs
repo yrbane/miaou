@@ -7,6 +7,7 @@ use miaou_network::{e2e_integration_production::UnifiedP2pManager, peer::PeerId,
 use std::time::{Duration, Instant};
 use tokio::time::timeout;
 use tracing::{debug, info, warn};
+use tracing_subscriber::fmt;
 
 /// Configuration pour les tests E2E
 #[allow(dead_code)]
@@ -14,8 +15,10 @@ struct E2eTestConfig {
     /// Timeout pour chaque étape (découverte, connexion, envoi)
     step_timeout: Duration,
     /// Timeout global pour tout le test
+    #[allow(dead_code)]
     total_timeout: Duration,
     /// Interval de polling pour vérifications
+    #[allow(dead_code)]
     poll_interval: Duration,
 }
 
@@ -98,6 +101,7 @@ struct E2eTestNode {
     /// Collecteur de traces
     trace_collector: TestTraceCollector,
     /// Timestamp de démarrage
+    #[allow(dead_code)]
     start_time: Instant,
 }
 
@@ -339,9 +343,7 @@ impl E2eTestNode {
 #[tokio::test]
 async fn test_e2e_two_nodes_discovery_connect_send_ack() {
     // Initialisation du logging pour collecter les traces
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("info,miaou_network=debug")
-        .try_init();
+    let _ = fmt().with_env_filter("info,miaou_network=debug").try_init();
 
     let config = E2eTestConfig::default();
     let test_start = Instant::now();
@@ -424,9 +426,7 @@ async fn test_e2e_two_nodes_discovery_connect_send_ack() {
 #[tokio::test]
 async fn test_e2e_bidirectional_messaging() {
     // Test bidirectionnel: Alice → Bob, puis Bob → Alice
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("info,miaou_network=debug")
-        .try_init();
+    let _ = fmt().with_env_filter("info,miaou_network=debug").try_init();
 
     let config = E2eTestConfig::default();
     let test_start = Instant::now();
@@ -468,9 +468,7 @@ async fn test_e2e_bidirectional_messaging() {
 #[tokio::test]
 async fn test_e2e_multi_peer_discovery() {
     // Test avec 3 nœuds pour vérifier la scalabilité
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("info,miaou_network=debug")
-        .try_init();
+    let _ = fmt().with_env_filter("info,miaou_network=debug").try_init();
 
     let config = E2eTestConfig::default();
     let test_start = Instant::now();
@@ -522,9 +520,7 @@ async fn test_e2e_multi_peer_discovery() {
 /// Test de robustesse avec gestion d'erreurs
 #[tokio::test]
 async fn test_e2e_error_handling() {
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter("info,miaou_network=debug")
-        .try_init();
+    let _ = fmt().with_env_filter("info,miaou_network=debug").try_init();
 
     let config = E2eTestConfig::default();
 
@@ -532,7 +528,8 @@ async fn test_e2e_error_handling() {
 
     let mut alice = E2eTestNode::new("alice").await.unwrap();
     // Utiliser blake3 pour générer un PeerId stable
-    let fake_peer_id = PeerId::from_bytes(blake3::hash(b"inexistant").as_bytes().to_vec());
+    let hash = blake3::hash(b"inexistant");
+    let fake_peer_id = PeerId::from_bytes(hash.as_bytes().to_vec());
 
     alice.start_discovery(&config).await.unwrap();
 
