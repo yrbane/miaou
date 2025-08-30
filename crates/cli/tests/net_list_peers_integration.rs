@@ -129,8 +129,9 @@ fn test_net_list_peers_error_handling() {
     // Test avec des paramètres invalides
     let mut cmd = Command::cargo_bin("miaou-cli").unwrap();
 
-    // Timeout invalide devrait donner erreur (code 1)
+    // Timeout invalide devrait donner erreur (clap retourne code 2 pour args invalides)
     cmd.args(["net", "unified", "list-peers", "--timeout", "invalid"])
         .assert()
-        .code(1); // Code erreur pour paramètre invalide
+        .code(2) // clap retourne 2 pour paramètres invalides
+        .stderr(predicate::str::contains("invalid value"));
 }

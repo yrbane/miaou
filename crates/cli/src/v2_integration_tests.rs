@@ -146,10 +146,10 @@ mod mdns_p2p_integration_tests {
 
                 // Envoyer message réel par data channel
                 let test_message = b"Real WebRTC message from Miaou v0.2.0";
-                alice_conn.send_real_message(test_message).await?;
+                alice_conn.send_real_message(test_message)?;
 
                 // Recevoir message côté Bob
-                let received = bob_conn.receive_real_message().await?;
+                let received = bob_conn.receive_real_message()?;
                 assert_eq!(received, test_message);
 
                 Ok::<(), String>(())
@@ -177,7 +177,7 @@ mod mdns_p2p_integration_tests {
                 let connection = negotiate_ice_connection(alice_candidates, bob_candidates).await?;
 
                 // Vérifier connexion à travers NAT
-                verify_nat_traversal(&connection).await
+                verify_nat_traversal(&connection)
             })
         }));
 
@@ -199,7 +199,7 @@ mod mdns_p2p_integration_tests {
                 let start = std::time::Instant::now();
 
                 // Connexion P2P complète
-                let _conn_id = establish_full_p2p_connection("performance-test-peer").await?;
+                let _conn_id = establish_full_p2p_connection("performance-test-peer")?;
 
                 let latency = start.elapsed();
                 assert!(
@@ -224,14 +224,14 @@ mod mdns_p2p_integration_tests {
 
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             tokio::runtime::Handle::current().block_on(async {
-                let connection = establish_full_p2p_connection("throughput-test-peer").await?;
+                let connection = establish_full_p2p_connection("throughput-test-peer")?;
 
                 let start = std::time::Instant::now();
 
                 // Envoyer 1000 messages
                 for i in 0..1000 {
                     let msg = format!("Throughput test message {}", i);
-                    send_real_encrypted_message(&connection, msg.as_bytes()).await?;
+                    send_real_encrypted_message(&connection, msg.as_bytes())?;
                 }
 
                 let duration = start.elapsed();
@@ -258,13 +258,13 @@ mod mdns_p2p_integration_tests {
 
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             tokio::runtime::Handle::current().block_on(async {
-                let connection = establish_full_p2p_connection("security-test-peer").await?;
+                let connection = establish_full_p2p_connection("security-test-peer")?;
 
                 let plaintext = b"Secret message that must be encrypted";
 
                 // Message doit être chiffré en transit
                 let encrypted_in_transit =
-                    capture_network_traffic_during_send(&connection, plaintext).await?;
+                    capture_network_traffic_during_send(&connection, plaintext)?;
 
                 // Vérifier que le texte clair n'apparaît pas sur le réseau
                 let plaintext_slice: &[u8] = plaintext;
@@ -291,13 +291,13 @@ mod mdns_p2p_integration_tests {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             tokio::runtime::Handle::current().block_on(async {
                 // Établir première session
-                let conn1 = establish_full_p2p_connection("pfs-test-peer").await?;
-                let session_key1 = extract_session_key(&conn1).await?;
+                let conn1 = establish_full_p2p_connection("pfs-test-peer")?;
+                let session_key1 = extract_session_key(&conn1)?;
 
                 // Terminer et rétablir connexion
-                terminate_connection(&conn1).await?;
-                let conn2 = establish_full_p2p_connection("pfs-test-peer").await?;
-                let session_key2 = extract_session_key(&conn2).await?;
+                terminate_connection(&conn1)?;
+                let conn2 = establish_full_p2p_connection("pfs-test-peer")?;
+                let session_key2 = extract_session_key(&conn2)?;
 
                 // Les clés de session doivent être différentes (PFS)
                 assert_ne!(
@@ -403,40 +403,37 @@ mod mdns_p2p_integration_tests {
         todo!("TDD RED v0.2.0: Negotiate ICE connection")
     }
 
-    async fn verify_nat_traversal(_conn: &WebRtcConnection) -> Result<(), String> {
+    fn verify_nat_traversal(_conn: &WebRtcConnection) -> Result<(), String> {
         todo!("TDD RED v0.2.0: Verify NAT traversal")
     }
 
-    async fn establish_full_p2p_connection(_peer_id: &str) -> Result<String, String> {
+    fn establish_full_p2p_connection(_peer_id: &str) -> Result<String, String> {
         todo!("TDD RED v0.2.0: Establish full P2P connection")
     }
 
-    async fn send_real_encrypted_message(_conn: &str, _data: &[u8]) -> Result<(), String> {
+    fn send_real_encrypted_message(_conn: &str, _data: &[u8]) -> Result<(), String> {
         todo!("TDD RED v0.2.0: Send real encrypted message")
     }
 
-    async fn capture_network_traffic_during_send(
-        _conn: &str,
-        _data: &[u8],
-    ) -> Result<Vec<u8>, String> {
+    fn capture_network_traffic_during_send(_conn: &str, _data: &[u8]) -> Result<Vec<u8>, String> {
         todo!("TDD RED v0.2.0: Capture network traffic")
     }
 
-    async fn extract_session_key(_conn: &str) -> Result<Vec<u8>, String> {
+    fn extract_session_key(_conn: &str) -> Result<Vec<u8>, String> {
         todo!("TDD RED v0.2.0: Extract session key")
     }
 
-    async fn terminate_connection(_conn: &str) -> Result<(), String> {
+    fn terminate_connection(_conn: &str) -> Result<(), String> {
         todo!("TDD RED v0.2.0: Terminate connection")
     }
 
     // Types manquants
     struct WebRtcConnection;
     impl WebRtcConnection {
-        async fn send_real_message(&self, _data: &[u8]) -> Result<(), String> {
+        fn send_real_message(&self, _data: &[u8]) -> Result<(), String> {
             todo!("TDD RED v0.2.0: WebRTC send")
         }
-        async fn receive_real_message(&self) -> Result<Vec<u8>, String> {
+        fn receive_real_message(&self) -> Result<Vec<u8>, String> {
             todo!("TDD RED v0.2.0: WebRTC receive")
         }
     }
@@ -454,10 +451,10 @@ mod cli_v2_integration_tests {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             tokio::runtime::Handle::current().block_on(async {
                 // 1. Démarrer mDNS discovery
-                start_cli_with_real_mdns().await?;
+                start_cli_with_real_mdns()?;
 
                 // 2. net-connect trouve peer via mDNS
-                let output = execute_cli_command("net-connect discovered-peer-abc123").await?;
+                let output = execute_cli_command("net-connect discovered-peer-abc123")?;
 
                 // 3. Vérifier workflow complet
                 assert!(output.contains("🔍 Découverte mDNS..."));
@@ -483,7 +480,7 @@ mod cli_v2_integration_tests {
 
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             tokio::runtime::Handle::current().block_on(async {
-                let output = execute_cli_command("net-connect performance-peer --metrics").await?;
+                let output = execute_cli_command("net-connect performance-peer --metrics")?;
 
                 // Doit afficher métriques temps réel
                 assert!(output.contains("⚡ Latence: "));
@@ -502,11 +499,11 @@ mod cli_v2_integration_tests {
         );
     }
 
-    async fn start_cli_with_real_mdns() -> Result<(), String> {
+    fn start_cli_with_real_mdns() -> Result<(), String> {
         todo!("TDD RED v0.2.0: Start CLI with real mDNS")
     }
 
-    async fn execute_cli_command(_cmd: &str) -> Result<String, String> {
+    fn execute_cli_command(_cmd: &str) -> Result<String, String> {
         todo!("TDD RED v0.2.0: Execute CLI command and capture output")
     }
 
