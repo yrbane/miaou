@@ -3,6 +3,8 @@
 //! Cette version remplace les simulations par de vraies primitives réseau WebRTC.
 //! Note: Pour une implémentation complète, ajouter la dépendance `webrtc-rs` dans Cargo.toml
 
+#![allow(unused_mut, clippy::significant_drop_tightening)]
+
 use crate::{NetworkError, PeerId};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -293,19 +295,28 @@ pub struct ProductionWebRtcManager {
 pub enum WebRtcEvent {
     /// Nouvelle connexion établie
     ConnectionEstablished {
+        /// ID unique de la connexion
         connection_id: String,
+        /// ID du pair connecté
         peer_id: PeerId,
     },
     /// Connexion fermée
-    ConnectionClosed { connection_id: String },
+    ConnectionClosed {
+        /// ID unique de la connexion fermée
+        connection_id: String,
+    },
     /// Erreur de connexion
     ConnectionError {
+        /// ID unique de la connexion en erreur
         connection_id: String,
+        /// Description de l'erreur
         error: String,
     },
     /// Données reçues
     DataReceived {
+        /// ID unique de la connexion source
         connection_id: String,
+        /// Données du message reçu
         data: Vec<u8>,
     },
 }
@@ -432,7 +443,7 @@ fn uuid_v4_simple() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::time::{sleep, Duration};
+    use tokio::time::Duration;
 
     #[tokio::test]
     async fn test_production_data_channel_creation() {

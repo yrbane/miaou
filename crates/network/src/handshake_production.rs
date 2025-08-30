@@ -197,7 +197,7 @@ impl ProductionHandshakeManager {
         let ephemeral_keys = self.ephemeral_keys.read().await;
         let ephemeral_publics: Vec<X25519PublicKey> = ephemeral_keys
             .iter()
-            .map(|secret| X25519PublicKey::from(secret))
+            .map(X25519PublicKey::from)
             .collect();
 
         Ok(KeyBundle {
@@ -773,7 +773,7 @@ mod tests {
             sender_id: peer_id,
             identity_key: vec![1u8; 32],
             ephemeral_key: vec![2u8; 32],
-            timestamp: 123456789,
+            timestamp: 123_456_789,
             signature: vec![3u8; 64],
         };
 
@@ -786,7 +786,7 @@ mod tests {
 
         match deserialized {
             HandshakeMessage::InitialRequest { timestamp, .. } => {
-                assert_eq!(timestamp, 123456789);
+                assert_eq!(timestamp, 123_456_789);
             }
             _ => panic!("Message incorrect après désérialisation"),
         }

@@ -87,6 +87,7 @@ pub struct ProductionMessageQueue {
     /// Statistiques
     stats: Arc<RwLock<QueueStats>>,
     /// Callback pour envoyer message
+    #[allow(clippy::type_complexity)]
     send_callback: Option<Arc<dyn Fn(&QueuedMessage) -> bool + Send + Sync>>,
 }
 
@@ -620,7 +621,7 @@ mod tests {
         let first_delay = message.next_retry_at - initial_time;
 
         // Le délai devrait être proche de initial_retry_delay_ms
-        assert!(first_delay >= 50 && first_delay <= 100);
+        assert!((50..=100).contains(&first_delay));
 
         // Simuler passage du temps et deuxième échec
         tokio::time::sleep(tokio::time::Duration::from_millis(60)).await;

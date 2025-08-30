@@ -191,7 +191,7 @@ impl WebRtcTransport {
             candidate_type: "host".to_string(),
             address: "192.168.1.100".to_string(),
             port: 54321,
-            priority: 2113667327,
+            priority: 2_113_667_327,
         }];
 
         // Essayer d'ajouter l'IP locale si disponible
@@ -201,7 +201,7 @@ impl WebRtcTransport {
                     candidate_type: "host".to_string(),
                     address: local_ip,
                     port: 54322,
-                    priority: 2113667326,
+                    priority: 2_113_667_326,
                 });
             }
         }

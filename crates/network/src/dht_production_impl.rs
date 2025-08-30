@@ -50,9 +50,11 @@ pub struct ProductionKademliaDht {
     socket: Arc<Mutex<Option<UdpSocket>>>,
     /// État du DHT
     is_running: Arc<Mutex<bool>>,
-    /// Bootstrap nodes pour démarrage
+    /// Bootstrap nodes pour démarrage (préparé pour implémentation future)
+    #[allow(dead_code)]
     bootstrap_nodes: Arc<Mutex<Vec<(PeerId, SocketAddr)>>>,
-    /// Requêtes en cours (pour gestion timeout)
+    /// Requêtes en cours (pour gestion timeout) (préparé pour implémentation future)
+    #[allow(dead_code)]
     pending_requests: Arc<Mutex<HashMap<String, tokio::time::Instant>>>,
 }
 
@@ -108,7 +110,8 @@ impl ProductionKademliaDht {
         Ok(())
     }
 
-    /// Boucle d'écoute UDP pour messages entrants
+    /// Boucle d'écoute UDP pour messages entrants (préparé pour implémentation future)
+    #[allow(dead_code)]
     async fn listen_loop(socket: Arc<UdpSocket>, routing_table: Arc<RoutingTable>) {
         let mut buffer = vec![0u8; 8192]; // 8KB buffer
 
@@ -316,7 +319,7 @@ impl ProductionKademliaDht {
         while iteration < MAX_ITERATIONS {
             iteration += 1;
             let mut new_nodes = Vec::new();
-            let mut queries = Vec::new();
+            let mut query_list = Vec::new();
 
             // Préparer requêtes FIND_NODE vers nœuds non-questionnés
             for (peer_id, peer_info) in &closest {
@@ -326,22 +329,22 @@ impl ProductionKademliaDht {
                         target_id: target.clone(),
                     };
 
-                    queries.push((peer_id.clone(), find_node_message, peer_info.addresses[0]));
+                    query_list.push((peer_id.clone(), find_node_message, peer_info.addresses[0]));
                     queried.insert(peer_id.clone());
 
-                    if queries.len() >= self.dht_config.alpha {
+                    if query_list.len() >= self.dht_config.alpha {
                         break; // Limiter parallélisme
                     }
                 }
             }
 
-            if queries.is_empty() {
+            if query_list.is_empty() {
                 debug!("Plus de nœuds à questionner, arrêt itération {}", iteration);
                 break;
             }
 
             // Exécuter les requêtes en parallèle
-            for (peer_id, message, addr) in queries {
+            for (peer_id, message, addr) in query_list {
                 match self.send_message(message, addr).await {
                     Ok(Some(DhtMessage::Nodes { nodes, .. })) => {
                         debug!("📨 Reçu {} nœuds de {}", nodes.len(), peer_id);

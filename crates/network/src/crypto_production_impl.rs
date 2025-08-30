@@ -242,6 +242,12 @@ pub struct ProductionCryptoManager {
     sessions: HashMap<String, ProductionCryptoSession>,
 }
 
+impl Default for ProductionCryptoManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProductionCryptoManager {
     /// Crée un nouveau gestionnaire crypto
     pub fn new() -> Self {

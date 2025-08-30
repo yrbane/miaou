@@ -3,6 +3,8 @@
 //! Principe SOLID : Single Responsibility & Interface Segregation
 //! Chaque connexion gère uniquement son propre état et communication
 
+#![allow(clippy::significant_drop_tightening)]
+
 use crate::{NetworkError, PeerId};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};

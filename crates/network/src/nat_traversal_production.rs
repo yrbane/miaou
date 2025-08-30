@@ -3,6 +3,8 @@
 //! Cette version remplace les simulations par de vraies requêtes STUN/TURN réseau.
 //! Architecture production pour découverte NAT et traversal P2P.
 
+#![allow(unused_mut, clippy::significant_drop_tightening)]
+
 use crate::NetworkError;
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, SocketAddr};
@@ -292,9 +294,8 @@ impl ProductionNatTraversal {
                         {
                             let rtt = start_time.elapsed().unwrap_or(Duration::from_secs(0));
                             return Ok((public_ip, public_port, rtt));
-                        } else {
-                            return Err(NetworkError::General("Réponse STUN invalide".to_string()));
                         }
+                        return Err(NetworkError::General("Réponse STUN invalide".to_string()));
                     }
                     Ok(Err(e)) => {
                         debug!(
@@ -338,7 +339,7 @@ impl ProductionNatTraversal {
         request.extend_from_slice(&0x0000u16.to_be_bytes());
 
         // Magic Cookie (4 bytes)
-        request.extend_from_slice(&0x2112A442u32.to_be_bytes());
+        request.extend_from_slice(&0x2112_A442_u32.to_be_bytes());
 
         // Transaction ID (12 bytes) - généré aléatoirement
         let transaction_id: [u8; 12] = [
@@ -358,7 +359,7 @@ impl ProductionNatTraversal {
         }
 
         // Vérifier Magic Cookie
-        if &response[4..8] != &0x2112A442u32.to_be_bytes() {
+        if response[4..8] != 0x2112_A442_u32.to_be_bytes() {
             return None;
         }
 
@@ -375,7 +376,7 @@ impl ProductionNatTraversal {
                 u32::from_be_bytes([response[28], response[29], response[30], response[31]]);
 
             // XOR avec Magic Cookie pour obtenir valeurs réelles
-            let magic = 0x2112A442u32;
+            let magic = 0x2112_A442_u32;
             let real_port = port_xor ^ ((magic >> 16) as u16);
             let real_ip = ip_xor ^ magic;
 
@@ -565,8 +566,10 @@ mod tests {
     #[tokio::test]
     async fn test_nat_discovery_with_real_stun() {
         // TDD: Test découverte NAT avec vrais serveurs STUN
-        let mut config = ProductionNatConfig::default();
-        config.stun_timeout = Duration::from_secs(10); // Plus long pour tests réseau
+        let config = ProductionNatConfig {
+            stun_timeout: Duration::from_secs(10), // Plus long pour tests réseau
+            ..Default::default()
+        };
 
         let mut nat_traversal = ProductionNatTraversal::new(config);
 

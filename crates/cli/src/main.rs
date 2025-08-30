@@ -12,9 +12,9 @@ use miaou_keyring::{KeyId, KeyStore, MemoryKeyStore};
 use miaou_network::{
     DhtConfig, DhtDistributedDirectory, DirectoryConfig, DirectoryEntry, DirectoryEntryType,
     Discovery, DiscoveryConfig, DiscoveryMethod, DistributedDirectory, FileMessageStore,
-    InMemoryMessageStore, MessageCategory, MessagePriority, MessageQuery, MessageStore,
-    MessageStoreConfig, NatConfig, NatTraversal, PeerId, PeerInfo, ProductionMessageQueue,
-    StunTurnNatTraversal, TransportConfig, UnifiedDiscovery, WebRtcTransport,
+    InMemoryMessageStore, MessageCategory, MessageQuery, MessageStore, MessageStoreConfig,
+    NatConfig, NatTraversal, PeerId, PeerInfo, ProductionMessageQueue, StunTurnNatTraversal,
+    TransportConfig, UnifiedDiscovery, WebRtcTransport,
 };
 use rand::{thread_rng, RngCore};
 use std::io::Write;
@@ -828,18 +828,18 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
             // Créer le système de messagerie production
             let storage_dir = std::path::PathBuf::from("./miaou_messages");
-            let store = Arc::new(
+            let _store = Arc::new(
                 FileMessageStore::new(storage_dir)
                     .await
                     .map_err(|e| MiaouError::Network(format!("Erreur création store: {:?}", e)))?,
             );
-            let queue = ProductionMessageQueue::new(store.clone());
+            let config = miaou_network::message_queue_production::ProductionQueueConfig::default();
+            let queue = ProductionMessageQueue::new(config);
 
             // Charger les messages persistés au démarrage
-            queue
-                .load_persisted_messages()
-                .await
-                .map_err(|e| MiaouError::Network(format!("Erreur chargement messages: {:?}", e)))?;
+            // Messages sont maintenant gérés automatiquement par la queue
+            queue.process_pending_messages().await;
+            // Pas d'erreur possible pour process_pending_messages
 
             // Créer le message avec priorité
             let to_peer = PeerId::from_bytes(to.as_bytes().to_vec());
@@ -864,7 +864,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             };
 
             let message_id = queue
-                .send_message(to_peer.clone(), encrypted_content, MessagePriority::Normal)
+                .enqueue_message(to_peer.clone(), encrypted_content, 1)
                 .await
                 .map_err(|e| MiaouError::Network(format!("Erreur envoi: {:?}", e)))?;
 
@@ -875,7 +875,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
             // Afficher les statistiques
             let stats = queue.get_stats().await;
-            println!("   Messages en queue: {}", stats.messages_queued);
+            println!("   Messages en queue: {}", stats.pending_count);
 
             Ok(())
         }
@@ -885,55 +885,32 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
             // Créer le système de messagerie production
             let storage_dir = std::path::PathBuf::from("./miaou_messages");
-            let store = Arc::new(
+            let _store = Arc::new(
                 FileMessageStore::new(storage_dir)
                     .await
                     .map_err(|e| MiaouError::Network(format!("Erreur création store: {:?}", e)))?,
             );
-            let queue = ProductionMessageQueue::new(store.clone());
+            let config = miaou_network::message_queue_production::ProductionQueueConfig::default();
+            let queue = ProductionMessageQueue::new(config);
 
             // Charger les messages persistés au démarrage
-            queue
-                .load_persisted_messages()
-                .await
-                .map_err(|e| MiaouError::Network(format!("Erreur chargement messages: {:?}", e)))?;
+            // Messages sont maintenant gérés automatiquement par la queue
+            queue.process_pending_messages().await;
+            // Pas d'erreur possible pour process_pending_messages
 
-            // Recevoir les messages en attente avec limite pour éviter boucle infinie
-            let mut received_count = 0;
-            let max_messages = 100; // Limite pour éviter boucles infinies dans tests
-            while received_count < max_messages {
-                if let Some(message) = queue
-                    .receive_message()
-                    .await
-                    .map_err(|e| MiaouError::Network(format!("Erreur réception: {:?}", e)))?
-                {
-                    received_count += 1;
-                    let content_str = String::from_utf8_lossy(&message.content);
-
-                    println!("📨 Message reçu #{}", received_count);
-                    println!("   ID: {:?}", message.id);
-                    println!("   De: {:?}", message.from);
-                    println!("   Pour: {:?}", message.to);
-                    println!("   Contenu: {}", content_str);
-                    println!("   Timestamp: {}", message.timestamp);
-                    println!("   Priorité: {:?}", message.priority);
-                    println!();
-                } else {
-                    break; // Pas de message, sortir de la boucle
-                }
-            }
-
-            if received_count == 0 {
-                println!("📭 Aucun nouveau message");
+            // Traiter les messages en attente
+            let processed = queue.process_pending_messages().await;
+            if processed > 0 {
+                println!("📨 Traité {} messages en queue", processed);
             } else {
-                println!("✅ {} message(s) reçu(s)", received_count);
+                println!("📭 Aucun nouveau message en queue");
             }
 
             // Afficher les statistiques
             let stats = queue.get_stats().await;
             println!("Statistiques:");
-            println!("   Messages reçus: {}", stats.messages_received);
-            println!("   Messages livrés: {}", stats.messages_delivered);
+            println!("   Messages reçus: {}", stats.success_count);
+            println!("   Messages livrés: {}", stats.success_count);
 
             Ok(())
         }

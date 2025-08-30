@@ -4,6 +4,8 @@
 //! Tests bout-en-bout du pipeline complet :
 //! Discovery → Connection → Handshake → Double Ratchet → Messaging
 
+#![allow(unused_mut, clippy::significant_drop_tightening)]
+
 use crate::{
     dht::DistributedHashTable, // Trait requis pour find_node() et get()
     dht_production_impl::{ProductionDhtConfig, ProductionKademliaDht},
@@ -16,6 +18,8 @@ use crate::{
     PeerId,
 };
 use std::time::Duration;
+// timeout est utilisé dans les tests E2E
+#[allow(unused_imports)]
 use tokio::time::timeout;
 
 /// Gestionnaire unifié pour pipeline P2P complet
@@ -331,7 +335,7 @@ impl UnifiedP2pManager {
                     sender_id: remote_peer_id.clone(),
                     identity_key: vec![1; 32],  // Clé factice
                     ephemeral_key: vec![2; 32], // Clé éphémère factice
-                    timestamp: 1234567890,
+                    timestamp: 1_234_567_890,
                     signature: vec![3; 64], // Signature factice
                 };
 
@@ -526,7 +530,7 @@ mod tests {
                 println!("🎉 Pipeline E2E P2P complet opérationnel !");
             }
             Ok(Err(e)) => {
-                println!("⚠️ Erreur dans pipeline E2E (attendu en TDD): {:?}", e);
+                println!("⚠️ Erreur dans pipeline E2E (attendu en TDD): {e:?}");
             }
             Err(_) => {
                 println!("⏱️ Timeout pipeline E2E (attendu en TDD)");
@@ -567,8 +571,7 @@ mod tests {
         // Tests passeront une fois l'implémentation complète
         // Pour l'instant, c'est normal qu'ils échouent (TDD)
         println!(
-            "Conversation bidirectionnelle E2E : {:?} {:?} {:?}",
-            result1, result2, result3
+            "Conversation bidirectionnelle E2E : {result1:?} {result2:?} {result3:?}"
         );
     }
 
@@ -612,13 +615,7 @@ mod tests {
         // Vérifications que tous les messages sont envoyés de manière sécurisée
         // (échoueront en TDD jusqu'à implémentation complète)
         println!(
-            "Group messaging E2E results: {:?} {:?} {:?} {:?} {:?} {:?}",
-            result_alice_to_bob,
-            result_alice_to_charlie,
-            result_bob_to_alice,
-            result_bob_to_charlie,
-            result_charlie_to_alice,
-            result_charlie_to_bob
+            "Group messaging E2E results: {result_alice_to_bob:?} {result_alice_to_charlie:?} {result_bob_to_alice:?} {result_bob_to_charlie:?} {result_charlie_to_alice:?} {result_charlie_to_bob:?}"
         );
     }
 
@@ -649,8 +646,7 @@ mod tests {
 
         // Tests pour robustesse réseau (TDD - échoueront initialement)
         println!(
-            "Connection recovery E2E: {:?} {:?} {:?}",
-            result1, result2, result3
+            "Connection recovery E2E: {result1:?} {result2:?} {result3:?}"
         );
     }
 }

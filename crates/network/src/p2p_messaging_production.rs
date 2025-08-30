@@ -402,8 +402,10 @@ mod tests {
         let peer_id = PeerId::from_bytes(b"sender".to_vec());
         let remote = PeerId::from_bytes(b"receiver".to_vec());
 
-        let mut config = ProductionMessagingConfig::default();
-        config.max_message_size = 100; // Limite très basse
+        let config = ProductionMessagingConfig {
+            max_message_size: 100, // Limite très basse
+            ..Default::default()
+        };
 
         let messaging = ProductionP2pMessaging::new(peer_id, config);
 
@@ -427,8 +429,10 @@ mod tests {
     async fn test_cleanup_expired_messages() {
         // TDD: Test nettoyage messages expirés
         let peer_id = PeerId::from_bytes(b"cleaner".to_vec());
-        let mut config = ProductionMessagingConfig::default();
-        config.message_ttl_secs = 0; // Expire immédiatement
+        let config = ProductionMessagingConfig {
+            message_ttl_secs: 0, // Expire immédiatement
+            ..Default::default()
+        };
 
         let messaging = ProductionP2pMessaging::new(peer_id.clone(), config);
 

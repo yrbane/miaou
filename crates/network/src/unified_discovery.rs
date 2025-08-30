@@ -124,7 +124,7 @@ impl UnifiedDiscovery {
         // Pour éviter unsafe, je vais utiliser une approche différente
         // On stocke temporairement l'Arc dans une variable static thread-local
         thread_local! {
-            static TEMP_DHT: std::cell::RefCell<Option<Arc<ProductionKademliaDht>>> = std::cell::RefCell::new(None);
+            static TEMP_DHT: std::cell::RefCell<Option<Arc<ProductionKademliaDht>>> = const { std::cell::RefCell::new(None) };
         }
         TEMP_DHT.with(|dht| {
             *dht.borrow_mut() = Some(production_dht_arc.clone());
@@ -458,7 +458,7 @@ impl Discovery for UnifiedDiscovery {
         // DHT Production - utilise thread-local storage temporaire
         if states.get(&DiscoveryMethod::Dht).is_some_and(|s| s.active) {
             thread_local! {
-                static TEMP_DHT: std::cell::RefCell<Option<Arc<ProductionKademliaDht>>> = std::cell::RefCell::new(None);
+                static TEMP_DHT: std::cell::RefCell<Option<Arc<ProductionKademliaDht>>> = const { std::cell::RefCell::new(None) };
             }
             TEMP_DHT.with(|dht| {
                 if let Some(_production_dht) = &*dht.borrow() {
