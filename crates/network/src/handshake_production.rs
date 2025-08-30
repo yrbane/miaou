@@ -195,11 +195,12 @@ impl ProductionHandshakeManager {
 
         // Récupérer clés éphémères publiques
         let ephemeral_keys = self.ephemeral_keys.read().await;
+
+        // Convertir les clés éphémères secrètes en clés publiques
         let ephemeral_publics: Vec<X25519PublicKey> = ephemeral_keys
             .iter()
             .map(X25519PublicKey::from)
             .collect();
-
         Ok(KeyBundle {
             identity_key: identity_public,
             signed_prekey,

@@ -5,10 +5,12 @@ on:
     branches: [ main, "v0.*" ]
     paths-ignore:
       - '**/*.md'
+      - 'docs/**'
   pull_request:
     branches: [ main, "v0.*" ]
     paths-ignore:
       - '**/*.md'
+      - 'docs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -106,7 +108,7 @@ jobs:
       
       - name: Run tests
         run: cargo test --workspace --all-features --verbose
-        timeout-minutes: 30
+        timeout-minutes: 20
       
       - name: Run doctests
         run: cargo test --workspace --doc --all-features
