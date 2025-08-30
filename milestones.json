@@ -1,0 +1,20 @@
+[
+  {
+    "title": "v0.1.0 - Première griffe",
+    "description": "Fondations: structure du repo, crates de base, premières commandes CLI, squelette réseau.",
+    "due_on": "2025-07-31T00:00:00Z",
+    "state": "open"
+  },
+  {
+    "title": "v0.2.0 - Radar & Moustaches",
+    "description": "Découverte LAN mDNS réelle, CLI réseau (list/announce), TDD étendu, préparation WebRTC/NAT, tests E2E & CI.",
+    "due_on": "2025-09-30T00:00:00Z",
+    "state": "open"
+  },
+  {
+    "title": "v0.3.0 - DHT & WebRTC réel",
+    "description": "Transport WebRTC complet (offer/answer + ICE STUN/TURN), DHT Kademlia réseau, Directory sur DHT, unification discovery.",
+    "due_on": "2025-12-15T00:00:00Z",
+    "state": "open"
+  }
+]

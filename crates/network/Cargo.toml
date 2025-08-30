@@ -52,6 +52,7 @@ uuid = { version = "1.0", features = ["v4"] }
 [dev-dependencies]
 tokio-test = "0.4"
 proptest = "1.6"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 # Pour les exemples
 rand = { workspace = true }
 

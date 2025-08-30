@@ -1,0 +1,77 @@
+name: 🐛 Bug Report
+description: Signaler un bug dans Miaou
+title: "[BUG] "
+labels: ["type:bug", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de remplir ce rapport de bug détaillé.
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du bug
+      description: Une description claire et concise du bug.
+      placeholder: Décrivez le problème rencontré...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes pour reproduire
+      description: Comment reproduire le comportement problématique
+      placeholder: |
+        1. Allez à '...'
+        2. Cliquez sur '...'
+        3. Faites défiler jusqu'à '...'
+        4. Observez l'erreur
+    validations:
+      required: true
+  
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+      description: Ce qui devrait se passer normalement
+      placeholder: Décrivez le comportement attendu...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportement actuel
+      description: Ce qui se passe actuellement
+      placeholder: Décrivez le comportement actuel...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environnement
+      description: |
+        Informations sur votre environnement
+        Tip: Vous pouvez exécuter `cargo --version && rustc --version`
+      value: |
+        - OS: [e.g. Ubuntu 22.04, Windows 11, macOS 13]
+        - Rust version: [e.g. 1.70.0]
+        - Cargo version: [e.g. 1.70.0]
+        - Miaou version: [e.g. v0.2.0]
+    validations:
+      required: true
+  
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs ou messages d'erreur
+      description: Si applicable, ajoutez les logs ou messages d'erreur
+      render: shell
+  
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte additionnel
+      description: Toute autre information utile sur le problème

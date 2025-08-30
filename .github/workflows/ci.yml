@@ -1,0 +1,191 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, "v0.*" ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main, "v0.*" ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  fmt:
+    name: Format Check
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  clippy:
+    name: Clippy Lints
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-clippy-
+            ${{ runner.os }}-cargo-
+      
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-features --all-targets -- -D warnings
+
+  test:
+    name: Tests
+    runs-on: ${{ matrix.os }}
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable, beta, nightly]
+    
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.rust }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.rust }}-cargo-test-
+            ${{ runner.os }}-${{ matrix.rust }}-cargo-
+            ${{ runner.os }}-cargo-
+      
+      - name: Run tests
+        run: cargo test --workspace --all-features --verbose
+        timeout-minutes: 20
+      
+      - name: Run doctests
+        run: cargo test --workspace --doc --all-features
+        timeout-minutes: 15
+
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-
+            ${{ runner.os }}-cargo-
+      
+      - name: Build workspace (dev)
+        run: cargo build --workspace --all-features
+      
+      - name: Build workspace (release)
+        run: cargo build --workspace --all-features --release
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    if: ${{ runner.os == 'Linux' && hashFiles('**/Cargo.toml') != '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install cargo-tarpaulin
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
+      
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-coverage-
+            ${{ runner.os }}-cargo-
+      
+      - name: Run coverage (Linux only)
+        if: ${{ runner.os == 'Linux' && hashFiles('**/Cargo.toml') != '' }}
+        run: |
+          cargo tarpaulin --workspace --all-features --timeout 300 \
+            --out Xml --output-dir target/tarpaulin -o cobertura.xml \
+            --exclude-files "target/*" "*/tests/*" "*/benches/*"
+        timeout-minutes: 20
+      
+      - name: Upload to Codecov
+        if: ${{ runner.os == 'Linux' && hashFiles('**/Cargo.toml') != '' }}
+        uses: codecov/codecov-action@v4
+        with:
+          files: target/tarpaulin/cobertura.xml
+          fail_ci_if_error: false
