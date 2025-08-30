@@ -7,9 +7,9 @@ use miaou_network::{e2e_integration_production::UnifiedP2pManager, peer::PeerId,
 use std::time::{Duration, Instant};
 use tokio::time::timeout;
 use tracing::{debug, info, warn};
-use tracing_subscriber::fmt;
 
 /// Configuration pour les tests E2E
+#[allow(dead_code)]
 struct E2eTestConfig {
     /// Timeout pour chaque étape (découverte, connexion, envoi)
     step_timeout: Duration,
@@ -91,6 +91,7 @@ impl TestTraceCollector {
 }
 
 /// Nœud de test E2E avec collecte de traces
+#[allow(dead_code)]
 struct E2eTestNode {
     /// ID du nœud
     peer_id: PeerId,
@@ -107,8 +108,11 @@ impl E2eTestNode {
     /// Crée un nouveau nœud de test
     async fn new(name: &str) -> Result<Self, NetworkError> {
         // Utiliser blake3 pour générer un PeerId stable et déterministe
-        let hash = blake3::hash(format!("e2e-{}", name).as_bytes());
-        let peer_id = PeerId::from_bytes(hash.as_bytes().to_vec());
+        let peer_id = PeerId::from_bytes(
+            blake3::hash(format!("e2e-{}", name).as_bytes())
+                .as_bytes()
+                .to_vec(),
+        );
         let p2p_manager = UnifiedP2pManager::new(peer_id.clone()).await?;
 
         info!("🚀 Nœud E2E créé: {}", name);
