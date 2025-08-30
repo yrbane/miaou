@@ -254,6 +254,10 @@ fn main() -> ExitCode {
     init_tracing(&cli.log);
     match run(cli) {
         Ok(()) => ExitCode::SUCCESS,
+        Err(MiaouError::NoPeersDiscovered) => {
+            // Issue #2: Code retour 2 pour "aucun pair découvert"
+            ExitCode::from(2)
+        }
         Err(e) => {
             eprintln!("error: {e}");
             ExitCode::from(1)
@@ -438,7 +442,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             Ok(())
         }
         Command::NetListPeers { timeout } => {
-            // TDD: Créer une instance temporaire pour lister les pairs actifs
+            // Issue #2: net-list-peers avec retries et codes retour corrects
             let discovery_config = DiscoveryConfig {
                 methods: vec![DiscoveryMethod::Mdns],
                 ..Default::default()
@@ -449,50 +453,96 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
             let discovery = UnifiedDiscovery::new(discovery_config, local_peer_id, local_peer_info);
 
-            // Démarrer la découverte temporairement pour collecter les pairs actifs
-            discovery.start().await?;
+            // Retries avec backoff exponentiel: 1s, 2s, 3s
+            let retry_delays = [1, 2, 3];
+            let mut all_attempts_peers = Vec::new();
 
-            // Attendre le timeout spécifié pour collecter les pairs existants
-            tokio::time::sleep(tokio::time::Duration::from_secs(timeout)).await;
+            for (attempt, delay) in retry_delays.iter().enumerate() {
+                if attempt > 0 {
+                    println!("🔄 Tentative {} avec délai de {}s...", attempt + 1, delay);
+                }
 
-            // Collecter les pairs depuis toutes les sources
-            discovery.collect_peers().await?;
+                // Démarrer la découverte pour cette tentative
+                discovery.start().await.map_err(|e| {
+                    eprintln!("Erreur démarrage découverte: {}", e);
+                    MiaouError::Network(format!("Erreur découverte mDNS: {}", e))
+                })?;
 
-            let peers = discovery.discovered_peers().await;
+                // Attendre le délai pour cette tentative (ou le timeout utilisateur pour la première)
+                let wait_duration = if attempt == 0 {
+                    tokio::time::Duration::from_secs(timeout)
+                } else {
+                    tokio::time::Duration::from_secs(*delay)
+                };
 
-            // Arrêter proprement
-            discovery.stop().await?;
+                tokio::time::sleep(wait_duration).await;
 
+                // Collecter les pairs depuis toutes les sources
+                match discovery.collect_peers().await {
+                    Ok(_) => {
+                        let peers = discovery.discovered_peers().await;
+                        if !peers.is_empty() {
+                            all_attempts_peers = peers;
+                            break; // On a trouvé des pairs, arrêter les retries
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Erreur collecte pairs (tentative {}): {}", attempt + 1, e);
+                    }
+                }
+
+                // Arrêter la découverte avant la prochaine tentative
+                let _ = discovery.stop().await;
+
+                // Si c'est la dernière tentative et qu'on n'a rien trouvé
+                if attempt == retry_delays.len() - 1 {
+                    break;
+                }
+            }
+
+            // Arrêter proprement après toutes les tentatives
+            let _ = discovery.stop().await;
+
+            // Issue #2: Génération de sortie avec latence optionnelle
             if json_output {
-                // Sortie JSON structurée
-                let peer_list: Vec<serde_json::Value> = peers
+                let peer_list: Vec<serde_json::Value> = all_attempts_peers
                     .iter()
                     .map(|peer| {
                         serde_json::json!({
                             "id": peer.id.to_string(),
                             "short_id": peer.id.short(),
-                            "addresses": peer.addresses
+                            "addresses": peer.addresses,
+                            "protocols": ["mDNS"], // Protocol utilisé pour découvrir ce pair
+                            "latency_ms": serde_json::Value::Null // Latence optionnelle (non implémentée)
                         })
                     })
                     .collect();
 
                 let output = serde_json::json!({
                     "discovered_peers": peer_list,
-                    "count": peers.len(),
-                    "timestamp": chrono::Utc::now().timestamp()
+                    "count": all_attempts_peers.len(),
+                    "timestamp": chrono::Utc::now().timestamp(),
+                    "discovery_timeout_sec": timeout,
+                    "total_attempts": retry_delays.len()
                 });
 
                 match serde_json::to_string_pretty(&output) {
                     Ok(json_str) => println!("{}", json_str),
-                    Err(e) => eprintln!("Erreur JSON: {}", e),
+                    Err(e) => {
+                        eprintln!("Erreur JSON: {}", e);
+                        return Err(MiaouError::Network("Erreur génération JSON".to_string()));
+                    }
                 }
             } else {
                 // Sortie texte habituelle
-                if peers.is_empty() {
-                    println!("Aucun pair découvert");
+                if all_attempts_peers.is_empty() {
+                    println!(
+                        "Aucun pair découvert après {} tentatives",
+                        retry_delays.len()
+                    );
                 } else {
-                    println!("Pairs découverts:");
-                    for peer in peers {
+                    println!("Pairs découverts ({} total):", all_attempts_peers.len());
+                    for peer in &all_attempts_peers {
                         println!("- {} ({} adresse(s))", peer.id, peer.addresses.len());
                         for addr in &peer.addresses {
                             println!("  📍 {}", addr);
@@ -501,7 +551,13 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                 }
             }
 
-            Ok(())
+            // Issue #2: Codes retour corrects
+            // 0: >=1 peer, 2: aucun peer, 1: erreur
+            if all_attempts_peers.is_empty() {
+                return Err(MiaouError::NoPeersDiscovered); // Code retour 2
+            }
+
+            Ok(()) // Code retour 0 pour succès (>=1 peer)
         }
         Command::NetConnect { peer_id } => {
             // TDD GREEN v0.2.0: Vraie intégration mDNS + P2P
@@ -1512,7 +1568,7 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                             Ok(())
                         }
                         UnifiedCommand::ListPeers { timeout } => {
-                            // TDD GREEN: Liste pairs via découverte unifiée
+                            // Issue #2: net unified list-peers avec retries et codes retour corrects
                             println!("🔍 Recherche pairs unifiée ({}s timeout)...", timeout);
 
                             let discovery_config = DiscoveryConfig {
@@ -1529,40 +1585,129 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                                 local_peer_info,
                             );
 
-                            discovery.start().await?;
-                            tokio::time::sleep(tokio::time::Duration::from_secs(timeout)).await;
-                            discovery.collect_peers().await?;
-                            let peers = discovery.discovered_peers().await;
-                            discovery.stop().await?;
+                            // Retries avec backoff exponentiel: 1s, 2s, 3s (comme dans NetListPeers)
+                            let retry_delays = [1, 2, 3];
+                            let mut all_attempts_peers = Vec::new();
 
+                            for (attempt, delay) in retry_delays.iter().enumerate() {
+                                if attempt > 0 {
+                                    println!(
+                                        "🔄 Tentative {} avec délai de {}s...",
+                                        attempt + 1,
+                                        delay
+                                    );
+                                }
+
+                                // Démarrer la découverte pour cette tentative
+                                discovery.start().await.map_err(|e| {
+                                    eprintln!("Erreur démarrage découverte unifiée: {}", e);
+                                    MiaouError::Network(format!("Erreur découverte unifiée: {}", e))
+                                })?;
+
+                                // Attendre le délai pour cette tentative
+                                let wait_duration = if attempt == 0 {
+                                    tokio::time::Duration::from_secs(timeout)
+                                } else {
+                                    tokio::time::Duration::from_secs(*delay)
+                                };
+
+                                tokio::time::sleep(wait_duration).await;
+
+                                // Collecter les pairs depuis toutes les sources
+                                match discovery.collect_peers().await {
+                                    Ok(_) => {
+                                        let peers = discovery.discovered_peers().await;
+                                        if !peers.is_empty() {
+                                            all_attempts_peers = peers;
+                                            break; // On a trouvé des pairs, arrêter les retries
+                                        }
+                                    }
+                                    Err(e) => {
+                                        eprintln!(
+                                            "Erreur collecte pairs (tentative {}): {}",
+                                            attempt + 1,
+                                            e
+                                        );
+                                    }
+                                }
+
+                                // Arrêter la découverte avant la prochaine tentative
+                                let _ = discovery.stop().await;
+
+                                // Si c'est la dernière tentative et qu'on n'a rien trouvé
+                                if attempt == retry_delays.len() - 1 {
+                                    break;
+                                }
+                            }
+
+                            // Arrêter proprement après toutes les tentatives
+                            let _ = discovery.stop().await;
+
+                            // Issue #2: Génération de sortie avec format spécifié
                             if json_output {
-                                let output = serde_json::json!({
-                                    "method": "unified",
-                                    "methods": ["mdns", "dht"],
-                                    "peers": peers.iter().map(|p| {
+                                let peer_list: Vec<serde_json::Value> = all_attempts_peers
+                                    .iter()
+                                    .map(|peer| {
                                         serde_json::json!({
-                                            "id": p.id.to_string(),
-                                            "short_id": p.id.short(),
-                                            "addresses": p.addresses
+                                            "id": peer.id.to_string(),
+                                            "short_id": peer.id.short(),
+                                            "addresses": peer.addresses,
+                                            "protocols": ["mDNS", "DHT"], // Protocoles utilisés pour découvrir ce pair
+                                            "latency_ms": serde_json::Value::Null // Latence optionnelle (non implémentée)
                                         })
-                                    }).collect::<Vec<_>>(),
-                                    "count": peers.len(),
-                                    "timeout_seconds": timeout,
-                                    "timestamp": chrono::Utc::now().timestamp()
+                                    })
+                                    .collect();
+
+                                let output = serde_json::json!({
+                                    "discovered_peers": peer_list,
+                                    "count": all_attempts_peers.len(),
+                                    "timestamp": chrono::Utc::now().timestamp(),
+                                    "discovery_timeout_sec": timeout,
+                                    "total_attempts": retry_delays.len(),
+                                    "methods": ["mDNS", "DHT"]
                                 });
-                                println!("{}", serde_json::to_string_pretty(&output).unwrap());
-                            } else if peers.is_empty() {
-                                println!("Aucun pair découvert via méthodes unifiées");
+
+                                match serde_json::to_string_pretty(&output) {
+                                    Ok(json_str) => println!("{}", json_str),
+                                    Err(e) => {
+                                        eprintln!("Erreur JSON: {}", e);
+                                        return Err(MiaouError::Network(
+                                            "Erreur génération JSON".to_string(),
+                                        ));
+                                    }
+                                }
                             } else {
-                                println!("Pairs découverts (unifiées):");
-                                for peer in &peers {
-                                    println!("- {} ({})", peer.id.short(), peer.addresses.len());
-                                    for addr in &peer.addresses {
-                                        println!("  📍 {}", addr);
+                                // Sortie texte habituelle
+                                if all_attempts_peers.is_empty() {
+                                    println!(
+                                        "Aucun pair découvert après {} tentatives",
+                                        retry_delays.len()
+                                    );
+                                } else {
+                                    println!(
+                                        "Pairs découverts ({} total):",
+                                        all_attempts_peers.len()
+                                    );
+                                    for peer in &all_attempts_peers {
+                                        println!(
+                                            "- {} ({} adresse(s))",
+                                            peer.id,
+                                            peer.addresses.len()
+                                        );
+                                        for addr in &peer.addresses {
+                                            println!("  📍 {}", addr);
+                                        }
                                     }
                                 }
                             }
-                            Ok(())
+
+                            // Issue #2: Codes retour corrects
+                            // 0: >=1 peer, 2: aucun peer, 1: erreur
+                            if all_attempts_peers.is_empty() {
+                                return Err(MiaouError::NoPeersDiscovered); // Code retour 2
+                            }
+
+                            Ok(()) // Code retour 0 pour succès (>=1 peer)
                         }
                         UnifiedCommand::Find { peer_id, timeout } => {
                             // TDD GREEN: Recherche pair spécifique

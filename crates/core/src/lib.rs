@@ -51,6 +51,9 @@ pub enum MiaouError {
     /// Erreur réseau.
     #[error("Network error: {0}")]
     Network(String),
+    /// Aucun pair découvert après retries (code de sortie 2).
+    #[error("No peers discovered")]
+    NoPeersDiscovered,
 }
 
 /// Résultat standardisé du projet Miaou.
