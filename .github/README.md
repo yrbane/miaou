@@ -117,7 +117,7 @@ cargo tarpaulin --workspace --all-features --timeout 300
 ```
 
 ### Pre-commit hooks
-Le projet inclut des hooks pre-commit dans `scripts/pre-commit.sh` qui reproduisent les validations CI localement.
+_Note : Le script `scripts/pre-commit.sh` n'est pas inclus dans ce dépôt. Pour reproduire les validations CI localement, utilisez les commandes listées ci-dessus dans la section "Commandes rapides"._
 
 ---
 *Configuration CI créée pour résoudre l'issue #12 - GitHub Actions pipeline standard*
