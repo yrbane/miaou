@@ -3,6 +3,7 @@
 //! Tests bout-en-bout du pipeline complet avec orchestration multi-process
 //! Scénario : 2 nœuds, découverte mDNS, connexion WebRTC, envoi message, accusé de réception
 
+use blake3;
 use miaou_network::{e2e_integration_production::UnifiedP2pManager, peer::PeerId, NetworkError};
 use std::time::{Duration, Instant};
 use tokio::time::timeout;
