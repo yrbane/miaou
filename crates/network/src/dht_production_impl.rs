@@ -76,6 +76,18 @@ impl ProductionKademliaDht {
         }
     }
 
+    /// Retourne l'adresse locale UDP du nœud DHT
+    pub async fn local_addr(&self) -> Result<SocketAddr, NetworkError> {
+        let socket_guard = self.socket.lock().await;
+        let socket = socket_guard
+            .as_ref()
+            .ok_or_else(|| NetworkError::TransportError("DHT non démarré".to_string()))?;
+        
+        socket.local_addr().map_err(|e| {
+            NetworkError::TransportError(format!("Erreur obtention adresse locale: {}", e))
+        })
+    }
+
     /// Démarre le serveur UDP et écoute les messages
     async fn start_udp_server(&self) -> Result<(), NetworkError> {
         let bind_addr = format!("0.0.0.0:{}", self.production_config.listen_port);
