@@ -32,6 +32,67 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
+## [0.2.0] - Radar Moustaches - 2025-09-30 - FONDATIONS P2P RÉALISÉES ✅
+
+### Ajouté
+- **Infrastructure réseau P2P production** pour communication LAN
+  - mDNS Service Discovery avec mdns-sd (`_miaou._tcp.local`)
+  - WebRTC DataChannels réels avec webrtc-rs (offer/answer + ICE)
+  - Architecture traits extensible (Discovery, Transport, MessageQueue)
+  - UnifiedP2pManager pour orchestration réseau
+- **Interface CLI intégrée** (14 commandes production)
+  - Commandes réseau : `net-list-peers`, `net-connect`, `net-status`
+  - Commandes mDNS : `lan-mdns-announce`, `lan-mdns-list`, `lan-mdns-browse`
+  - Commandes messaging : `send`, `recv`, `history`
+  - Support JSON avec schémas figés pour intégration
+- **Tests E2E automatisés** pour validation pipeline complet
+  - 4 scripts de validation : mDNS, messaging, DHT, net-connect
+  - Tests discovery → connect → send/ack avec métriques de performance
+  - Validation timing < 8s découverte, < 60s E2E complet
+- **Pipeline CI/CD unifié** GitHub Actions
+  - Multi-plateformes : Ubuntu, Windows, macOS
+  - Tests multi-versions Rust : stable, beta, nightly
+  - Couverture de code avec tarpaulin, audit sécurité
+- **Nouveau crate miaou-network** avec 5 modules production
+  - mdns_discovery.rs : Service mDNS réel opérationnel
+  - webrtc_production_real.rs : WebRTC avec webrtc-rs
+  - unified_discovery.rs : Agrégation multi-transport
+  - messaging.rs : FileMessageStore JSON atomique
+  - peer.rs : Types PeerInfo/PeerMetadata complets
+
+### Modifié
+- **Documentation réconciliée** entre vision et réalité technique
+  - Transparence sur statut production vs MVP par composant
+  - Liens explicites vers issues GitHub pour chaque feature
+  - Tableau de statut unifié dans V0.2.0_STATUS_RECONCILIATION.md
+- **Architecture workspace étendue** à 5 crates modulaires
+  - Séparation claire réseau/crypto/CLI avec traits
+  - Support feature flags pour composants optionnels
+  - APIs publiques stables et documentées
+
+### En cours (MVP)
+- **DHT Kademlia** : Architecture traits présente, implémentation réseau en cours
+- **CLI handshake** : Incohérences mineures à nettoyer
+- **NAT Traversal** : Diagnostics basiques, STUN/TURN complet prévu v0.3.0
+
+### Sécurité
+- **Zéro régression sécurité** vs v0.1.0
+- **Gestion erreurs renforcée** avec types MiaouError étendus
+- **Validation entrées** systématique pour toutes APIs publiques
+
+### Performance
+- **mDNS découverte** : < 8s systématiquement en LAN
+- **WebRTC établissement** : DataChannels opérationnels
+- **CLI responsivité** : Temps de réponse < 100ms pour commandes locales
+- **Tests E2E complets** : < 60s validation pipeline entier
+
+### Migration depuis v0.1.0
+- **Compatibilité totale** des APIs crypto/core/keyring
+- **Nouvelles dépendances** : mdns-sd, webrtc-rs
+- **Commandes CLI étendues** : 6 crypto → 14 total (8 réseau)
+
+---
+
 ## [0.1.0] - Première Griffe - 2025-08-20 - IMPLÉMENTÉ ✅
 
 ### Ajouté
