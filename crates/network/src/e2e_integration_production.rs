@@ -570,9 +570,7 @@ mod tests {
 
         // Tests passeront une fois l'implémentation complète
         // Pour l'instant, c'est normal qu'ils échouent (TDD)
-        println!(
-            "Conversation bidirectionnelle E2E : {result1:?} {result2:?} {result3:?}"
-        );
+        println!("Conversation bidirectionnelle E2E : {result1:?} {result2:?} {result3:?}");
     }
 
     #[tokio::test]
@@ -645,8 +643,6 @@ mod tests {
         let result3 = alice.connect_and_send_secure(bob_id, msg3).await;
 
         // Tests pour robustesse réseau (TDD - échoueront initialement)
-        println!(
-            "Connection recovery E2E: {result1:?} {result2:?} {result3:?}"
-        );
+        println!("Connection recovery E2E: {result1:?} {result2:?} {result3:?}");
     }
 }
