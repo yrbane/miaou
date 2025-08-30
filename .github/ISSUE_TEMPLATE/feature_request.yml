@@ -1,0 +1,81 @@
+name: ✨ Feature Request
+description: Proposer une nouvelle fonctionnalité pour Miaou
+title: "[FEATURE] "
+labels: ["type:feature", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de proposer une amélioration pour Miaou !
+  
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problème à résoudre
+      description: Décrivez le problème que cette fonctionnalité résoudrait
+      placeholder: En tant qu'utilisateur, j'aimerais...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution proposée
+      description: Décrivez la solution que vous aimeriez voir implémentée
+      placeholder: Je propose d'ajouter...
+    validations:
+      required: true
+  
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considérées
+      description: Décrivez les solutions alternatives que vous avez considérées
+      placeholder: J'ai aussi pensé à...
+  
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorité
+      description: Quelle est l'importance de cette fonctionnalité ?
+      options:
+        - P1 - Critique (bloquant)
+        - P2 - Haute (important mais contournable)
+        - P3 - Moyenne (amélioration)
+        - P4 - Basse (nice-to-have)
+      default: 2
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: area
+    attributes:
+      label: Domaine concerné
+      description: Quel domaine de Miaou cette fonctionnalité concerne-t-elle ?
+      options:
+        - CLI (interface ligne de commande)
+        - Network (réseau P2P)
+        - Crypto (cryptographie)
+        - DHT (table de hachage distribuée)
+        - WebRTC (communication temps réel)
+        - Discovery (découverte de pairs)
+        - Core (fonctionnalités de base)
+        - Documentation
+        - CI/CD
+        - Autre
+      default: 9
+    validations:
+      required: true
+  
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Détails d'implémentation
+      description: Si vous avez des idées sur l'implémentation technique
+      placeholder: Cette fonctionnalité pourrait être implémentée en...
+  
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte additionnel
+      description: Toute autre information utile pour cette demande
