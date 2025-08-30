@@ -13,6 +13,10 @@ on:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
 
+permissions:
+  contents: read
+  security-events: write
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -20,6 +24,7 @@ jobs:
   audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

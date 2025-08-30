@@ -5,32 +5,53 @@ Ce dossier contient la configuration GitHub pour le projet Miaou, incluant les w
 ## 🔧 Workflows CI/CD
 
 ### `ci.yml` - Pipeline principal
-**Statut**: ✅ Implémenté pour issue #12
+**Statut**: ✅ Implémenté et optimisé pour issue #12
 
 Le workflow principal exécute :
 - **Format Check** : Vérification du formatage avec `cargo fmt`
 - **Clippy Lints** : Analyse statique avec `cargo clippy` (zéro warning toléré)
-- **Tests** : Tests multi-plateformes (Ubuntu, Windows, macOS) avec Rust stable + nightly expérimental
+- **Tests** : Tests multi-plateformes (Ubuntu, Windows, macOS) avec Rust stable, beta et nightly
 - **Build Check** : Compilation dev et release pour validation
-- **Coverage** : Analyse de couverture avec `cargo-tarpaulin` (uniquement sur `main`)
+- **Coverage** : Analyse de couverture avec `cargo-tarpaulin` (Linux uniquement)
 
 **Triggers** :
-- Push sur `main` et branches `v0.*`
-- Pull requests vers `main` et branches `v0.*`
+- Push sur `main` et branches `v0.*` (ignore fichiers `.md`)
+- Pull requests vers `main` et branches `v0.*` (ignore fichiers `.md`)
 
 **Optimisations** :
+- Concurrency avec cancel-in-progress pour éviter les runs dupliqués
+- Permissions minimales (contents: read)
 - Cache Rust pour accélérer les builds
 - Timeouts configurés (30min tests, 20min coverage)
 - Échec non-critique pour Rust nightly
+- Garde-fou `hashFiles('**/Cargo.toml')` pour repos non-Rust
 
 ### `security-audit.yml` - Audit de sécurité
-**Statut**: ✅ Implémenté pour issue #12
+**Statut**: ✅ Implémenté et sécurisé pour issue #12
 
 Audit de sécurité automatique :
 - Exécution hebdomadaire (dimanche 02:00 UTC)
 - Déclenchement sur changements `Cargo.toml`/`Cargo.lock`
 - Utilise `cargo-audit` pour scanner les vulnérabilités
 - Rapport JSON détaillé des problèmes trouvés
+- Permissions minimales (contents: read, security-events: write)
+
+### `dependency-review.yml` - Review des dépendances
+**Statut**: ✅ Nouveau workflow ajouté
+
+Review automatique des dépendances sur les PR :
+- Analyse les changements de dépendances
+- Commente directement dans la PR
+- Mode warning pour ne pas bloquer le développement
+
+### `cargo-deny.yml` - Analyse approfondie des dépendances
+**Statut**: ✅ Nouveau workflow ajouté
+
+Analyse complète avec cargo-deny :
+- Vérification des licences acceptées
+- Détection des dépendances dupliquées
+- Scan des vulnérabilités connues
+- Exécution hebdomadaire et sur changements
 
 ## 🤖 Dependabot
 

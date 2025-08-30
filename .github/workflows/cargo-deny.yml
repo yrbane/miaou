@@ -1,0 +1,43 @@
+name: Cargo Deny
+
+on:
+  push:
+    branches: [ main, "v0.*" ]
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - 'deny.toml'
+  pull_request:
+    paths:
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - 'deny.toml'
+  schedule:
+    # Run weekly on Sundays
+    - cron: '0 3 * * 0'
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-deny:
+    name: Cargo Deny Check
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
+    strategy:
+      matrix:
+        checks:
+          - advisories
+          - bans licenses sources
+    
+    continue-on-error: ${{ matrix.checks == 'advisories' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run cargo deny
+        uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check ${{ matrix.checks }}
+          arguments: --all-features
