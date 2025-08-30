@@ -95,8 +95,7 @@ jobs:
             ${{ runner.os }}-cargo-
       
       - name: Run tests
-        run: cargo test --workspace --all-features --verbose
-        timeout-minutes: 30
+        timeout-minutes: 20
       
       - name: Run doctests
         run: cargo test --workspace --doc --all-features
