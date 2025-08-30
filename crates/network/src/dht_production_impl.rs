@@ -82,7 +82,7 @@ impl ProductionKademliaDht {
         let socket = socket_guard
             .as_ref()
             .ok_or_else(|| NetworkError::TransportError("DHT non démarré".to_string()))?;
-        
+
         socket.local_addr().map_err(|e| {
             NetworkError::TransportError(format!("Erreur obtention adresse locale: {}", e))
         })
