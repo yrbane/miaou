@@ -38,6 +38,7 @@ pub mod p2p_connection;
 pub mod p2p_messaging_production;
 pub mod peer;
 pub mod ratchet;
+pub mod robust_messaging;
 pub mod store;
 pub mod transport;
 pub mod unified_discovery;
@@ -84,6 +85,10 @@ pub use peer::{PeerId, PeerInfo};
 pub use ratchet::{
     ChainKey, DoubleRatchet, MessageKey, RatchetConfig, RatchetMessage, RatchetState,
     X3dhDoubleRatchet,
+};
+pub use robust_messaging::{
+    AckStatus, AcknowledgableMessage, LoadTestResults, MessageAck, MessagingStats,
+    RobustMessagingConfig, RobustMessagingManager,
 };
 pub use store::{
     InMemoryMessageStore, MessageCategory, MessageQuery, MessageStore, MessageStoreConfig,

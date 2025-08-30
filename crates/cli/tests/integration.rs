@@ -1,6 +1,6 @@
-//! Tests d'intégration pour CLI main()
+//! Tests d'intégration pour CLI `main()`
 //!
-//! TDD: Test de la fonction main() qui ne peut être testée en unit test
+//! TDD: Test de la fonction `main()` qui ne peut être testée en unit test
 
 use std::process::{Command, Stdio};
 

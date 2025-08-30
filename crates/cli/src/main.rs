@@ -633,9 +633,8 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                 if target_peer.is_some() {
                     println!("✅ Pair trouvé à la tentative {}", attempt + 1);
                     break;
-                } else {
-                    println!("   ⚠️  Pair non trouvé, retry...");
                 }
+                println!("   ⚠️  Pair non trouvé, retry...");
             }
 
             match target_peer {
@@ -762,7 +761,9 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             println!("Initiation du handshake E2E avec le pair: {}", peer_id);
 
             // Import des types production pour handshake
-            use miaou_network::handshake_production::{ProductionHandshakeConfig, ProductionHandshakeManager};
+            use miaou_network::handshake_production::{
+                ProductionHandshakeConfig, ProductionHandshakeManager,
+            };
             use miaou_network::PeerId;
 
             // Créer configuration handshake production
@@ -773,18 +774,21 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
             // Créer gestionnaire de handshake production
             let local_peer_id = PeerId::from_bytes(
-                format!("handshake-initiator-{}", std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs())
-                .as_bytes().to_vec()
+                format!(
+                    "handshake-initiator-{}",
+                    std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs()
+                )
+                .as_bytes()
+                .to_vec(),
             );
-            
-            let handshake_manager = ProductionHandshakeManager::new(
-                local_peer_id.clone(),
-                config,
-            )
-            .map_err(|e| MiaouError::Network(format!("Erreur création handshake manager: {:?}", e)))?;
+
+            let handshake_manager = ProductionHandshakeManager::new(local_peer_id.clone(), config)
+                .map_err(|e| {
+                    MiaouError::Network(format!("Erreur création handshake manager: {:?}", e))
+                })?;
 
             // Créer PeerId cible à partir de la string
             let target_peer_id = PeerId::from_bytes(peer_id.as_bytes().to_vec());
@@ -841,15 +845,15 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
 
                         // GREEN: Production handshake avec vraie connexion P2P
                         println!("🔐 Échange messages handshake X3DH avec pair découvert...");
-                        
+
                         // En production réelle, on enverrait le message via WebRTC
                         // Pour ce MVP, on simule l'échange de messages complet
                         println!("📨 Message X3DH envoyé: {:?}", handshake_msg);
                         println!("⏳ Attente réponse du pair...");
-                        
+
                         // Simuler délai réseau
                         tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
-                        
+
                         // Simuler succès handshake production
                         println!("🔑 Production handshake simulé réussi ! Session X3DH établie");
                         println!("📞 Session E2E sécurisée avec {} (Production)", peer_id);
@@ -872,18 +876,22 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
             // GREEN: Production handshake status avec ProductionHandshakeManager
             println!("=== Statut des sessions E2E Production ===");
 
-            use miaou_network::handshake_production::{ProductionHandshakeConfig, ProductionHandshakeManager};
+            use miaou_network::handshake_production::{
+                ProductionHandshakeConfig, ProductionHandshakeManager,
+            };
 
             // Configuration production handshake pour affichage
             let config = ProductionHandshakeConfig::default();
             let local_peer_id = PeerId::from_bytes(b"status-check".to_vec());
-            
+
             let _handshake_manager = ProductionHandshakeManager::new(local_peer_id, config.clone())
-                .map_err(|e| MiaouError::Network(format!("Erreur création handshake manager: {:?}", e)))?;
+                .map_err(|e| {
+                    MiaouError::Network(format!("Erreur création handshake manager: {:?}", e))
+                })?;
 
             println!("Configuration handshake production:");
             println!("  - Timeout handshake: {} ms", config.handshake_timeout_ms);
-            println!("  - Max attempts: {}", config.max_attempts);  
+            println!("  - Max attempts: {}", config.max_attempts);
             println!("  - Ephemeral key TTL: {} s", config.ephemeral_key_ttl_secs);
             println!("  - Protocol: X3DH + Double Ratchet");
 
@@ -1018,27 +1026,26 @@ async fn run_internal(cli: Cli, ks: &mut MemoryKeyStore) -> Result<(), MiaouErro
                 println!("Utilisez 'send <peer> <message>' pour envoyer des messages.");
                 println!("Utilisez 'recv' pour récupérer les messages reçus.");
                 return Ok(());
-            } else {
-                for (i, stored_msg) in messages.iter().enumerate() {
-                    let category_str = match stored_msg.category {
-                        MessageCategory::Sent => "ENVOYÉ",
-                        MessageCategory::Received => "REÇU",
-                        MessageCategory::Draft => "BROUILLON",
-                        MessageCategory::System => "SYSTÈME",
-                    };
-                    let status = if stored_msg.is_read { "" } else { " [NON LU]" };
+            }
+            for (i, stored_msg) in messages.iter().enumerate() {
+                let category_str = match stored_msg.category {
+                    MessageCategory::Sent => "ENVOYÉ",
+                    MessageCategory::Received => "REÇU",
+                    MessageCategory::Draft => "BROUILLON",
+                    MessageCategory::System => "SYSTÈME",
+                };
+                let status = if stored_msg.is_read { "" } else { " [NON LU]" };
 
-                    println!(
-                        "{}. [{}] {} -> {}: \"{}\" ({}){}",
-                        i + 1,
-                        category_str,
-                        stored_msg.message.from.short(),
-                        stored_msg.message.to.short(),
-                        stored_msg.message.content,
-                        stored_msg.message.timestamp,
-                        status
-                    );
-                }
+                println!(
+                    "{}. [{}] {} -> {}: \"{}\" ({}){}",
+                    i + 1,
+                    category_str,
+                    stored_msg.message.from.short(),
+                    stored_msg.message.to.short(),
+                    stored_msg.message.content,
+                    stored_msg.message.timestamp,
+                    status
+                );
             }
 
             // Statistiques
