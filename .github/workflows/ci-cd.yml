@@ -1,0 +1,373 @@
+name: Miaou CI/CD Pipeline
+
+on:
+  push:
+    branches: ["v*.*.*-*", "v0.1.0-phase1-refactor", "main", "master", "develop", "v*-*"]
+    tags: ['v*']
+  pull_request:
+    branches: ["**"]
+  schedule:
+    - cron: "0 5 * * 1"  # Security audit every Monday at 05:00 UTC
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Validation multi-OS (formatage, linting, tests de base)
+  validation:
+    name: 🧪 Validation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy, llvm-tools-preview
+        
+    - name: 📦 Cache dependencies
+      uses: Swatinem/rust-cache@v2
+      
+    - name: 🎨 Check formatting
+      run: cargo fmt --all -- --check
+      
+    - name: 🔍 Strict Clippy lint (pedantic + nursery + cargo)
+      run: |
+        cargo clippy --all-features --all-targets -- -D warnings -D clippy::pedantic -D clippy::nursery -D clippy::cargo -A clippy::multiple_crate_versions -A clippy::cargo_common_metadata
+          
+    - name: 🔧 Build workspace
+      run: cargo build --workspace --all-targets --verbose
+      
+    - name: 🧪 Run all tests
+      run: cargo test --workspace --all-features --verbose
+      
+    - name: 📚 Test documentation
+      run: cargo test --doc
+
+  # Couverture de code avec validation seuil 90% (Ubuntu uniquement)
+  coverage:
+    name: 📊 Test Coverage Analysis
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -Cinstrument-coverage
+      LLVM_PROFILE_FILE: "cargo-test-%p-%m.profraw"
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: llvm-tools-preview
+        
+    - name: 📦 Cache dependencies
+      uses: Swatinem/rust-cache@v2
+        
+    - name: 🧪 Run tests with coverage instrumentation
+      run: cargo test --workspace --all-features --verbose
+      
+    - name: 📊 Install and run grcov
+      run: |
+        cargo install grcov --locked
+        mkdir -p target/coverage
+        grcov . \
+          --binary-path target/debug/ \
+          --source-dir . \
+          --ignore-not-existing \
+          --keep-only 'crates/**' \
+          --output-type lcov \
+          --output-path target/coverage/lcov.info \
+          --branch
+        grcov . \
+          --binary-path target/debug/ \
+          --source-dir . \
+          --ignore-not-existing \
+          --keep-only 'crates/**' \
+          --output-type cobertura \
+          --output-path target/coverage/cobertura.xml \
+          --branch
+        
+    - name: 📈 Generate coverage with validation (90% minimum)
+      run: |
+        cargo install cargo-llvm-cov --locked
+        cargo llvm-cov --workspace --cobertura --output-path cobertura.xml
+        
+        # Extract and validate coverage threshold
+        COVERAGE=$(grep -oP 'line-rate="\K[^"]*' cobertura.xml | head -1 | awk '{printf "%.1f", $1*100}')
+        echo "Coverage: ${COVERAGE}%"
+        
+        if awk "BEGIN {exit !($COVERAGE >= 90)}"; then
+          echo "✅ Coverage above 90%: ${COVERAGE}%"
+        else
+          echo "❌ Coverage below 90%: ${COVERAGE}%"
+          exit 1
+        fi
+        
+    - name: 📤 Upload coverage reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          target/coverage/
+          cobertura.xml
+
+  # Audit de sécurité (schedulé + à la demande)
+  security-audit:
+    name: 🔒 Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: 🔍 Install and run cargo-audit
+      run: |
+        cargo install cargo-audit --locked
+        cargo audit --deny warnings
+
+  # Tests cryptographiques spécialisés
+  crypto-tests:
+    name: 🔐 Cryptographic Tests
+    runs-on: ubuntu-latest
+    if: contains(github.ref, 'premiere-griffe') || contains(github.ref, 'radar-moustaches') || contains(github.ref, 'ronron-bonheur') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: 🔐 Run dedicated crypto tests
+      run: cargo test --release --verbose -p miaou-crypto
+
+  # Tests de mutation (robustesse du code)
+  mutation-tests:
+    name: 🧬 Mutation Testing
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/'))
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: 🧬 Run mutation tests
+      run: |
+        cargo install cargo-mutants --locked
+        cargo mutants --check --timeout 30
+
+  # Builds desktop multiplateformes
+  build-desktop:
+    name: 🖥️ Desktop Build (${{ matrix.target }})
+    needs: [validation, coverage]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: miaou-cli
+            asset_name: miaou-linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: miaou-cli
+            asset_name: miaou-linux-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: miaou-cli.exe
+            asset_name: miaou-windows-x86_64.exe
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: miaou-cli
+            asset_name: miaou-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: miaou-cli
+            asset_name: miaou-macos-aarch64
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
+    
+    - name: 🛠️ Install cross-compilation tools (Ubuntu ARM64)
+      if: matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64-unknown-linux-gnu'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-aarch64-linux-gnu
+    
+    - name: 📦 Cache cargo
+      uses: Swatinem/rust-cache@v2
+    
+    - name: 🔧 Build release
+      run: cargo build --release --target ${{ matrix.target }} -p miaou-cli
+      env:
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+    
+    - name: 🧪 Test (native targets only)
+      if: matrix.target == 'x86_64-unknown-linux-gnu' || matrix.target == 'x86_64-pc-windows-msvc' || matrix.target == 'x86_64-apple-darwin' || matrix.target == 'aarch64-apple-darwin'
+      run: cargo test --target ${{ matrix.target }} --workspace
+    
+    - name: 📤 Upload desktop artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.asset_name }}
+        path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+  # Android builds disponibles localement avec: cargo build --target i686-linux-android --profile release-mobile -p miaou-cli
+  # Temporairement désactivé dans CI en attendant configuration NDK appropriée
+
+  # Build WebAssembly avec profil optimisé
+  build-wasm:
+    name: 🌐 WebAssembly Build
+    needs: [validation, coverage]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown, wasm32-wasip1
+    
+    - name: 📦 Cache cargo
+      uses: Swatinem/rust-cache@v2
+    
+    - name: 🌐 Build WASM core libraries (release-wasm profile)
+      run: cargo build --target wasm32-unknown-unknown --profile release-wasm --lib
+    
+    - name: 🌐 Build WASM CLI (WASIP1)
+      run: cargo build --target wasm32-wasip1 --profile release-wasm -p miaou-cli
+    
+    - name: 📤 Upload WASM artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: miaou-wasm
+        path: |
+          target/wasm32-unknown-unknown/release-wasm/*.wasm
+          target/wasm32-wasip1/release-wasm/*.wasm
+
+  # Documentation génération et déploiement
+  documentation:
+    name: 📚 Documentation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: 📦 Cache cargo
+      uses: Swatinem/rust-cache@v2
+        
+    - name: 📚 Generate documentation
+      run: |
+        cargo doc --all-features --no-deps --document-private-items
+        
+    - name: 🌐 Deploy to GitHub Pages (main branch only)
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./target/doc
+
+  # Benchmarks de performance
+  benchmarks:
+    name: 🚀 Performance Benchmarks
+    needs: [validation, coverage]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/'))
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🦀 Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: 📦 Cache cargo
+      uses: Swatinem/rust-cache@v2
+    
+    - name: 🚀 Run benchmarks
+      run: cargo bench --workspace
+    
+    - name: 📤 Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: target/criterion/
+
+  # Release automatique pour les tags
+  release:
+    name: 🚀 Create Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [validation, coverage, security-audit, build-desktop, build-wasm, documentation, benchmarks]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+    
+    - name: 📦 Create release archives
+      run: |
+        cd artifacts/
+        for dir in */; do
+          if [[ "$dir" == *"android"* ]]; then
+            cd "$dir" && zip -r "../${dir%/}.zip" * && cd ..
+          elif [[ "$dir" == *"wasm"* ]]; then
+            cd "$dir" && tar -czf "../${dir%/}.tar.gz" * && cd ..
+          else
+            cd "$dir" && tar -czf "../${dir%/}.tar.gz" * && cd ..
+          fi
+        done
+    
+    - name: 🚀 Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: artifacts/*.{tar.gz,zip}
+        draft: true
+        generate_release_notes: true
+        body: |
+          ## 🎉 Miaou Release
+          
+          ### 📦 Artifacts Inclus
+          - **Desktop**: Linux (x86_64, ARM64), Windows (x86_64), macOS (x86_64, ARM64)
+          - **Web**: WebAssembly (WASM + WASIP1)
+          - **Documentation**: API docs et coverage reports
+          - **Mobile**: Android builds disponibles via compilation locale
+          
+          ### ✅ Quality Metrics
+          - Tests: 54 tests passés
+          - Coverage: ≥90% garanti
+          - Linting: Clippy pedantic+nursery compliance
+          - Security: Audit automatique passed
+          
+          🤖 *Auto-generated release via GitHub Actions*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

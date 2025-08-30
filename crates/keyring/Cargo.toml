@@ -1,0 +1,23 @@
+[package]
+name = "miaou-keyring"
+version = "0.1.0"
+edition = "2021"
+
+description.workspace = true
+license.workspace     = true
+repository.workspace  = true
+readme.workspace      = true
+keywords.workspace    = true
+categories.workspace  = true
+ 
+[dependencies]
+miaou-core = { path = "../core" }
+miaou-crypto = { path = "../crypto" }
+argon2 = { workspace = true }
+secrecy = { workspace = true }
+zeroize = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+serde_bytes = "0.11"
+getrandom = { workspace = true }

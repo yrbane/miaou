@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glossaire Technique Miaou - Wiki Interactif</title>
+    <style>
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .glossary-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-height: 100vh;
+        }
+        
+        .glossary-header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .glossary-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        
+        .search-container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        #search {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            outline: none;
+            background: white;
+        }
+        
+        #search:focus {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+        }
+        
+        .search-stats {
+            text-align: center;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .sections-nav {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 120px;
+            z-index: 90;
+        }
+        
+        .sections-nav h3 {
+            margin-bottom: 1rem;
+            color: #495057;
+        }
+        
+        .sections-nav ul {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            list-style: none;
+        }
+        
+        .section-link {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: white;
+            color: #495057;
+            text-decoration: none;
+            border-radius: 20px;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+        }
+        
+        .section-link:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .term-count {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        
+        .glossary-content {
+            padding: 2rem;
+        }
+        
+        .section {
+            margin-bottom: 3rem;
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        
+        .terms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .term-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+            transition: all 0.3s ease;
+        }
+        
+        .term-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .term-card.highlight {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            animation: highlight 1s ease-in-out;
+        }
+        
+        @keyframes highlight {
+            0%, 100% { background: #fff3cd; }
+            50% { background: #ffecb3; }
+        }
+        
+        .term-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: #2c3e50;
+            font-size: 1.3rem;
+        }
+        
+        .permalink {
+            color: #6c757d;
+            text-decoration: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .term-card:hover .permalink {
+            opacity: 1;
+        }
+        
+        .permalink:hover {
+            color: #3498db;
+        }
+        
+        .term-definition {
+            color: #495057;
+            line-height: 1.7;
+        }
+        
+        .term-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px dotted #3498db;
+            transition: all 0.3s ease;
+        }
+        
+        .term-link:hover {
+            color: #2980b9;
+            border-bottom-style: solid;
+        }
+        
+        .glossary-footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .glossary-footer p {
+            margin-bottom: 0.5rem;
+        }
+        
+        .miaou-signature {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 1rem !important;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        code {
+            background: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+        
+        strong {
+            color: #2c3e50;
+        }
+        
+        @media (max-width: 768px) {
+            .glossary-header {
+                padding: 1rem;
+            }
+            
+            .glossary-header h1 {
+                font-size: 2rem;
+            }
+            
+            .sections-nav {
+                padding: 1rem;
+            }
+            
+            .sections-nav ul {
+                justify-content: center;
+            }
+            
+            .glossary-content {
+                padding: 1rem;
+            }
+            
+            .terms-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="glossary-container">
+        <header class="glossary-header">
+            <h1>📚 Glossaire Technique Miaou</h1>
+            <p class="subtitle">Wiki interactif des termes techniques</p>
+            <div class="search-container">
+                <input type="text" id="search" placeholder="🔍 Rechercher un terme..." autocomplete="off">
+                <div class="search-stats">
+                    <span id="search-results">0 résultats</span>
+                </div>
+            </div>
+        </header>
+        
+        <nav class="sections-nav">
+            <h3>📑 Sections</h3>
+            <ul>
+                <li><a href="#a" class="section-link">A <span class="term-count">(8)</span></a></li>
+                <li><a href="#b" class="section-link">B <span class="term-count">(3)</span></a></li>
+                <li><a href="#c" class="section-link">C <span class="term-count">(10)</span></a></li>
+                <li><a href="#d" class="section-link">D <span class="term-count">(6)</span></a></li>
+                <li><a href="#e" class="section-link">E <span class="term-count">(2)</span></a></li>
+                <li><a href="#f" class="section-link">F <span class="term-count">(4)</span></a></li>
+                <li><a href="#g" class="section-link">G <span class="term-count">(1)</span></a></li>
+                <li><a href="#h" class="section-link">H <span class="term-count">(2)</span></a></li>
+                <li><a href="#i" class="section-link">I <span class="term-count">(4)</span></a></li>
+                <li><a href="#k" class="section-link">K <span class="term-count">(2)</span></a></li>
+                <li><a href="#l" class="section-link">L <span class="term-count">(2)</span></a></li>
+                <li><a href="#m" class="section-link">M <span class="term-count">(4)</span></a></li>
+                <li><a href="#n" class="section-link">N <span class="term-count">(1)</span></a></li>
+                <li><a href="#p" class="section-link">P <span class="term-count">(5)</span></a></li>
+                <li><a href="#q" class="section-link">Q <span class="term-count">(2)</span></a></li>
+                <li><a href="#r" class="section-link">R <span class="term-count">(5)</span></a></li>
+                <li><a href="#s" class="section-link">S <span class="term-count">(8)</span></a></li>
+                <li><a href="#t" class="section-link">T <span class="term-count">(5)</span></a></li>
+                <li><a href="#w" class="section-link">W <span class="term-count">(6)</span></a></li>
+                <li><a href="#x" class="section-link">X <span class="term-count">(1)</span></a></li>
+                <li><a href="#z" class="section-link">Z <span class="term-count">(1)</span></a></li>
+                <li><a href="#nouveaux-termes-postcritiques" class="section-link">Nouveaux termes (post-critiques) <span class="term-count">(6)</span></a></li>
+                <li><a href="#nouveaux-termes-v010" class="section-link">Nouveaux termes v0.1.0 <span class="term-count">(6)</span></a></li>
+                <li><a href="#termes-spcifiques-miaou" class="section-link">Termes spécifiques à Miaou <span class="term-count">(6)</span></a></li>
+                <li><a href="#termes-supplmentaires-pour-dbutants" class="section-link">Termes supplémentaires pour débutants <span class="term-count">(30)</span></a></li>
+                <li><a href="#termes-spcifiques-rust" class="section-link">Termes spécifiques Rust <span class="term-count">(8)</span></a></li>
+                <li><a href="#termes-rseau-et-scurit" class="section-link">Termes réseau et sécurité <span class="term-count">(6)</span></a></li>
+            </ul>
+        </nav>
+        
+        <main class="glossary-content">
+
+            <section class="section" id="a">
+                <h2>A</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="adr-architecture-decision-records" data-term="adr (architecture decision records)">
+                        <h3 class="term-title">
+                            <strong>ADR (Architecture Decision Records)</strong>
+                            <a href="#adr-architecture-decision-records" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Documents traçant les décisions architecturales importantes, leurs contextes, options considérées et justifications.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="aead-authenticated-encryption-with-associated-data" data-term="aead (authenticated encryption with associated data)">
+                        <h3 class="term-title">
+                            <strong>AEAD (Authenticated Encryption with Associated Data)</strong>
+                            <a href="#aead-authenticated-encryption-with-associated-data" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mode de chiffrement qui combine confidentialité et authentification. Exemples : AES-GCM, <a href="#chacha20poly1305" class="term-link">ChaCha20-Poly1305</a>. Dans Miaou v0.1.0, utilisation obligatoire d'AAD (Associated Authenticated Data) pour toutes les opérations de chiffrement.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="aes-advanced-encryption-standard" data-term="aes (advanced encryption standard)">
+                        <h3 class="term-title">
+                            <strong>AES (Advanced Encryption Standard)</strong>
+                            <a href="#aes-advanced-encryption-standard" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Standard de chiffrement symétrique adopté par le NIST. Versions : AES-128, AES-192, AES-256.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="allowlist-de-dpendances" data-term="allowlist de dépendances">
+                        <h3 class="term-title">
+                            <strong>Allowlist de dépendances</strong>
+                            <a href="#allowlist-de-dpendances" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Liste blanche stricte de dépendances externes autorisées après audit de sécurité, remplaçant la politique "zéro dépendance". Voir <a href="#dependenciesmd" class="term-link">DEPENDENCIES.md</a>.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="argon2" data-term="argon2">
+                        <h3 class="term-title">
+                            <strong>Argon2</strong>
+                            <a href="#argon2" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Fonction de dérivation de clés résistante aux attaques par force brute, winner du Password Hashing Competition. Miaou v0.1.0 utilise Argon2id avec configurations adaptées : fast_insecure (tests), balanced (défaut), secure (haute sécurité).</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="activitypub" data-term="activitypub">
+                        <h3 class="term-title">
+                            <strong>ActivityPub</strong>
+                            <a href="#activitypub" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole de <a href="#fdration" class="term-link">Fédération</a> sociale du W3C utilisé par <a href="#mastodon" class="term-link">Mastodon</a>, Pleroma et autres réseaux sociaux décentralisés.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="api-application-programming-interface" data-term="api (application programming interface)">
+                        <h3 class="term-title">
+                            <strong>API (Application Programming Interface)</strong>
+                            <a href="#api-application-programming-interface" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Interface de programmation permettant l'interaction entre différents composants logiciels.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="audit-de-scurit-externe" data-term="audit de sécurité externe">
+                        <h3 class="term-title">
+                            <strong>Audit de sécurité externe</strong>
+                            <a href="#audit-de-scurit-externe" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Examen professionnel du code par des experts indépendants pour identifier vulnérabilités. Obligatoire avant release 1.0.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="b">
+                <h2>B</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="blake3" data-term="blake3">
+                        <h3 class="term-title">
+                            <strong>BLAKE3</strong>
+                            <a href="#blake3" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Fonction de hachage cryptographique ultra-rapide, successeur de BLAKE2, basé sur l'arbre de Merkle.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="bootstrap-nodes" data-term="bootstrap nodes">
+                        <h3 class="term-title">
+                            <strong>Bootstrap nodes</strong>
+                            <a href="#bootstrap-nodes" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Nœuds de démarrage permettant à un nouveau client de découvrir d'autres pairs sur le réseau P2P.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="bridges" data-term="bridges">
+                        <h3 class="term-title">
+                            <strong>Bridges</strong>
+                            <a href="#bridges" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Composants logiciels permettant l'interopérabilité entre Miaou et d'autres protocoles de messagerie.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="c">
+                <h2>C</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="cargoaudit" data-term="cargo-audit">
+                        <h3 class="term-title">
+                            <strong>Cargo-audit</strong>
+                            <a href="#cargoaudit" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Outil Rust détectant vulnérabilités connues dans dépendances via base <a href="#rustsec" class="term-link">RustSec</a>. Intégré au CI Miaou.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="cargodeny" data-term="cargo-deny">
+                        <h3 class="term-title">
+                            <strong>Cargo-deny</strong>
+                            <a href="#cargodeny" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Outil vérifiant licences et politiques de dépendances pour projets Rust.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="cargotarpaulin" data-term="cargo-tarpaulin">
+                        <h3 class="term-title">
+                            <strong>Cargo-tarpaulin</strong>
+                            <a href="#cargotarpaulin" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Outil mesure de couverture de code Rust. Objectif Miaou : >= 90% + <a href="#fuzzing" class="term-link">Fuzzing</a>.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="chacha20poly1305" data-term="chacha20-poly1305">
+                        <h3 class="term-title">
+                            <strong>ChaCha20-Poly1305</strong>
+                            <a href="#chacha20poly1305" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Algorithme de chiffrement authentifié combinant le cipher ChaCha20 et l'authentificateur Poly1305. Primitive AEAD principale de Miaou v0.1.0, choisie pour sa performance et sa sécurité post-quantique.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="cicd-continuous-integrationcontinuous-deployment" data-term="ci/cd (continuous integration/continuous deployment)">
+                        <h3 class="term-title">
+                            <strong>CI/CD (Continuous Integration/Continuous Deployment)</strong>
+                            <a href="#cicd-continuous-integrationcontinuous-deployment" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Pratiques d'intégration et <a href="#dploiement" class="term-link">Déploiement</a> continus pour automatiser les tests et livraisons.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="cli-command-line-interface" data-term="cli (command line interface)">
+                        <h3 class="term-title">
+                            <strong>CLI (Command Line Interface)</strong>
+                            <a href="#cli-command-line-interface" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Interface en ligne de commande pour interagir avec l'application via terminal.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="consensus" data-term="consensus">
+                        <h3 class="term-title">
+                            <strong>Consensus</strong>
+                            <a href="#consensus" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mécanisme permettant à un réseau distribué de s'accorder sur un état commun malgré les pannes ou défaillances.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="constanttime" data-term="constant-time">
+                        <h3 class="term-title">
+                            <strong>Constant-time</strong>
+                            <a href="#constanttime" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Propriété d'algorithmes crypto exécutant en temps fixe pour éviter attaques par canaux auxiliaires.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="crates" data-term="crates">
+                        <h3 class="term-title">
+                            <strong>Crates</strong>
+                            <a href="#crates" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Unités de <a href="#compilation" class="term-link">Compilation</a> et distribution dans l'écosystème Rust. Équivalent des packages/bibliothèques.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="croquettes" data-term="croquettes">
+                        <h3 class="term-title">
+                            <strong>Croquettes</strong>
+                            <a href="#croquettes" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Crypto-monnaie interne de Miaou récompensant les contributions qualitatives (sécurité, hébergement, parrainage).</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="d">
+                <h2>D</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="dalekcryptography" data-term="dalek-cryptography">
+                        <h3 class="term-title">
+                            <strong>Dalek-cryptography</strong>
+                            <a href="#dalekcryptography" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Écosystème de bibliothèques Rust pour cryptographie courbes elliptiques (<a href="#ed25519" class="term-link">Ed25519</a>-dalek, x25519-dalek). Utilisé dans Miaou.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="dao-decentralized-autonomous-organization" data-term="dao (decentralized autonomous organization)">
+                        <h3 class="term-title">
+                            <strong>DAO (Decentralized Autonomous Organization)</strong>
+                            <a href="#dao-decentralized-autonomous-organization" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Organisation décentralisée autonome gouvernée par des smart contracts et votes communautaires.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="dependenciesmd" data-term="dependencies.md">
+                        <h3 class="term-title">
+                            <strong>DEPENDENCIES.md</strong>
+                            <a href="#dependenciesmd" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Fichier définissant politique stricte des dépendances autorisées/interdites dans Miaou.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="dht-distributed-hash-table" data-term="dht (distributed hash table)">
+                        <h3 class="term-title">
+                            <strong>DHT (Distributed Hash Table)</strong>
+                            <a href="#dht-distributed-hash-table" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Structure de données distribuée pour stocker et retrouver des informations dans un réseau P2P.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="dpi-deep-packet-inspection" data-term="dpi (deep packet inspection)">
+                        <h3 class="term-title">
+                            <strong>DPI (Deep Packet Inspection)</strong>
+                            <a href="#dpi-deep-packet-inspection" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Technique d'analyse du contenu des paquets réseau, souvent utilisée pour la censure.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="double-ratchet" data-term="double ratchet">
+                        <h3 class="term-title">
+                            <strong>Double Ratchet</strong>
+                            <a href="#double-ratchet" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole cryptographique offrant Perfect <a href="#forward-secrecy" class="term-link">Forward Secrecy</a>, utilisé par Signal et autres messageries sécurisées.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="e">
+                <h2>E</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="e2ee-endtoend-encryption" data-term="e2ee (end-to-end encryption)">
+                        <h3 class="term-title">
+                            <strong>E2EE (End-to-End Encryption)</strong>
+                            <a href="#e2ee-endtoend-encryption" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Chiffrement de bout en bout où seuls les correspondants peuvent déchiffrer les messages.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ed25519" data-term="ed25519">
+                        <h3 class="term-title">
+                            <strong>Ed25519</strong>
+                            <a href="#ed25519" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Algorithme de signature numérique basé sur les courbes elliptiques, rapide et sécurisé.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="f">
+                <h2>F</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="forward-secrecy" data-term="forward secrecy">
+                        <h3 class="term-title">
+                            <strong>Forward Secrecy</strong>
+                            <a href="#forward-secrecy" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Propriété garantissant que la compromission des clés actuelles ne compromet pas les communications passées.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="fdration" data-term="fédération">
+                        <h3 class="term-title">
+                            <strong>Fédération</strong>
+                            <a href="#fdration" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Interconnexion de serveurs indépendants permettant la communication entre utilisateurs de différentes instances.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="from-scratch-crypto" data-term="from scratch (crypto)">
+                        <h3 class="term-title">
+                            <strong>From scratch (crypto)</strong>
+                            <a href="#from-scratch-crypto" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Approche implémentant cryptographie depuis zéro. INTERDITE dans Miaou au profit de <a href="#libs-audites" class="term-link">Libs auditées</a>.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="fuzzing" data-term="fuzzing">
+                        <h3 class="term-title">
+                            <strong>Fuzzing</strong>
+                            <a href="#fuzzing" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Technique de test consistant à fournir des données aléatoires ou malformées pour détecter des bugs. Objectif Miaou : obligatoire avec couverture >= 90%.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="g">
+                <h2>G</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="gcm-galoiscounter-mode" data-term="gcm (galois/counter mode)">
+                        <h3 class="term-title">
+                            <strong>GCM (Galois/Counter Mode)</strong>
+                            <a href="#gcm-galoiscounter-mode" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mode de chiffrement authentifié pour AES, fournissant confidentialité et intégrité.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="h">
+                <h2>H</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="hkdf-hmacbased-key-derivation-function" data-term="hkdf (hmac-based key derivation function)">
+                        <h3 class="term-title">
+                            <strong>HKDF (HMAC-based Key Derivation Function)</strong>
+                            <a href="#hkdf-hmacbased-key-derivation-function" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Fonction de dérivation de clés basée sur HMAC, standardisée dans RFC 5869.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="hole-punching" data-term="hole punching">
+                        <h3 class="term-title">
+                            <strong>Hole Punching</strong>
+                            <a href="#hole-punching" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Technique permettant l'établissement de connexions P2P directes à travers NAT.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="i">
+                <h2>I</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="ice-interactive-connectivity-establishment" data-term="ice (interactive connectivity establishment)">
+                        <h3 class="term-title">
+                            <strong>ICE (Interactive Connectivity Establishment)</strong>
+                            <a href="#ice-interactive-connectivity-establishment" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole pour établir des connexions entre pairs à travers NAT et firewalls.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="i18n-internationalization" data-term="i18n (internationalization)">
+                        <h3 class="term-title">
+                            <strong>i18n (Internationalization)</strong>
+                            <a href="#i18n-internationalization" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Processus de conception logicielle pour supporter multiple langues et régions.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="iot-internet-of-things" data-term="iot (internet of things)">
+                        <h3 class="term-title">
+                            <strong>IoT (Internet of Things)</strong>
+                            <a href="#iot-internet-of-things" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Réseau d'objets connectés échangeant des données via Internet.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="isolation-des-donnes" data-term="isolation des données">
+                        <h3 class="term-title">
+                            <strong>Isolation des données</strong>
+                            <a href="#isolation-des-donnes" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Séparation technique stricte entre données sociales publiques et conversations privées pour préserver la confidentialité.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="k">
+                <h2>K</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="kat-known-answer-tests" data-term="kat (known answer tests)">
+                        <h3 class="term-title">
+                            <strong>KAT (Known Answer Tests)</strong>
+                            <a href="#kat-known-answer-tests" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Tests cryptographiques avec vecteurs officiels NIST/IETF validant implémentation. Obligatoires dans Miaou pour toutes primitives crypto.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="kdf-key-derivation-function" data-term="kdf (key derivation function)">
+                        <h3 class="term-title">
+                            <strong>KDF (Key Derivation Function)</strong>
+                            <a href="#kdf-key-derivation-function" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Fonction dérivant des clés cryptographiques à partir d'un matériel de base.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="l">
+                <h2>L</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="libsignalprotocol" data-term="libsignal-protocol">
+                        <h3 class="term-title">
+                            <strong>Libsignal-protocol</strong>
+                            <a href="#libsignalprotocol" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Bibliothèque officielle implémentant X3DH et <a href="#double-ratchet" class="term-link">Double Ratchet</a> du protocole Signal. Adoptée dans Miaou.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="libs-audites" data-term="libs auditées">
+                        <h3 class="term-title">
+                            <strong>Libs auditées</strong>
+                            <a href="#libs-audites" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Bibliothèques cryptographiques ayant subi audits de sécurité professionnels (<a href="#ring" class="term-link">Ring</a>, <a href="#rustcrypto" class="term-link">RustCrypto</a>, libsignal).</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="m">
+                <h2>M</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="mastodon" data-term="mastodon">
+                        <h3 class="term-title">
+                            <strong>Mastodon</strong>
+                            <a href="#mastodon" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Réseau social décentralisé basé sur <a href="#activitypub" class="term-link">ActivityPub</a>, alternative libre à Twitter.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="mdns-multicast-dns" data-term="mdns (multicast dns)">
+                        <h3 class="term-title">
+                            <strong>mDNS (Multicast DNS)</strong>
+                            <a href="#mdns-multicast-dns" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole permettant la résolution de noms sur réseaux locaux sans serveur DNS central.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="mls-messaging-layer-security" data-term="mls (messaging layer security)">
+                        <h3 class="term-title">
+                            <strong>MLS (Messaging Layer Security)</strong>
+                            <a href="#mls-messaging-layer-security" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole de sécurité pour messagerie de groupe, standardisé IETF (RFC 9420).</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="mvp-minimum-viable-product" data-term="mvp (minimum viable product)">
+                        <h3 class="term-title">
+                            <strong>MVP (Minimum Viable Product)</strong>
+                            <a href="#mvp-minimum-viable-product" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Version minimale fonctionnelle d'un produit pour valider les hypothèses de base.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="n">
+                <h2>N</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="nat-network-address-translation" data-term="nat (network address translation)">
+                        <h3 class="term-title">
+                            <strong>NAT (Network Address Translation)</strong>
+                            <a href="#nat-network-address-translation" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Technique permettant à plusieurs appareils de partager une adresse IP publique.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="p">
+                <h2>P</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="p2p-peertopeer" data-term="p2p (peer-to-peer)">
+                        <h3 class="term-title">
+                            <strong>P2P (Peer-to-Peer)</strong>
+                            <a href="#p2p-peertopeer" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Architecture réseau où les participants communiquent directement sans intermédiaire central.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="perfect-forward-secrecy-pfs" data-term="perfect forward secrecy (pfs)">
+                        <h3 class="term-title">
+                            <strong>Perfect Forward Secrecy (PFS)</strong>
+                            <a href="#perfect-forward-secrecy-pfs" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Propriété crypto garantissant que chaque session utilise des clés éphémères uniques.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="pow-proof-of-work" data-term="pow (proof of work)">
+                        <h3 class="term-title">
+                            <strong>PoW (Proof of Work)</strong>
+                            <a href="#pow-proof-of-work" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mécanisme de <a href="#consensus" class="term-link">Consensus</a> nécessitant une preuve de calcul, utilisé contre le spam.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="psi-private-set-intersection" data-term="psi (private set intersection)">
+                        <h3 class="term-title">
+                            <strong>PSI (Private Set Intersection)</strong>
+                            <a href="#psi-private-set-intersection" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole permettant de calculer l'intersection d'ensembles sans révéler les éléments privés.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="pwa-progressive-web-app" data-term="pwa (progressive web app)">
+                        <h3 class="term-title">
+                            <strong>PWA (Progressive Web App)</strong>
+                            <a href="#pwa-progressive-web-app" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Application web avec capacités natives (offline, notifications, installation).</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="q">
+                <h2>Q</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="publication-sociale" data-term="publication sociale">
+                        <h3 class="term-title">
+                            <strong>Publication sociale</strong>
+                            <a href="#publication-sociale" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Fonctionnalité permettant de partager du contenu sur les réseaux sociaux de manière optionnelle et anonymisable.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="quic" data-term="quic">
+                        <h3 class="term-title">
+                            <strong>QUIC</strong>
+                            <a href="#quic" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole de transport moderne (Google/IETF) offrant multiplexage et migration de connexions.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="r">
+                <h2>R</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="rfc-request-for-comments" data-term="rfc (request for comments)">
+                        <h3 class="term-title">
+                            <strong>RFC (Request for Comments)</strong>
+                            <a href="#rfc-request-for-comments" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Documents techniques standardisant les protocoles Internet (IETF).</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ring" data-term="ring">
+                        <h3 class="term-title">
+                            <strong>Ring</strong>
+                            <a href="#ring" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Bibliothèque cryptographique Rust auditée par Google, utilisée dans Miaou pour primitives AEAD.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="rustcrypto" data-term="rustcrypto">
+                        <h3 class="term-title">
+                            <strong>RustCrypto</strong>
+                            <a href="#rustcrypto" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Écosystème de bibliothèques cryptographiques Rust pures, auditées. Adoptées dans Miaou.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="rustdoc" data-term="rustdoc">
+                        <h3 class="term-title">
+                            <strong>Rustdoc</strong>
+                            <a href="#rustdoc" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Outil de génération automatique de documentation pour le langage Rust.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="rustsec" data-term="rustsec">
+                        <h3 class="term-title">
+                            <strong>RustSec</strong>
+                            <a href="#rustsec" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Base de données vulnérabilités connues dans écosystème Rust. Surveillée via <a href="#cargoaudit" class="term-link">Cargo-audit</a>.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="s">
+                <h2>S</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="sbom-software-bill-of-materials" data-term="sbom (software bill of materials)">
+                        <h3 class="term-title">
+                            <strong>SBOM (Software Bill of Materials)</strong>
+                            <a href="#sbom-software-bill-of-materials" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Liste exhaustive des composants logiciels et dépendances d'une application.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="sdk-software-development-kit" data-term="sdk (software development kit)">
+                        <h3 class="term-title">
+                            <strong>SDK (Software Development Kit)</strong>
+                            <a href="#sdk-software-development-kit" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Ensemble d'outils de développement pour créer des applications.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="sha3" data-term="sha-3">
+                        <h3 class="term-title">
+                            <strong>SHA-3</strong>
+                            <a href="#sha3" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Famille de fonctions de hachage cryptographique standardisée par NIST (Keccak).</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="slsa-supplychain-levels-for-software-artifacts" data-term="slsa (supply-chain levels for software artifacts)">
+                        <h3 class="term-title">
+                            <strong>SLSA (Supply-chain Levels for Software Artifacts)</strong>
+                            <a href="#slsa-supplychain-levels-for-software-artifacts" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p><a href="#framework" class="term-link">Framework</a> pour sécuriser la chaîne d'approvisionnement logicielle.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="socialaggregator" data-term="social-aggregator">
+                        <h3 class="term-title">
+                            <strong>Social-aggregator</strong>
+                            <a href="#socialaggregator" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Module d'agrégation des publications provenant de différents réseaux sociaux (Facebook, Instagram, Twitter).</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="socialpublisher" data-term="social-publisher">
+                        <h3 class="term-title">
+                            <strong>Social-publisher</strong>
+                            <a href="#socialpublisher" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Module de publication de contenu sur les réseaux sociaux avec options d'anonymisation.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="solid" data-term="solid">
+                        <h3 class="term-title">
+                            <strong>SOLID</strong>
+                            <a href="#solid" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Cinq principes de conception orientée objet : Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="stun-session-traversal-utilities-for-nat" data-term="stun (session traversal utilities for nat)">
+                        <h3 class="term-title">
+                            <strong>STUN (Session Traversal Utilities for NAT)</strong>
+                            <a href="#stun-session-traversal-utilities-for-nat" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole standard découverte IP publique et type NAT. Utilisé avec ICE dans Miaou vs custom.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="t">
+                <h2>T</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="tdd-testdriven-development" data-term="tdd (test-driven development)">
+                        <h3 class="term-title">
+                            <strong>TDD (Test-Driven Development)</strong>
+                            <a href="#tdd-testdriven-development" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Méthodologie où les tests sont écrits avant le code d'implémentation.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="tls-transport-layer-security" data-term="tls (transport layer security)">
+                        <h3 class="term-title">
+                            <strong>TLS (Transport Layer Security)</strong>
+                            <a href="#tls-transport-layer-security" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole cryptographique sécurisant les communications sur réseaux. Version actuelle : TLS 1.3.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="tofu-trust-on-first-use" data-term="tofu (trust on first use)">
+                        <h3 class="term-title">
+                            <strong>TOFU (Trust On First Use)</strong>
+                            <a href="#tofu-trust-on-first-use" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Modèle de confiance acceptant une clé lors de la première rencontre.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="tuf-the-update-framework" data-term="tuf (the update framework)">
+                        <h3 class="term-title">
+                            <strong>TUF (The Update Framework)</strong>
+                            <a href="#tuf-the-update-framework" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p><a href="#framework" class="term-link">Framework</a> pour sécuriser les mises à jour logicielles contre diverses attaques.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="turn-traversal-using-relays-around-nat" data-term="turn (traversal using relays around nat)">
+                        <h3 class="term-title">
+                            <strong>TURN (Traversal Using Relays around NAT)</strong>
+                            <a href="#turn-traversal-using-relays-around-nat" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole relais standard quand connexion P2P directe impossible. Adopté dans Miaou avec ICE/STUN.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="w">
+                <h2>W</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="wasm-webassembly" data-term="wasm (webassembly)">
+                        <h3 class="term-title">
+                            <strong>WASM (WebAssembly)</strong>
+                            <a href="#wasm-webassembly" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Format de bytecode permettant l'exécution de code natif dans les navigateurs.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="wcag-web-content-accessibility-guidelines" data-term="wcag (web content accessibility guidelines)">
+                        <h3 class="term-title">
+                            <strong>WCAG (Web Content Accessibility Guidelines)</strong>
+                            <a href="#wcag-web-content-accessibility-guidelines" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Standards d'accessibilité web du W3C. Niveaux : A, AA, AAA.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="webrtc-web-realtime-communication" data-term="webrtc (web real-time communication)">
+                        <h3 class="term-title">
+                            <strong>WebRTC (Web Real-Time Communication)</strong>
+                            <a href="#webrtc-web-realtime-communication" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Standards W3C communications temps réel. Adopté dans Miaou pour P2P et NAT traversal vs implémentations custom.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="web-of-trust" data-term="web of trust">
+                        <h3 class="term-title">
+                            <strong>Web of Trust</strong>
+                            <a href="#web-of-trust" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Modèle de confiance décentralisé basé sur les recommandations entre utilisateurs.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="websocial" data-term="web-social">
+                        <h3 class="term-title">
+                            <strong>Web-social</strong>
+                            <a href="#websocial" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Serveur de contenu social intégré permettant de servir du contenu web directement depuis les clients Miaou.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="webwasm" data-term="web-wasm">
+                        <h3 class="term-title">
+                            <strong>Web-wasm</strong>
+                            <a href="#webwasm" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Modules WebAssembly permettant l'exécution de contenu riche et interactif dans l'interface web de Miaou.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="x">
+                <h2>X</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="x3dh-extended-triple-diffiehellman" data-term="x3dh (extended triple diffie-hellman)">
+                        <h3 class="term-title">
+                            <strong>X3DH (Extended Triple Diffie-Hellman)</strong>
+                            <a href="#x3dh-extended-triple-diffiehellman" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocole d'accord de clés permettant l'échange sécurisé initial entre deux parties.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="z">
+                <h2>Z</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="zeroize" data-term="zeroize">
+                        <h3 class="term-title">
+                            <strong>Zeroize</strong>
+                            <a href="#zeroize" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Technique d'effacement sécurisé de données sensibles en mémoire pour éviter leur récupération.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="nouveaux-termes-postcritiques">
+                <h2>Nouveaux termes (post-critiques)</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="approche-progressive-blockchain" data-term="approche progressive blockchain">
+                        <h3 class="term-title">
+                            <strong>Approche progressive blockchain</strong>
+                            <a href="#approche-progressive-blockchain" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Stratégie Miaou : Phase 1-6 sans blockchain, Phase 7+ avec blockchain basée sur usage réel.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="consensus-technique-gpt5-claude" data-term="consensus technique (gpt-5 + claude)">
+                        <h3 class="term-title">
+                            <strong>Consensus technique (GPT-5 + Claude)</strong>
+                            <a href="#consensus-technique-gpt5-claude" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Points d'accord entre les deux IA : abandonner <a href="#crypto-custom" class="term-link">Crypto custom</a>, utiliser <a href="#libs-audites" class="term-link">Libs auditées</a>, standards réseau éprouvés.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="crypto-custom" data-term="crypto custom">
+                        <h3 class="term-title">
+                            <strong>Crypto custom</strong>
+                            <a href="#crypto-custom" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Implémentation cryptographique from scratch. INTERDITE dans Miaou suite aux critiques de sécurité.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="politique-dpendances-audit" data-term="politique dépendances audit">
+                        <h3 class="term-title">
+                            <strong>Politique dépendances audit</strong>
+                            <a href="#politique-dpendances-audit" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Approche équilibrée remplaçant "zéro dépendance" : allowlist stricte de dépendances auditées.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="standards-prouvs" data-term="standards éprouvés">
+                        <h3 class="term-title">
+                            <strong>Standards éprouvés</strong>
+                            <a href="#standards-prouvs" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocoles réseau établis (WebRTC, ICE, STUN/TURN) adoptés dans Miaou au lieu d'algorithmes custom.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="wrappers-crypto" data-term="wrappers crypto">
+                        <h3 class="term-title">
+                            <strong>Wrappers crypto</strong>
+                            <a href="#wrappers-crypto" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Couches d'abstraction Miaou autour de bibliothèques auditées (<a href="#ring" class="term-link">Ring</a>, <a href="#rustcrypto" class="term-link">RustCrypto</a>) au lieu d'implémentations from scratch.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="nouveaux-termes-v010">
+                <h2>Nouveaux termes v0.1.0</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="aad-obligatoire" data-term="aad obligatoire">
+                        <h3 class="term-title">
+                            <strong>AAD obligatoire</strong>
+                            <a href="#aad-obligatoire" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Politique Miaou imposant l'utilisation d'Associated Authenticated Data pour toutes les opérations AEAD, empêchant les chiffrements sans contexte d'authentification.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="cryptoprovider-trait" data-term="cryptoprovider trait">
+                        <h3 class="term-title">
+                            <strong>CryptoProvider trait</strong>
+                            <a href="#cryptoprovider-trait" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Interface object-safe définissant les opérations cryptographiques fondamentales (seal, open, sign, verify) dans l'architecture modulaire de Miaou.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="edition-2024" data-term="edition 2024">
+                        <h3 class="term-title">
+                            <strong>Edition 2024</strong>
+                            <a href="#edition-2024" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Version du langage Rust requise par certaines dépendances cryptographiques, nécessitant une mise à jour de la toolchain.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="objectsafe-traits" data-term="object-safe traits">
+                        <h3 class="term-title">
+                            <strong>Object-safe traits</strong>
+                            <a href="#objectsafe-traits" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Contrainte Rust permettant l'utilisation de <a href="#trait" class="term-link">Trait</a> objects pour le polymorphisme dynamique. Essentiel pour l'architecture modulaire crypto de Miaou.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="sealeddata" data-term="sealeddata">
+                        <h3 class="term-title">
+                            <strong>SealedData</strong>
+                            <a href="#sealeddata" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Structure Miaou encapsulant les données chiffrées avec nonce et tag d'authentification pour un transport sécurisé.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="zeroization" data-term="zeroization">
+                        <h3 class="term-title">
+                            <strong>Zeroization</strong>
+                            <a href="#zeroization" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Effacement sécurisé automatique des clés cryptographiques en mémoire via le <a href="#trait" class="term-link">Trait</a> ZeroizeOnDrop, implémenté dans toutes les structures sensibles.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="termes-spcifiques-miaou">
+                <h2>Termes spécifiques à Miaou</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="bridgemastodon" data-term="bridge-mastodon">
+                        <h3 class="term-title">
+                            <strong>Bridge-mastodon</strong>
+                            <a href="#bridgemastodon" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Pont bidirectionnel entre Miaou et le réseau <a href="#mastodon" class="term-link">Mastodon</a> utilisant l'API <a href="#activitypub" class="term-link">ActivityPub</a>.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="croquettes" data-term="croquettes">
+                        <h3 class="term-title">
+                            <strong>Croquettes</strong>
+                            <a href="#croquettes" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Crypto-monnaie interne de Miaou récompensant les contributions qualitatives (sécurité, hébergement, parrainage).</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="fonctions-sociales" data-term="fonctions sociales">
+                        <h3 class="term-title">
+                            <strong>Fonctions sociales</strong>
+                            <a href="#fonctions-sociales" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Ensemble de fonctionnalités permettant l'agrégation et la publication sur les réseaux sociaux tout en préservant la confidentialité des conversations privées.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="hub-social-dcentralis" data-term="hub social décentralisé">
+                        <h3 class="term-title">
+                            <strong>Hub social décentralisé</strong>
+                            <a href="#hub-social-dcentralis" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Vision de Miaou comme point central pour gérer ses communications privées et ses interactions sociales publiques de manière unifiée.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="socialfeeds" data-term="social-feeds">
+                        <h3 class="term-title">
+                            <strong>Social-feeds</strong>
+                            <a href="#socialfeeds" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Gestionnaire de flux sociaux personnalisés permettant de suivre du contenu agrégé depuis multiple sources.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="socialprivacy" data-term="social-privacy">
+                        <h3 class="term-title">
+                            <strong>Social-privacy</strong>
+                            <a href="#socialprivacy" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Module d'anonymisation et d'isolation garantissant que les données sociales n'interfèrent pas avec la messagerie privée.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="termes-supplmentaires-pour-dbutants">
+                <h2>Termes supplémentaires pour débutants</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="api-gateway" data-term="api gateway">
+                        <h3 class="term-title">
+                            <strong>API Gateway</strong>
+                            <a href="#api-gateway" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Point d'entrée unique qui route les requêtes vers les bons services dans une architecture <a href="#microservices" class="term-link">Microservices</a>. Comme une réceptionniste qui dirige les visiteurs.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="backendfrontend" data-term="backend/frontend">
+                        <h3 class="term-title">
+                            <strong>Backend/Frontend</strong>
+                            <a href="#backendfrontend" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Backend = partie serveur invisible aux utilisateurs. Frontend = interface utilisateur visible. Comme la cuisine (backend) et la salle de restaurant (frontend).</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="bug" data-term="bug">
+                        <h3 class="term-title">
+                            <strong>Bug</strong>
+                            <a href="#bug" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Erreur dans le code qui cause un comportement inattendu. Vient d'un vrai insecte trouvé dans un ordinateur en 1947 !</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="cache" data-term="cache">
+                        <h3 class="term-title">
+                            <strong>Cache</strong>
+                            <a href="#cache" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mémoire temporaire pour stocker des données fréquemment utilisées. Comme garder ses clés sur la table d'entrée au lieu de les chercher partout.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="compilation" data-term="compilation">
+                        <h3 class="term-title">
+                            <strong>Compilation</strong>
+                            <a href="#compilation" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Processus qui transforme le code source humain en code machine exécutable. Comme traduire un livre français en chinois.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="cookie" data-term="cookie">
+                        <h3 class="term-title">
+                            <strong>Cookie</strong>
+                            <a href="#cookie" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Petit fichier stocké par le navigateur pour se souvenir des informations sur un site. Comme un bracelet d'identification dans un parc d'attractions.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="debugging" data-term="debugging">
+                        <h3 class="term-title">
+                            <strong>Debugging</strong>
+                            <a href="#debugging" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Processus de recherche et correction des bugs. Comme jouer au détective pour résoudre un mystère.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="dploiement" data-term="déploiement">
+                        <h3 class="term-title">
+                            <strong>Déploiement</strong>
+                            <a href="#dploiement" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Action de mettre une application en production pour que les utilisateurs puissent l'utiliser. Comme ouvrir un magasin au public.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="devops" data-term="devops">
+                        <h3 class="term-title">
+                            <strong>DevOps</strong>
+                            <a href="#devops" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Pratiques combinant développement (Dev) et opérations (Ops) pour livrer rapidement et fiablement. Comme une équipe de F1 ultra-coordonnée.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="docker" data-term="docker">
+                        <h3 class="term-title">
+                            <strong>Docker</strong>
+                            <a href="#docker" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Outil pour empaqueter une application avec toutes ses dépendances dans un "conteneur" portable. Comme une valise parfaitement organisée.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="framework" data-term="framework">
+                        <h3 class="term-title">
+                            <strong>Framework</strong>
+                            <a href="#framework" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Structure de base réutilisable pour développer des applications. Comme un kit de construction avec des pièces pré-assemblées.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="git" data-term="git">
+                        <h3 class="term-title">
+                            <strong>Git</strong>
+                            <a href="#git" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Système de contrôle de version pour suivre les modifications du code. Comme un historique magique qui permet de revenir en arrière.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="httphttps" data-term="http/https">
+                        <h3 class="term-title">
+                            <strong>HTTP/HTTPS</strong>
+                            <a href="#httphttps" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Protocoles de communication web. HTTP = conversation normale, HTTPS = conversation chuchotée et sécurisée.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ide-integrated-development-environment" data-term="ide (integrated development environment)">
+                        <h3 class="term-title">
+                            <strong>IDE (Integrated Development Environment)</strong>
+                            <a href="#ide-integrated-development-environment" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Logiciel tout-en-un pour écrire du code (éditeur, debugger, etc.). Comme un atelier complet pour bricoleur.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="json-javascript-object-notation" data-term="json (javascript object notation)">
+                        <h3 class="term-title">
+                            <strong>JSON (JavaScript Object Notation)</strong>
+                            <a href="#json-javascript-object-notation" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Format simple pour échanger des données entre applications. Comme un formulaire structuré et lisible.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="latence" data-term="latence">
+                        <h3 class="term-title">
+                            <strong>Latence</strong>
+                            <a href="#latence" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Temps d'attente avant qu'une réponse arrive. Comme le délai entre poser une question et entendre la réponse.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="load-balancer" data-term="load balancer">
+                        <h3 class="term-title">
+                            <strong>Load Balancer</strong>
+                            <a href="#load-balancer" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Répartit la charge entre plusieurs serveurs pour éviter la surcharge. Comme un régulateur de trafic intelligent.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="microservices" data-term="microservices">
+                        <h3 class="term-title">
+                            <strong>Microservices</strong>
+                            <a href="#microservices" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Architecture divisant une grosse application en petits services indépendants. Comme remplacer un gros camion par une flotte de scooters.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="nodejs" data-term="node.js">
+                        <h3 class="term-title">
+                            <strong>Node.js</strong>
+                            <a href="#nodejs" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Environnement permettant d'exécuter JavaScript côté serveur. Comme parler français en Chine grâce à un traducteur.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="open-source" data-term="open source">
+                        <h3 class="term-title">
+                            <strong>Open Source</strong>
+                            <a href="#open-source" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Code source disponible publiquement que tout le monde peut voir et modifier. Comme une recette de cuisine partagée.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ram-random-access-memory" data-term="ram (random access memory)">
+                        <h3 class="term-title">
+                            <strong>RAM (Random Access Memory)</strong>
+                            <a href="#ram-random-access-memory" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mémoire temporaire ultra-rapide de l'ordinateur. Comme un bureau où on étale les documents sur lesquels on travaille.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="repository-repo" data-term="repository (repo)">
+                        <h3 class="term-title">
+                            <strong>Repository (Repo)</strong>
+                            <a href="#repository-repo" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Dossier contenant tout le code d'un projet avec son historique. Comme une bibliothèque pour un projet spécifique.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="saas-software-as-a-service" data-term="saas (software as a service)">
+                        <h3 class="term-title">
+                            <strong>SaaS (Software as a Service)</strong>
+                            <a href="#saas-software-as-a-service" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Logiciel utilisé via internet sans installation. Comme louer une voiture au lieu de l'acheter.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="sql-structured-query-language" data-term="sql (structured query language)">
+                        <h3 class="term-title">
+                            <strong>SQL (Structured Query Language)</strong>
+                            <a href="#sql-structured-query-language" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Langage pour interroger et manipuler les bases de données. Comme poser des questions très précises à un bibliothécaire.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="stack-technique" data-term="stack technique">
+                        <h3 class="term-title">
+                            <strong>Stack technique</strong>
+                            <a href="#stack-technique" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Ensemble des technologies utilisées dans un projet. Comme la liste d'ingrédients d'une recette.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="url-uniform-resource-locator" data-term="url (uniform resource locator)">
+                        <h3 class="term-title">
+                            <strong>URL (Uniform Resource Locator)</strong>
+                            <a href="#url-uniform-resource-locator" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Adresse web d'une ressource. Comme l'adresse postale d'une maison sur internet.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="version-control" data-term="version control">
+                        <h3 class="term-title">
+                            <strong>Version Control</strong>
+                            <a href="#version-control" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Système pour suivre et gérer les modifications du code. Comme tenir un journal détaillé de tous les changements.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="virtual-machine-vm" data-term="virtual machine (vm)">
+                        <h3 class="term-title">
+                            <strong>Virtual Machine (VM)</strong>
+                            <a href="#virtual-machine-vm" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Ordinateur simulé dans un ordinateur réel. Comme avoir plusieurs appartements dans le même immeuble.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="webhook" data-term="webhook">
+                        <h3 class="term-title">
+                            <strong>Webhook</strong>
+                            <a href="#webhook" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mécanisme permettant à une application d'envoyer automatiquement des données à une autre. Comme un facteur qui livre automatiquement le courrier.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="workspace" data-term="workspace">
+                        <h3 class="term-title">
+                            <strong>Workspace</strong>
+                            <a href="#workspace" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Environnement de travail organisé pour un projet. Comme un bureau bien rangé avec tous les outils nécessaires.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="termes-spcifiques-rust">
+                <h2>Termes spécifiques Rust</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="cargo" data-term="cargo">
+                        <h3 class="term-title">
+                            <strong>Cargo</strong>
+                            <a href="#cargo" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Gestionnaire de paquets et outil de build pour Rust. Comme un assistant personnel pour développeur Rust.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="crate" data-term="crate">
+                        <h3 class="term-title">
+                            <strong>Crate</strong>
+                            <a href="#crate" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Paquet/bibliothèque Rust. Comme une boîte à outils spécialisée qu'on peut réutiliser.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ownership" data-term="ownership">
+                        <h3 class="term-title">
+                            <strong>Ownership</strong>
+                            <a href="#ownership" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Système unique de Rust pour gérer la mémoire sans garbage collector. Comme des règles strictes de propriété d'objets.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="trait" data-term="trait">
+                        <h3 class="term-title">
+                            <strong>Trait</strong>
+                            <a href="#trait" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Interface définissant des comportements que les types peuvent implémenter. Comme un contrat de comportement.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="lifetime" data-term="lifetime">
+                        <h3 class="term-title">
+                            <strong>Lifetime</strong>
+                            <a href="#lifetime" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Durée de vie d'une référence en Rust. Comme la date d'expiration d'un produit.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="match" data-term="match">
+                        <h3 class="term-title">
+                            <strong>Match</strong>
+                            <a href="#match" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Système de correspondance de motifs très puissant en Rust. Comme un aiguilleur ultra-intelligent.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="borrowing" data-term="borrowing">
+                        <h3 class="term-title">
+                            <strong>Borrowing</strong>
+                            <a href="#borrowing" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Mécanisme permettant d'utiliser une valeur sans en prendre possession. Comme emprunter un livre à la bibliothèque.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="panic" data-term="panic">
+                        <h3 class="term-title">
+                            <strong>Panic</strong>
+                            <a href="#panic" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Arrêt brutal du programme en cas d'erreur critique. Comme le bouton d'arrêt d'urgence d'une machine.</p><p>---</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="termes-rseau-et-scurit">
+                <h2>Termes réseau et sécurité</h2>
+                <div class="terms-grid">
+
+                    <div class="term-card" id="firewall" data-term="firewall">
+                        <h3 class="term-title">
+                            <strong>Firewall</strong>
+                            <a href="#firewall" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Barrière de sécurité filtrant le trafic réseau. Comme un vigile à l'entrée d'un bâtiment.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="load-testing" data-term="load testing">
+                        <h3 class="term-title">
+                            <strong>Load Testing</strong>
+                            <a href="#load-testing" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Tests simulant une forte charge pour vérifier la résistance du système. Comme tester un pont avec des camions lourds.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="penetration-testing" data-term="penetration testing">
+                        <h3 class="term-title">
+                            <strong>Penetration Testing</strong>
+                            <a href="#penetration-testing" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Tests de sécurité simulant des attaques réelles. Comme faire appel à un cambrioleur professionnel pour tester ses serrures.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="rate-limiting" data-term="rate limiting">
+                        <h3 class="term-title">
+                            <strong>Rate Limiting</strong>
+                            <a href="#rate-limiting" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Limitation du nombre de requêtes par unité de temps. Comme un péage qui régule le flux de voitures.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="ssl-certificate" data-term="ssl certificate">
+                        <h3 class="term-title">
+                            <strong>SSL Certificate</strong>
+                            <a href="#ssl-certificate" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Certificat prouvant l'identité d'un site web. Comme une carte d'identité pour sites internet.</p>
+                        </div>
+                    </div>
+
+                    <div class="term-card" id="vpn-virtual-private-network" data-term="vpn (virtual private network)">
+                        <h3 class="term-title">
+                            <strong>VPN (Virtual Private Network)</strong>
+                            <a href="#vpn-virtual-private-network" class="permalink" title="Lien permanent">#</a>
+                        </h3>
+                        <div class="term-definition">
+                            <p>Tunnel sécurisé pour protéger sa connexion internet. Comme un passage secret pour naviguer anonymement.</p><p>---</p><p><em>Ce glossaire enrichi contient maintenant plus de 150 termes pour aider les débutants à mieux comprendre l'écosystème technique de Miaou.</em></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+        
+        <footer class="glossary-footer">
+            <p>📊 <strong>143</strong> termes dans <strong>27</strong> sections</p>
+            <p>Généré automatiquement depuis <code>docs/GLOSSAIRE.md</code></p>
+            <p class="miaou-signature">🐱 <strong>Miaou v0.1.0</strong> - Glossaire Technique</p>
+        </footer>
+    </div>
+    
+    <script>
+        
+        class GlossarySearch {
+            constructor() {
+                this.searchInput = document.getElementById('search');
+                this.searchResults = document.getElementById('search-results');
+                this.allTerms = document.querySelectorAll('.term-card');
+                this.allSections = document.querySelectorAll('.section');
+                
+                this.init();
+            }
+            
+            init() {
+                this.searchInput.addEventListener('input', (e) => {
+                    this.performSearch(e.target.value);
+                });
+                
+                // Recherche lors du chargement si hash présent
+                if (window.location.hash) {
+                    this.scrollToElement(window.location.hash);
+                }
+            }
+            
+            performSearch(query) {
+                query = query.toLowerCase().trim();
+                
+                if (!query) {
+                    this.showAllTerms();
+                    return;
+                }
+                
+                let visibleCount = 0;
+                let firstMatch = null;
+                
+                this.allTerms.forEach(term => {
+                    const termName = term.dataset.term;
+                    const termContent = term.textContent.toLowerCase();
+                    
+                    if (termName.includes(query) || termContent.includes(query)) {
+                        term.classList.remove('hidden');
+                        term.parentElement.parentElement.classList.remove('hidden');
+                        visibleCount++;
+                        
+                        if (!firstMatch && termName.includes(query)) {
+                            firstMatch = term;
+                        }
+                    } else {
+                        term.classList.add('hidden');
+                    }
+                });
+                
+                // Masquer sections vides
+                this.allSections.forEach(section => {
+                    const visibleTerms = section.querySelectorAll('.term-card:not(.hidden)');
+                    if (visibleTerms.length === 0) {
+                        section.classList.add('hidden');
+                    } else {
+                        section.classList.remove('hidden');
+                    }
+                });
+                
+                // Mettre à jour stats
+                this.searchResults.textContent = `${visibleCount} résultat${visibleCount > 1 ? 's' : ''}`;
+                
+                // Scroll au premier résultat exact
+                if (firstMatch && query.length > 2) {
+                    this.scrollToElement('#' + firstMatch.id, true);
+                }
+            }
+            
+            showAllTerms() {
+                this.allTerms.forEach(term => term.classList.remove('hidden'));
+                this.allSections.forEach(section => section.classList.remove('hidden'));
+                this.searchResults.textContent = `${this.allTerms.length} termes`;
+            }
+            
+            scrollToElement(selector, highlight = false) {
+                const element = document.querySelector(selector);
+                if (element) {
+                    element.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    
+                    if (highlight) {
+                        element.classList.add('highlight');
+                        setTimeout(() => {
+                            element.classList.remove('highlight');
+                        }, 2000);
+                    }
+                }
+            }
+        }
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            new GlossarySearch();
+            
+            // Stats initiales
+            const termCount = document.querySelectorAll('.term-card').length;
+            document.getElementById('search-results').textContent = `${termCount} termes`;
+        });
+        
+        // Gestion des liens permaliens
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('permalink')) {
+                e.preventDefault();
+                const targetId = e.target.getAttribute('href');
+                window.location.hash = targetId;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    targetElement.classList.add('highlight');
+                    setTimeout(() => {
+                        targetElement.classList.remove('highlight');
+                    }, 2000);
+                }
+            }
+        });
+        
+    </script>
+</body>
+</html>

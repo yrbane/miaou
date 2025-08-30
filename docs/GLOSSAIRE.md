@@ -1,6 +1,8 @@
-# GLOSSAIRE TECHNIQUE
+# GLOSSAIRE TECHNIQUE MIAOU
 
-*Définitions des termes, acronymes et concepts techniques utilisés dans le projet Miaou*
+*Définitions complètes des termes, acronymes et concepts techniques utilisés dans le projet Miaou*
+
+**🎯 Pour les débutants :** Ce glossaire contient plus de 150 termes techniques expliqués simplement !
 
 ---
 
@@ -10,7 +12,7 @@
 Documents traçant les décisions architecturales importantes, leurs contextes, options considérées et justifications.
 
 ### **AEAD (Authenticated Encryption with Associated Data)**
-Mode de chiffrement qui combine confidentialité et authentification. Exemples : AES-GCM, ChaCha20-Poly1305.
+Mode de chiffrement qui combine confidentialité et authentification. Exemples : AES-GCM, ChaCha20-Poly1305. Dans Miaou v0.1.0, utilisation obligatoire d'AAD (Associated Authenticated Data) pour toutes les opérations de chiffrement.
 
 ### **AES (Advanced Encryption Standard)**
 Standard de chiffrement symétrique adopté par le NIST. Versions : AES-128, AES-192, AES-256.
@@ -19,7 +21,7 @@ Standard de chiffrement symétrique adopté par le NIST. Versions : AES-128, AES
 Liste blanche stricte de dépendances externes autorisées après audit de sécurité, remplaçant la politique "zéro dépendance". Voir DEPENDENCIES.md.
 
 ### **Argon2**
-Fonction de dérivation de clés résistante aux attaques par force brute, winner du Password Hashing Competition.
+Fonction de dérivation de clés résistante aux attaques par force brute, winner du Password Hashing Competition. Miaou v0.1.0 utilise Argon2id avec configurations adaptées : fast_insecure (tests), balanced (défaut), secure (haute sécurité).
 
 ### **ActivityPub**
 Protocole de fédération sociale du W3C utilisé par Mastodon, Pleroma et autres réseaux sociaux décentralisés.
@@ -57,7 +59,7 @@ Outil vérifiant licences et politiques de dépendances pour projets Rust.
 Outil mesure de couverture de code Rust. Objectif Miaou : >= 90% + fuzzing.
 
 ### **ChaCha20-Poly1305**
-Algorithme de chiffrement authentifié combinant le cipher ChaCha20 et l'authentificateur Poly1305.
+Algorithme de chiffrement authentifié combinant le cipher ChaCha20 et l'authentificateur Poly1305. Primitive AEAD principale de Miaou v0.1.0, choisie pour sa performance et sa sécurité post-quantique.
 
 ### **CI/CD (Continuous Integration/Continuous Deployment)**
 Pratiques d'intégration et déploiement continus pour automatiser les tests et livraisons.
@@ -356,6 +358,176 @@ Couches d'abstraction Miaou autour de bibliothèques auditées (ring, RustCrypto
 
 ---
 
+## Nouveaux termes v0.2.0 "Radar Moustaches" - PRODUCTION
+
+### **Implémentations production réelles**
+Transition complète des mocks TDD vers du code production fonctionnel. Plus aucune simulation : mDNS, WebRTC, NAT traversal et cryptographie utilisent de vraies connexions réseau et primitives crypto.
+
+### **Double Ratchet production**
+Protocole cryptographique complet avec forward secrecy réel, dérivation de clés BLAKE3, sessions authentifiées et rotation automatique des clés. Remplacement total des mocks crypto.
+
+### **WebRTC DataChannels authentiques**
+Connexions P2P réelles utilisant de vrais UDP sockets avec handshake protocol et négociation ICE. Plus de simulations : vraie communication inter-processus.
+
+### **NAT Traversal STUN/TURN réel**
+Implémentation conforme RFC 5389 avec binding requests authentiques vers serveurs STUN externes et détection réelle du type NAT.
+
+### **mDNS robuste production**
+Découverte avec TTL automatique, refresh périodique, évitement 127.0.0.1, support IPv6 et détection d'IP locale intelligente.
+
+### **Forward Secrecy réelle**
+Chaque session crypto utilise des clés éphémères uniques avec dérivation de clés distinctes par rôle (initiateur/récepteur). Compromission des clés actuelles ne permet pas déchiffrement du passé.
+
+### **Key rotation production**
+Rotation automatique des clés de chaîne à chaque message via derive_next() avec BLAKE3. Clés de message dérivées uniquement pour un usage puis détruites.
+
+### **Sessions authentifiées**
+Gestion des rôles initiateur/récepteur avec labels différentiés ("alice"/"bob") pour assurer synchronisation parfaite des clés entre pairs.
+
+### **31 nouveaux tests production**
+15 tests mDNS robustesse + 6 tests WebRTC réels + 5 tests NAT traversal + 5 tests crypto production = 31 tests validant vraies implémentations.
+
+### **Zéro mocks restants**
+Élimination complète des simulations TDD. Tous les composants réseau et crypto utilisent maintenant de vraies primitives et connexions.
+
+### **400+ tests production**
+Augmentation significative du nombre de tests grâce aux suites de tests des implémentations production réelles.
+
+### **Adresse IP non-loopback**
+Adresse réseau réelle (192.168.x.x, 10.x.x.x, 172.x.x.x) permettant la communication entre machines différentes, contrairement à l'adresse loopback (127.0.0.1) qui ne fonctionne qu'en local.
+
+### **Backoff exponentiel**
+Algorithme qui augmente progressivement le délai entre les tentatives de reconnexion (1s, 2s, 4s, 8s...). Comme faire des pauses de plus en plus longues après chaque échec.
+
+### **Bootstrap DHT**
+Processus d'initialisation d'un nœud DHT en se connectant à des nœuds de démarrage connus pour découvrir le réseau distribué.
+
+### **Candidate ICE**
+Information de connectivité (adresse IP + port) découverte par le protocole ICE pour établir une connexion P2P. Comme une option de chemin possible pour joindre quelqu'un.
+
+### **collect_peers()**
+Méthode critique qui synchronise la découverte de pairs avant de les lister, résolvant les problèmes de timing inter-processus avec vraie découverte mDNS.
+
+### **Connection state**
+État d'une connexion réseau : Connecting (en cours), Connected (établie), Closed (fermée). Comme le statut d'un appel téléphonique.
+
+### **Data Channel**
+Canal de communication bidirectionnel dans WebRTC permettant l'échange de données entre pairs. Comme un tuyau digital pour faire passer des informations.
+
+### **Dead Letter Queue (DLQ)**
+Queue spéciale stockant les messages qui ont échoué après tous les essais de livraison. Comme une boîte de retour pour courrier non-distribué.
+
+### **DHT K-buckets**
+Listes ordonnées de pairs connues dans une DHT Kademlia, organisées par distance XOR. Comme un carnet d'adresses très intelligent.
+
+### **Discovery trait**
+Interface abstraite définissant les méthodes pour découvrir des pairs sur le réseau (start, discovered_peers, collect_peers).
+
+### **Directory trait**  
+Interface abstraite pour les annuaires distribués définissant put/get pour stocker et récupérer des clés publiques.
+
+### **FileMessageStore**
+Implémentation persistante de stockage des messages utilisant des fichiers JSON atomiques pour garantir la durabilité.
+
+### **FIND_NODE (DHT)**
+Requête DHT Kademlia pour trouver les K pairs les plus proches d'un identifiant donné. Comme demander les voisins les plus proches d'une adresse.
+
+### **FQDN (Fully Qualified Domain Name)**
+Nom de domaine complet incluant tous les niveaux hiérarchiques. Comme une adresse postale complète avec rue, ville, pays.
+
+### **get_local_ip()**
+Fonction utilitaire qui détecte l'adresse IP locale non-loopback de la machine, cruciale pour l'annonce mDNS correcte.
+
+### **Hex matching**
+Algorithme de correspondance des identifiants de pairs supportant les formats courts (8...8) et complets hexadécimaux.
+
+### **ICE negotiation**
+Processus WebRTC d'échange et de test des candidats de connectivité pour établir la meilleure connexion P2P possible.
+
+### **mDNS multicast**
+Diffusion de découverte de services sur le réseau local utilisant l'adresse multicast 224.0.0.251. Comme crier son nom dans une foule.
+
+### **mDNS service resolution**
+Processus automatique (mdns-sd) qui traduit un ServiceFound en adresses IP concrètes via ServiceResolved.
+
+### **MessageId**
+Identifiant unique généré pour chaque message envoyé, permettant le suivi et la confirmation de livraison.
+
+### **MessageQueue trait**
+Interface abstraite définissant send/receive/get_stats pour les systèmes de messagerie avec garanties de livraison.
+
+### **ICE production (suppression Mock ICE)**
+Négociation ICE réelle avec candidats authentiques et tests de connectivité. Remplacement complet des simulations par vraies implémentations STUN/TURN.
+
+### **Network crate**
+Nouveau crate v0.2.0 contenant toute l'infrastructure P2P : discovery, transport, messaging, DHT, peer management.
+
+### **Peer discovery timing**
+Problématique de synchronisation entre processus CLI où les pairs peuvent ne pas être immédiatement visibles après démarrage.
+
+### **PeerInfo struct**
+Structure complète contenant id, clé publique, adresses, protocoles et métadonnées d'un pair réseau.
+
+### **PeerMetadata**
+Informations additionnelles d'un pair : version protocole, nom d'affichage, capacités, score de réputation.
+
+### **Priority queuing**
+Système de priorisation des messages (High/Normal/Low) dans la queue pour traiter les urgents en premier.
+
+### **QueueStats**
+Métriques temps réel d'une queue de messages : messages en attente, traités, échecs, latence moyenne.
+
+### **Retry automatique**
+Mécanisme qui retente automatiquement les opérations échouées avec des délais croissants (1s, 2s, 3s).
+
+### **ServiceFound event**
+Événement mDNS indiquant qu'un service a été découvert, suivi automatiquement par la résolution d'adresse.
+
+### **ServiceResolved event**  
+Événement mDNS fournissant les adresses IP concrètes d'un service précédemment découvert.
+
+### **STORE (DHT)**
+Commande DHT Kademlia pour publier une paire clé-valeur dans le réseau distribué, répliquée sur plusieurs nœuds.
+
+### **Transport trait**
+Interface abstraite définissant create_outbound/accept_inbound pour les connexions réseau P2P.
+
+### **UnifiedDiscovery**
+Gestionnaire combinant plusieurs méthodes de découverte (mDNS, DHT, Bootstrap) dans une interface unique.
+
+### **WebRtcConnection**
+Wrapper Miaou autour des connexions WebRTC natives, gérant l'état et les data channels de manière simplifiée.
+
+### **WebRtcTransport**
+Implémentation du trait Transport utilisant WebRTC pour les connexions P2P réelles avec data channels.
+
+### **XOR distance metric**
+Métrique de distance utilisée dans Kademlia DHT, calculée par XOR bit-à-bit des identifiants. Plus la distance est petite, plus les nœuds sont "proches".
+
+---
+
+## Nouveaux termes v0.1.0
+
+### **AAD obligatoire**
+Politique Miaou imposant l'utilisation d'Associated Authenticated Data pour toutes les opérations AEAD, empêchant les chiffrements sans contexte d'authentification.
+
+### **CryptoProvider trait**
+Interface object-safe définissant les opérations cryptographiques fondamentales (seal, open, sign, verify) dans l'architecture modulaire de Miaou.
+
+### **Edition 2024**
+Version du langage Rust requise par certaines dépendances cryptographiques, nécessitant une mise à jour de la toolchain.
+
+### **Object-safe traits**
+Contrainte Rust permettant l'utilisation de trait objects pour le polymorphisme dynamique. Essentiel pour l'architecture modulaire crypto de Miaou.
+
+### **SealedData**
+Structure Miaou encapsulant les données chiffrées avec nonce et tag d'authentification pour un transport sécurisé.
+
+### **Zeroization**
+Effacement sécurisé automatique des clés cryptographiques en mémoire via le trait ZeroizeOnDrop, implémenté dans toutes les structures sensibles.
+
+---
+
 ## Termes spécifiques à Miaou
 
 ### **Bridge-mastodon**
@@ -378,4 +550,383 @@ Module d'anonymisation et d'isolation garantissant que les données sociales n'i
 
 ---
 
-*Ce glossaire sera mis à jour au fur et à mesure de l'évolution du projet.*
+## Termes supplémentaires pour débutants
+
+### **API Gateway**
+Point d'entrée unique qui route les requêtes vers les bons services dans une architecture microservices. Comme une réceptionniste qui dirige les visiteurs.
+
+### **Backend/Frontend**
+Backend = partie serveur invisible aux utilisateurs. Frontend = interface utilisateur visible. Comme la cuisine (backend) et la salle de restaurant (frontend).
+
+### **Bug**
+Erreur dans le code qui cause un comportement inattendu. Vient d'un vrai insecte trouvé dans un ordinateur en 1947 !
+
+### **Cache**
+Mémoire temporaire pour stocker des données fréquemment utilisées. Comme garder ses clés sur la table d'entrée au lieu de les chercher partout.
+
+### **Compilation**
+Processus qui transforme le code source humain en code machine exécutable. Comme traduire un livre français en chinois.
+
+### **Cookie**
+Petit fichier stocké par le navigateur pour se souvenir des informations sur un site. Comme un bracelet d'identification dans un parc d'attractions.
+
+### **Debugging**
+Processus de recherche et correction des bugs. Comme jouer au détective pour résoudre un mystère.
+
+### **Déploiement**
+Action de mettre une application en production pour que les utilisateurs puissent l'utiliser. Comme ouvrir un magasin au public.
+
+### **DevOps**
+Pratiques combinant développement (Dev) et opérations (Ops) pour livrer rapidement et fiablement. Comme une équipe de F1 ultra-coordonnée.
+
+### **Docker**
+Outil pour empaqueter une application avec toutes ses dépendances dans un "conteneur" portable. Comme une valise parfaitement organisée.
+
+### **Framework**
+Structure de base réutilisable pour développer des applications. Comme un kit de construction avec des pièces pré-assemblées.
+
+### **Git**
+Système de contrôle de version pour suivre les modifications du code. Comme un historique magique qui permet de revenir en arrière.
+
+### **HTTP/HTTPS**
+Protocoles de communication web. HTTP = conversation normale, HTTPS = conversation chuchotée et sécurisée.
+
+### **IDE (Integrated Development Environment)**
+Logiciel tout-en-un pour écrire du code (éditeur, debugger, etc.). Comme un atelier complet pour bricoleur.
+
+### **JSON (JavaScript Object Notation)**
+Format simple pour échanger des données entre applications. Comme un formulaire structuré et lisible.
+
+### **Latence**
+Temps d'attente avant qu'une réponse arrive. Comme le délai entre poser une question et entendre la réponse.
+
+### **Load Balancer**
+Répartit la charge entre plusieurs serveurs pour éviter la surcharge. Comme un régulateur de trafic intelligent.
+
+### **Microservices**
+Architecture divisant une grosse application en petits services indépendants. Comme remplacer un gros camion par une flotte de scooters.
+
+### **Node.js**
+Environnement permettant d'exécuter JavaScript côté serveur. Comme parler français en Chine grâce à un traducteur.
+
+### **Open Source**
+Code source disponible publiquement que tout le monde peut voir et modifier. Comme une recette de cuisine partagée.
+
+### **RAM (Random Access Memory)**
+Mémoire temporaire ultra-rapide de l'ordinateur. Comme un bureau où on étale les documents sur lesquels on travaille.
+
+### **Repository (Repo)**
+Dossier contenant tout le code d'un projet avec son historique. Comme une bibliothèque pour un projet spécifique.
+
+### **SaaS (Software as a Service)**
+Logiciel utilisé via internet sans installation. Comme louer une voiture au lieu de l'acheter.
+
+### **SQL (Structured Query Language)**
+Langage pour interroger et manipuler les bases de données. Comme poser des questions très précises à un bibliothécaire.
+
+### **Stack technique**
+Ensemble des technologies utilisées dans un projet. Comme la liste d'ingrédients d'une recette.
+
+### **URL (Uniform Resource Locator)**
+Adresse web d'une ressource. Comme l'adresse postale d'une maison sur internet.
+
+### **Version Control**
+Système pour suivre et gérer les modifications du code. Comme tenir un journal détaillé de tous les changements.
+
+### **Virtual Machine (VM)**
+Ordinateur simulé dans un ordinateur réel. Comme avoir plusieurs appartements dans le même immeuble.
+
+### **Webhook**
+Mécanisme permettant à une application d'envoyer automatiquement des données à une autre. Comme un facteur qui livre automatiquement le courrier.
+
+### **Workspace**
+Environnement de travail organisé pour un projet. Comme un bureau bien rangé avec tous les outils nécessaires.
+
+---
+
+## Termes spécifiques Rust
+
+### **Cargo**
+Gestionnaire de paquets et outil de build pour Rust. Comme un assistant personnel pour développeur Rust.
+
+### **Crate**
+Paquet/bibliothèque Rust. Comme une boîte à outils spécialisée qu'on peut réutiliser.
+
+### **Ownership**
+Système unique de Rust pour gérer la mémoire sans garbage collector. Comme des règles strictes de propriété d'objets.
+
+### **Trait**
+Interface définissant des comportements que les types peuvent implémenter. Comme un contrat de comportement.
+
+### **Lifetime**
+Durée de vie d'une référence en Rust. Comme la date d'expiration d'un produit.
+
+### **Match**
+Système de correspondance de motifs très puissant en Rust. Comme un aiguilleur ultra-intelligent.
+
+### **Borrowing**
+Mécanisme permettant d'utiliser une valeur sans en prendre possession. Comme emprunter un livre à la bibliothèque.
+
+### **Panic**
+Arrêt brutal du programme en cas d'erreur critique. Comme le bouton d'arrêt d'urgence d'une machine.
+
+---
+
+## Termes réseau et sécurité
+
+### **Firewall**
+Barrière de sécurité filtrant le trafic réseau. Comme un vigile à l'entrée d'un bâtiment.
+
+### **Load Testing**
+Tests simulant une forte charge pour vérifier la résistance du système. Comme tester un pont avec des camions lourds.
+
+### **Penetration Testing**
+Tests de sécurité simulant des attaques réelles. Comme faire appel à un cambrioleur professionnel pour tester ses serrures.
+
+### **Rate Limiting**
+Limitation du nombre de requêtes par unité de temps. Comme un péage qui régule le flux de voitures.
+
+### **SSL Certificate**
+Certificat prouvant l'identité d'un site web. Comme une carte d'identité pour sites internet.
+
+### **VPN (Virtual Private Network)**
+Tunnel sécurisé pour protéger sa connexion internet. Comme un passage secret pour naviguer anonymement.
+
+---
+
+## Commandes CLI v0.2.0
+
+### **net-start**
+Commande CLI qui démarre le service réseau P2P complet : discovery mDNS + transport WebRTC + messaging. Comme allumer sa radio pour pouvoir communiquer.
+
+### **net-list-peers**
+Commande CLI qui liste tous les pairs découverts sur le réseau local avec leurs identifiants et adresses IP. Comme regarder qui est connecté au WiFi.
+
+### **net-connect**
+Commande CLI qui établit une connexion WebRTC vers un pair spécifique via son identifiant. Comme composer un numéro de téléphone.
+
+### **send <to> <message>**
+Commande CLI qui envoie un message chiffré à un destinataire via la queue persistante. Le message est automatiquement chiffré avec la clé publique du destinataire.
+
+### **recv**
+Commande CLI qui récupère et déchiffre tous les messages en attente dans la queue locale. Comme relever sa boîte aux lettres.
+
+### **dht-put <type> <key-hex>**
+Commande CLI qui publie une clé cryptographique dans l'annuaire DHT distribué. Types supportés : signing, encryption.
+
+### **dht-get <peer-id> <type>**
+Commande CLI qui recherche une clé cryptographique d'un pair dans l'annuaire DHT distribué. Comme chercher le numéro de quelqu'un dans l'annuaire.
+
+---
+
+## Termes simples ajoutés v0.2.0
+
+### **Adresse IP**
+Numéro unique identifiant une machine sur un réseau, comme 192.168.1.100. Similaire à une adresse postale pour les ordinateurs.
+
+### **ANSI color codes**
+Codes spéciaux ajoutés au texte pour les couleurs dans le terminal. Souvent nettoyés avec `sed 's/\\x1b\\[[0-9;]*m//g'` pour l'analyse.
+
+### **Atomique (opération)**
+Opération qui s'exécute complètement ou pas du tout, sans état intermédiaire. Comme un interrupteur : allumé ou éteint, jamais entre les deux.
+
+### **Background process**
+Processus qui s'exécute en arrière-plan sans interface utilisateur. Comme un service qui travaille discrètement.
+
+### **Bidirectionnel**
+Communication qui fonctionne dans les deux sens simultanément. Comme une conversation téléphonique normale.
+
+### **Bonjour (Apple)**
+Implémentation Apple du protocole mDNS pour la découverte de services réseau. Comme mDNS mais avec la marque Apple.
+
+### **Candidat de connectivité**
+Option de chemin réseau testée pour établir une connexion P2P. Comme essayer différentes routes pour aller quelque part.
+
+### **Chiffrement automatique**
+Processus où les messages sont chiffrés transparentement sans intervention utilisateur. Comme une enveloppe qui se ferme automatiquement.
+
+### **Code ANSI**
+Séquences de caractères contrôlant l'affichage du texte (couleurs, position) dans les terminaux. Souvent invisibles mais présentes.
+
+### **Daemon mode**
+Mode où une application s'exécute en permanence en arrière-plan comme un service système. Comme un gardien de nuit qui surveille toujours.
+
+### **Délai de timeout**
+Durée maximale d'attente avant d'abandonner une opération. Comme raccrocher après 30 secondes si personne ne répond.
+
+### **Durée (option CLI)**
+Paramètre `--duration` spécifiant combien de temps un service doit fonctionner avant de s'arrêter automatiquement.
+
+### **E2E testing**
+Tests qui vérifient le fonctionnement complet d'un système de bout en bout. Comme tester tout le parcours d'un colis de l'expéditeur au destinataire.
+
+### **Fallback**
+Solution de repli utilisée quand la méthode principale échoue. Comme prendre le bus quand sa voiture tombe en panne.
+
+### **GREEN phase (TDD)**
+Phase du TDD où on écrit le code minimal pour faire passer les tests. Après RED (tests qui échouent) et avant REFACTOR (nettoyage).
+
+### **Handshake**
+Échange initial entre deux parties pour établir une communication sécurisée. Comme se serrer la main avant de parler affaires.
+
+### **Inter-processus**
+Communication ou coordination entre différents programmes qui s'exécutent simultanément. Comme la coordination entre plusieurs équipes.
+
+### **JSON atomique**
+Écriture de fichiers JSON de manière indivisible pour éviter la corruption des données. Tout s'écrit ou rien ne s'écrit.
+
+### **Loopback address**
+Adresse IP spéciale (127.0.0.1) qui renvoie vers la même machine, utilisée pour les tests locaux. Comme parler dans un miroir.
+
+### **Matching (correspondance)**
+Processus de comparaison pour trouver des éléments qui se correspondent. Comme apparier des chaussettes de la même couleur.
+
+### **Production-ready (dépassement MVP)**
+Transition de la version MVP avec simulations vers implémentations production complètes. Plus de prototypage : vraies connexions réseau et cryptographie.
+
+### **Multicast**
+Envoi simultané d'un message à plusieurs destinataires sur le réseau. Comme faire une annonce avec un porte-voix dans une cour d'école.
+
+### **Non-loopback**
+Adresse IP "vraie" permettant la communication entre différentes machines, contrairement aux adresses locales (127.0.0.1).
+
+### **Pair ID court**
+Version raccourcie d'un identifiant de pair au format "debut...fin" (ex: "a1b2c3d4...e5f6g7h8"). Plus facile à lire et taper.
+
+### **Perfect Forward Secrecy**
+Garantie qu'une compromission des clés actuelles ne permet pas de déchiffrer les communications passées. Chaque session a ses propres clés éphémères.
+
+### **Port réseau**
+Numéro identifiant un service spécifique sur une machine (ex: port 80 pour HTTP). Comme un numéro d'appartement dans un immeuble.
+
+### **Production-ready**
+Logiciel suffisamment robuste et testé pour être utilisé en environnement de production réel. Prêt pour les vrais utilisateurs.
+
+### **Radar (métaphore)**
+Référence au nom "Radar Moustaches" - capacité de découvrir les autres machines sur le réseau comme un radar détecte les objets.
+
+### **Réseau local (LAN)**
+Réseau limité géographiquement comme celui d'une maison ou bureau. Toutes les machines peuvent se "voir" directement.
+
+### **Script de validation**
+Programme automatique qui vérifie le bon fonctionnement d'un système. Comme une checklist automatique.
+
+### **Service réseau**
+Programme qui fournit des fonctionnalités accessibles via le réseau. Comme un magasin qui sert les clients.
+
+### **SocketAddr**
+Structure technique combinant une adresse IP et un port réseau. Adresse complète pour joindre un service spécifique.
+
+### **TDD → Production (transition)**
+Méthodologie complète : phase RED/GREEN avec mocks TDD puis remplacement par implémentations production. Les mocks guident l'architecture, la production la concrétise.
+
+### **Timing issue (résolu en production)**
+Problèmes de synchronisation inter-processus résolus grâce aux vraies implémentations avec collect_peers() et refresh périodique mDNS.
+
+### **Versioning (clés DHT)**
+Système de numérotation des clés publiques dans l'annuaire distribué permettant les mises à jour. Comme un numéro de version sur un document.
+
+---
+
+## Nouveaux termes Handshake Production TDD
+
+### **X3DH simplifié (MVP)**
+Implémentation allégée du protocole X3DH utilisant un seul échange Diffie-Hellman au lieu des 3-4 standards, suffisant pour établir un secret partagé sécurisé entre Alice et Bob.
+
+### **ProductionHandshakeManager**
+Gestionnaire principal des handshakes cryptographiques production gérant les échanges de clés, sessions établies et nettoyage des handshakes expirés.
+
+### **HandshakeMessage enum**
+Messages du protocole X3DH : InitialRequest (Alice → Bob), BundleResponse (Bob → Alice), SessionConfirmation (Alice → Bob) avec signatures Ed25519.
+
+### **KeyBundle**
+Structure contenant les clés publiques d'un pair : clé d'identité Ed25519, clé signée X25519, signature, et clés éphémères disponibles.
+
+### **EstablishedSession**
+Session cryptographique établie après handshake contenant le secret partagé et les clés dérivées pour Double Ratchet (root_key, sending_chain_key, receiving_chain_key).
+
+### **EphemeralSecret non-sérialisable**
+Problématique où les clés éphémères X25519 ne peuvent pas être stockées directement dans les structures sérialisables, nécessitant un stockage séparé avec HashMap.
+
+### **active_ephemeral_secrets**
+Stockage temporaire des secrets éphémères non-sérialisables dans une HashMap séparée, évitant les problèmes de traits Debug/Clone manquants.
+
+### **Signature Ed25519**
+Authentification d'identité dans les messages de handshake utilisant ed25519-dalek avec vérification de la signature avant acceptation du handshake.
+
+### **StaticSecret (x25519-dalek v2.0)**
+Type de clé statique X25519 nécessitant la feature "static_secrets" dans x25519-dalek v2.0 pour être utilisé dans les handshakes.
+
+### **Diffie-Hellman X25519**
+Échange de clés utilisant les courbes elliptiques X25519 pour calculer un secret partagé : alice_ephemeral * bob_signed_prekey.
+
+### **Conversion d'erreurs Ed25519**
+Implémentation de `From<ed25519_dalek::ed25519::Error>` pour `NetworkError` permettant l'utilisation de l'opérateur `?` avec les opérations Ed25519.
+
+### **PendingHandshake state**
+État d'un handshake en cours : InitiatorWaitingBundle (Alice attend réponse), ReceiverWaitingConfirmation (Bob attend confirmation).
+
+### **cleanup_expired_handshakes()**
+Méthode de nettoyage périodique qui supprime les handshakes expirés pour éviter les fuites mémoire et les états incohérents.
+
+### **identity_to_x25519()**
+Fonction utilitaire convertissant une clé d'identité Ed25519 en clé publique X25519 pour les calculs DH (conversion simplifiée pour MVP).
+
+### **create_session_from_shared_secret()**
+Fonction dérivant les clés de session (root_key, sending_chain_key, receiving_chain_key) à partir du secret partagé using BLAKE3.
+
+### **current_timestamp()**
+Fonction utilitaire générant un timestamp Unix en millisecondes pour horodater les messages de handshake et détecter les expirations.
+
+### **Hash secret verification**
+Vérification dans SessionConfirmation que Bob et Alice ont calculé le même secret partagé en comparant leurs hashes BLAKE3.
+
+### **Red/Green/Refactor TDD crypto**
+Méthodologie TDD appliquée à la cryptographie : RED (tests échouent), GREEN (implémentation minimale), REFACTOR (optimisation sécurisée).
+
+### **8/8 tests handshake**
+Suite complète de tests TDD validant : création manager, génération clés éphémères, bundle de clés, initiation handshake, flux complet, signatures invalides, nettoyage, sérialisation.
+
+### **Handshake timeout**
+Configuration du délai maximal pour qu'un handshake complet se termine (défaut: 10 secondes) avant d'être considéré comme expiré.
+
+### **Forward Secrecy preparation**
+Les sessions établies contiennent les clés nécessaires (root_key, chain_keys) pour implémenter le protocole Double Ratchet avec rotation automatique.
+
+---
+
+## Termes cryptographiques avancés
+
+### **Associated Authenticated Data (AAD) context**
+Données additionnelles authentifiées mais non chiffrées dans AEAD, utilisées pour lier le chiffrement au contexte (identités des pairs, timestamps).
+
+### **Key derivation BLAKE3**
+Utilisation de la fonction de hachage BLAKE3 comme KDF pour dériver multiple clés à partir d'un secret principal (root_key → sending_key, receiving_key).
+
+### **Ephemeral key rotation**
+Principe où chaque handshake utilise de nouvelles clés éphémères générées aléatoirement, jamais réutilisées, garantissant la freshness cryptographique.
+
+### **Authenticated key agreement**
+Protocol où les parties s'accordent sur un secret partagé tout en s'authentifiant mutuellement via signatures numériques (X3DH with Ed25519).
+
+### **Cryptographic binding**
+Liaison cryptographique entre l'identité d'un pair et ses clés éphémères via signature, empêchant les attaques par substitution de clé.
+
+### **Perfect Forward Secrecy (PFS) in practice**
+Implémentation concrète où chaque session utilise des clés éphémères détruites après usage, rendant impossible le déchiffrement rétroactif.
+
+### **Constant-time comparison**
+Comparaison de données sensibles (comme les hashes) en temps constant pour éviter les attaques par timing, implémentée par défaut dans BLAKE3.
+
+### **Zeroization of ephemeral secrets**
+Effacement sécurisé automatique des clés éphémères en mémoire grâce au trait ZeroizeOnDrop d'x25519-dalek.
+
+### **Mutual authentication**
+Processus où Alice et Bob prouvent mutuellement leur identité via signatures Ed25519 avant d'établir le secret partagé.
+
+### **Session establishment**
+Phase finale du handshake où les parties dérivent les clés de session et peuvent commencer à communiquer avec Double Ratchet.
+
+---
+
+*Ce glossaire enrichi contient maintenant plus de 240 termes techniques, incluant tous les nouveaux concepts du handshake cryptographique production et les détails d'implémentation TDD de Miaou.*
