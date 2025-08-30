@@ -44,6 +44,7 @@ pub mod unified_discovery;
 pub mod webrtc_data_channels;
 pub mod webrtc_production_impl;
 pub mod webrtc_transport;
+pub mod robust_messaging;
 
 // Tests d'intégration E2E Production
 pub mod e2e_integration_production;
@@ -97,6 +98,10 @@ pub use webrtc_data_channels::{
     WebRtcDataChannels,
 };
 pub use webrtc_transport::WebRtcTransport;
+pub use robust_messaging::{
+    RobustMessagingManager, RobustMessagingConfig, AcknowledgableMessage,
+    MessageAck, AckStatus, LoadTestResults, MessagingStats
+};
 
 #[cfg(test)]
 mod tests {
