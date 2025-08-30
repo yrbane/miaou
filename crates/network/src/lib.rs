@@ -38,13 +38,13 @@ pub mod p2p_connection;
 pub mod p2p_messaging_production;
 pub mod peer;
 pub mod ratchet;
+pub mod robust_messaging;
 pub mod store;
 pub mod transport;
 pub mod unified_discovery;
 pub mod webrtc_data_channels;
 pub mod webrtc_production_impl;
 pub mod webrtc_transport;
-pub mod robust_messaging;
 
 // Tests d'intégration E2E Production
 pub mod e2e_integration_production;
@@ -86,6 +86,10 @@ pub use ratchet::{
     ChainKey, DoubleRatchet, MessageKey, RatchetConfig, RatchetMessage, RatchetState,
     X3dhDoubleRatchet,
 };
+pub use robust_messaging::{
+    AckStatus, AcknowledgableMessage, LoadTestResults, MessageAck, MessagingStats,
+    RobustMessagingConfig, RobustMessagingManager,
+};
 pub use store::{
     InMemoryMessageStore, MessageCategory, MessageQuery, MessageStore, MessageStoreConfig,
     StoredMessage,
@@ -98,10 +102,6 @@ pub use webrtc_data_channels::{
     WebRtcDataChannels,
 };
 pub use webrtc_transport::WebRtcTransport;
-pub use robust_messaging::{
-    RobustMessagingManager, RobustMessagingConfig, AcknowledgableMessage,
-    MessageAck, AckStatus, LoadTestResults, MessagingStats
-};
 
 #[cfg(test)]
 mod tests {

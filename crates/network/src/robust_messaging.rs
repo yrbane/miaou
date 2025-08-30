@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-use tokio::sync::{RwLock, mpsc};
+use tokio::sync::{mpsc, RwLock};
 use tracing::{debug, info, warn};
 
 /// Message avec accusé de réception
@@ -85,13 +85,13 @@ pub struct RobustMessagingConfig {
 impl Default for RobustMessagingConfig {
     fn default() -> Self {
         Self {
-            initial_retry_delay_ms: 1000,    // 1s
-            backoff_factor: 2.0,             // 2s, 4s, 8s...
-            max_retry_delay_ms: 8000,        // 8s max
-            max_retry_attempts: 5,           // Maximum 5 tentatives
-            message_ttl_seconds: 300,        // 5 minutes TTL
-            dedup_history_size: 10000,       // 10k messages dans l'historique
-            ack_timeout_ms: 30000,           // 30s timeout pour ACK
+            initial_retry_delay_ms: 1000, // 1s
+            backoff_factor: 2.0,          // 2s, 4s, 8s...
+            max_retry_delay_ms: 8000,     // 8s max
+            max_retry_attempts: 5,        // Maximum 5 tentatives
+            message_ttl_seconds: 300,     // 5 minutes TTL
+            dedup_history_size: 10000,    // 10k messages dans l'historique
+            ack_timeout_ms: 30000,        // 30s timeout pour ACK
         }
     }
 }
@@ -142,7 +142,7 @@ impl RobustMessagingManager {
     pub fn new(config: RobustMessagingConfig) -> Self {
         let (incoming_tx, _incoming_rx) = mpsc::unbounded_channel();
         let (ack_tx, _ack_rx) = mpsc::unbounded_channel();
-        
+
         Self {
             config,
             pending_messages: Arc::new(RwLock::new(VecDeque::new())),
@@ -165,7 +165,8 @@ impl RobustMessagingManager {
         let expires_at = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
-            .as_secs() + self.config.message_ttl_seconds;
+            .as_secs()
+            + self.config.message_ttl_seconds;
 
         let ack_message = AcknowledgableMessage {
             message,
@@ -189,7 +190,7 @@ impl RobustMessagingManager {
         }
 
         info!(
-            "📤 Message {} en queue (ACK: {}, dedup: {})", 
+            "📤 Message {} en queue (ACK: {}, dedup: {})",
             ack_message.message.id, requires_ack, dedup_id
         );
 
@@ -205,23 +206,24 @@ impl RobustMessagingManager {
         if self.is_duplicate(&message.dedup_id).await {
             let mut stats = self.stats.write().await;
             stats.duplicates_detected += 1;
-            
+
             warn!(
                 "🔄 Message dupliqué détecté: {} (dedup_id: {})",
                 message.message.id, message.dedup_id
             );
-            
+
             // Envoyer ACK de duplication
             if message.requires_ack {
-                self.send_ack(&message.message, AckStatus::Duplicate).await?;
+                self.send_ack(&message.message, AckStatus::Duplicate)
+                    .await?;
             }
-            
+
             return Ok(false); // Message rejeté
         }
 
         // Marquer comme traité
         self.mark_as_processed(&message.dedup_id).await;
-        
+
         // Mettre à jour statistiques
         {
             let mut stats = self.stats.write().await;
@@ -244,11 +246,11 @@ impl RobustMessagingManager {
     /// Traite un ACK entrant
     pub async fn handle_incoming_ack(&self, ack: MessageAck) -> Result<(), NetworkError> {
         let mut awaiting = self.awaiting_ack.write().await;
-        
+
         if let Some(original_message) = awaiting.remove(&ack.message_id) {
             let mut stats = self.stats.write().await;
             stats.acks_received += 1;
-            
+
             match ack.status {
                 AckStatus::Success => {
                     stats.messages_sent += 1;
@@ -266,10 +268,11 @@ impl RobustMessagingManager {
                 _ => {
                     warn!(
                         "⚠️ ACK d'erreur pour message {}: {:?} - {}",
-                        ack.message_id, ack.status, 
+                        ack.message_id,
+                        ack.status,
                         ack.error_message.as_deref().unwrap_or("N/A")
                     );
-                    
+
                     // Remettre en queue pour retry si applicable
                     self.schedule_retry(original_message).await?;
                 }
@@ -283,10 +286,10 @@ impl RobustMessagingManager {
     pub async fn process_retries(&self) -> Result<u32, NetworkError> {
         let mut retry_count = 0;
         let now = Instant::now();
-        
+
         let mut pending = self.pending_messages.write().await;
         let mut to_retry = Vec::new();
-        
+
         // Identifier les messages à retenter
         for message in pending.iter_mut() {
             if let Some(next_retry) = message.next_retry_at {
@@ -295,28 +298,31 @@ impl RobustMessagingManager {
                 }
             }
         }
-        
+
         // Traiter les retries
         for mut message in to_retry {
             message.attempt_count += 1;
-            
+
             // Calculer prochain délai avec backoff exponentiel
             let delay_ms = std::cmp::min(
-                (self.config.initial_retry_delay_ms as f64 
-                    * self.config.backoff_factor.powi(message.attempt_count as i32 - 1)) as u64,
-                self.config.max_retry_delay_ms
+                (self.config.initial_retry_delay_ms as f64
+                    * self
+                        .config
+                        .backoff_factor
+                        .powi(message.attempt_count as i32 - 1)) as u64,
+                self.config.max_retry_delay_ms,
             );
-            
+
             message.next_retry_at = Some(now + Duration::from_millis(delay_ms));
-            
+
             info!(
                 "🔄 Retry #{} pour message {} dans {}ms",
                 message.attempt_count, message.message.id, delay_ms
             );
-            
+
             retry_count += 1;
         }
-        
+
         Ok(retry_count)
     }
 
@@ -326,9 +332,9 @@ impl RobustMessagingManager {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         let mut cleanup_count = 0;
-        
+
         // Nettoyer les messages en attente expirés
         {
             let mut pending = self.pending_messages.write().await;
@@ -340,19 +346,19 @@ impl RobustMessagingManager {
                 !expired
             });
         }
-        
+
         // Nettoyer l'historique de déduplication
         {
             let mut dedup_history = self.dedup_history.write().await;
             let cutoff = now_secs - self.config.message_ttl_seconds;
-            
+
             dedup_history.retain(|_, &mut timestamp| timestamp > cutoff);
         }
-        
+
         if cleanup_count > 0 {
             debug!("🧹 Nettoyé {} messages expirés", cleanup_count);
         }
-        
+
         Ok(cleanup_count)
     }
 
@@ -360,13 +366,13 @@ impl RobustMessagingManager {
     pub async fn get_stats(&self) -> MessagingStats {
         let stats = self.stats.read().await;
         let mut result = stats.clone();
-        
+
         // Calculer taux de réussite
         if result.messages_sent + result.permanent_failures > 0 {
-            result.success_rate = result.messages_sent as f64 
+            result.success_rate = result.messages_sent as f64
                 / (result.messages_sent + result.permanent_failures) as f64;
         }
-        
+
         result
     }
 
@@ -378,9 +384,9 @@ impl RobustMessagingManager {
     ) -> Result<LoadTestResults, NetworkError> {
         let start_time = Instant::now();
         info!("🚀 Début test de charge: {} messages", message_count);
-        
+
         let mut sent_messages = Vec::new();
-        
+
         // Envoyer tous les messages
         for i in 0..message_count {
             let test_message = Message::new(
@@ -389,26 +395,27 @@ impl RobustMessagingManager {
                 format!("Test message #{}", i + 1),
                 "load_test_session".to_string(),
             );
-            
+
             let message_id = self.send_with_guarantees(test_message, true).await?;
             sent_messages.push(message_id);
-            
+
             // Simulation de charge
             if i % 10 == 0 {
                 tokio::time::sleep(Duration::from_millis(1)).await;
             }
         }
-        
+
         // Attendre un délai raisonnable pour les ACK
         let timeout = Duration::from_secs(60); // Critère: < 60s
         tokio::time::sleep(std::cmp::min(
             Duration::from_millis(message_count as u64 * 10),
-            timeout
-        )).await;
-        
+            timeout,
+        ))
+        .await;
+
         let final_stats = self.get_stats().await;
         let elapsed = start_time.elapsed();
-        
+
         let results = LoadTestResults {
             total_sent: message_count,
             successful: final_stats.messages_sent as usize,
@@ -418,13 +425,15 @@ impl RobustMessagingManager {
             throughput_msg_per_sec: (message_count as f64 / elapsed.as_secs_f64()) as u64,
             success_rate: final_stats.success_rate,
         };
-        
+
         info!(
             "🎯 Test de charge terminé: {}/{} réussis en {}ms ({}%)",
-            results.successful, results.total_sent, results.elapsed_ms, 
+            results.successful,
+            results.total_sent,
+            results.elapsed_ms,
             (results.success_rate * 100.0) as u32
         );
-        
+
         Ok(results)
     }
 
@@ -432,14 +441,14 @@ impl RobustMessagingManager {
     fn generate_dedup_id(&self, message: &Message) -> String {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
-        
+
         let mut hasher = DefaultHasher::new();
         message.id.hash(&mut hasher);
         message.from.hash(&mut hasher);
         message.to.hash(&mut hasher);
         message.content.hash(&mut hasher);
         message.timestamp.hash(&mut hasher);
-        
+
         format!("dedup_{:x}", hasher.finish())
     }
 
@@ -455,10 +464,10 @@ impl RobustMessagingManager {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         let mut dedup_history = self.dedup_history.write().await;
         dedup_history.insert(dedup_id.to_string(), now);
-        
+
         // Limiter la taille de l'historique
         if dedup_history.len() > self.config.dedup_history_size {
             let oldest_keys: Vec<String> = dedup_history
@@ -468,7 +477,7 @@ impl RobustMessagingManager {
                 .take(self.config.dedup_history_size / 10) // Supprimer 10%
                 .map(|(key, _)| key.clone())
                 .collect();
-            
+
             for key in oldest_keys {
                 dedup_history.remove(&key);
             }
@@ -493,10 +502,10 @@ impl RobustMessagingManager {
         // En production, ceci enverrait l'ACK via le réseau
         // Pour les tests, on simule l'envoi
         let _ = self.ack_tx.send(ack);
-        
+
         let mut stats = self.stats.write().await;
         stats.acks_sent += 1;
-        
+
         Ok(())
     }
 
@@ -505,7 +514,7 @@ impl RobustMessagingManager {
         if message.attempt_count >= self.config.max_retry_attempts {
             let mut stats = self.stats.write().await;
             stats.permanent_failures += 1;
-            
+
             warn!(
                 "❌ Message {} échoué définitivement après {} tentatives",
                 message.message.id, message.attempt_count
@@ -515,17 +524,20 @@ impl RobustMessagingManager {
 
         // Calculer délai de retry
         let delay_ms = std::cmp::min(
-            (self.config.initial_retry_delay_ms as f64 
-                * self.config.backoff_factor.powi(message.attempt_count as i32)) as u64,
-            self.config.max_retry_delay_ms
+            (self.config.initial_retry_delay_ms as f64
+                * self
+                    .config
+                    .backoff_factor
+                    .powi(message.attempt_count as i32)) as u64,
+            self.config.max_retry_delay_ms,
         );
 
         message.next_retry_at = Some(Instant::now() + Duration::from_millis(delay_ms));
-        
+
         // Remettre en queue
         let mut pending = self.pending_messages.write().await;
         pending.push_back(message);
-        
+
         Ok(())
     }
 }
@@ -557,32 +569,36 @@ mod tests {
     async fn test_robust_messaging_deduplication() {
         let config = RobustMessagingConfig::default();
         let manager = RobustMessagingManager::new(config);
-        
+
         let message = Message::new_mock(
             PeerId::from_bytes(b"sender".to_vec()),
             PeerId::from_bytes(b"receiver".to_vec()),
             "Test message".to_string(),
         );
-        
+
         let ack_message = AcknowledgableMessage {
             message: message.clone(),
             requires_ack: true,
             dedup_id: "test_dedup_id".to_string(),
-            expires_at: SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 300,
+            expires_at: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                + 300,
             attempt_count: 0,
             next_retry_at: None,
         };
-        
+
         // Premier message devrait passer
         let result1 = manager.handle_incoming_message(ack_message.clone()).await;
         assert!(result1.is_ok());
         assert!(result1.unwrap());
-        
+
         // Deuxième message (duplicata) devrait être rejeté
         let result2 = manager.handle_incoming_message(ack_message).await;
         assert!(result2.is_ok());
         assert!(!result2.unwrap()); // Rejeté comme duplicata
-        
+
         let stats = manager.get_stats().await;
         assert_eq!(stats.duplicates_detected, 1);
     }
@@ -591,11 +607,11 @@ mod tests {
     async fn test_load_test_basic() {
         let config = RobustMessagingConfig::default();
         let manager = RobustMessagingManager::new(config);
-        
+
         // Test avec petit nombre pour rapidité
         let results = manager.load_test(10, false).await;
         assert!(results.is_ok());
-        
+
         let results = results.unwrap();
         assert_eq!(results.total_sent, 10);
         assert!(results.elapsed_ms < 60000); // Moins de 60s

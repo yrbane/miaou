@@ -6,18 +6,25 @@ on:
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
+      - 'LICENSE*'
+      - '*.txt'
   pull_request:
     branches: [ main, "v0.*" ]
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
+      - 'LICENSE*'
+      - '*.txt'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Permissions minimales selon les recommandations de sécurité
 permissions:
   contents: read
+  checks: write  # Pour les tests
+  pull-requests: read  # Pour les PRs
 
 env:
   CARGO_TERM_COLOR: always
@@ -175,13 +182,17 @@ jobs:
             ${{ runner.os }}-cargo-coverage-
             ${{ runner.os }}-cargo-
       
+      - name: Install jq (for JSON processing)
+        run: sudo apt-get update && sudo apt-get install -y jq
+      
       - name: Run coverage (Linux only)
         if: ${{ runner.os == 'Linux' && hashFiles('**/Cargo.toml') != '' }}
         run: |
           cargo tarpaulin --workspace --all-features --timeout 300 \
-            --out Xml --output-dir target/tarpaulin -o cobertura.xml \
-            --exclude-files "target/*" "*/tests/*" "*/benches/*"
-        timeout-minutes: 20
+            --out Xml --output-dir target/tarpaulin \
+            --exclude-files "target/*" "*/tests/*" "*/benches/*" \
+            --fail-under 90
+        timeout-minutes: 25
       
       - name: Upload to Codecov
         if: ${{ runner.os == 'Linux' && hashFiles('**/Cargo.toml') != '' }}
@@ -189,3 +200,23 @@ jobs:
         with:
           files: target/tarpaulin/cobertura.xml
           fail_ci_if_error: false
+          verbose: true
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    if: ${{ hashFiles('**/Cargo.toml') != '' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+      
+      - name: Run security audit
+        run: cargo audit --deny warnings
