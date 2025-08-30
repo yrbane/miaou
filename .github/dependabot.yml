@@ -1,0 +1,35 @@
+version: 2
+updates:
+  # Enable version updates for Cargo
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "yrbane"
+    labels:
+      - "dependencies"
+      - "type:maintenance"
+    commit-message:
+      prefix: "[deps]"
+      include: "scope"
+    
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/.github/workflows"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "04:30"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "yrbane"
+    labels:
+      - "ci"
+      - "type:maintenance"
+    commit-message:
+      prefix: "[ci]"
+      include: "scope"
